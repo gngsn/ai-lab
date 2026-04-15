@@ -1,0 +1,168 @@
+goal: >
+  Build a fully automated English tech-news cardnews pipeline that ingests RSS
+  feeds from major tech publications, ranks articles with a cheap LLM, rewrites
+  the top N per day into simplified English with a dedicated key-terms card using
+  a strong LLM, renders Instagram-sized PNG carousel slides via Playwright, and
+  publishes them to Instagram via the Meta Graph API — targeting English learners
+  who want to follow IT trends.
+
+constraints:
+  - Standalone project — no shared code with personalized-service-platform or vocab-chat-service (v1)
+  - Single-tenant, no auth (one creator, one IG account)
+  - Instagram carousel is the sole publishing channel in v1 (web + email deferred)
+  - Python for the pipeline (ingest, rank, rewrite, extract, orchestrate, publish)
+  - Node.js + Playwright for card rendering (HTML/CSS template → PNG)
+  - Two-tier LLM: cheap model (e.g. Gemini Flash / Claude Haiku) for ranking; strong model (e.g. Claude Sonnet / GPT-4o) for rewriting and key-terms extraction
+  - All generated content must be in English — no Korean
+  - Local cron scheduling on the creator's machine (no cloud infra in v1)
+  - SQLite + local filesystem for storage (runs, stories, rendered assets)
+  - N stories per day is configurable via env/config — not hardcoded
+  - Multi-channel publishing (web, email) deferred to v2
+
+acceptance_criteria:
+  - RSS feeds from ≥3 configurable tech sources are polled, deduplicated, and stored on each cron run
+  - Cheap LLM scores each candidate article; top N (configurable) are selected per run
+  - Strong LLM rewrites each selected article into simplified English (short sentences, technical jargon defined inline)
+  - Strong LLM extracts a dedicated key-terms list of 3–5 vocabulary items with English-only definitions per story
+  - Story content is rendered into a PNG carousel (1080×1080 or 1080×1350 px) via Playwright; cards include hook, body segment(s), key-terms card, and source/CTA card
+  - Completed carousel + auto-generated caption is published to Instagram via Meta Graph API without human intervention
+  - Each pipeline run persists a log entry in SQLite (items fetched, selected, published, errors)
+  - Rendered PNGs and captions are saved to a local dated directory for archival/debugging
+  - Pipeline runs end-to-end without human intervention when triggered by cron
+  - Failures (LLM API errors, render errors, IG API errors) are caught, logged, and do not crash subsequent stories in the same run
+
+ontology_schema:
+  name: CardnewsPipeline
+  description: >
+    Domain model for automated English tech-news cardnews generation and
+    Instagram publishing. Core entities are Story (a news article being
+    processed), Card (a single carousel slide), and Run (one pipeline execution).
+  fields:
+    - name: story
+      type: object
+      description: A tech news article being processed through the pipeline
+    - name: story.id
+      type: string
+      description: SHA-256 hash of the source URL — stable dedup key
+    - name: story.source_url
+      type: string
+      description: Original article URL from RSS
+    - name: story.raw_title
+      type: string
+      description: Headline as it appears in the RSS feed
+    - name: story.raw_body
+      type: string
+      description: Full text scraped from the article (or RSS summary if full text unavailable)
+    - name: story.ranking_score
+      type: number
+      description: Float 0.0–1.0 assigned by the cheap ranking LLM (interest + relevance + learnability)
+    - name: story.simplified_body
+      type: string
+      description: LLM-rewritten plain English version of the article body
+    - name: story.key_terms
+      type: array
+      description: 3–5 vocabulary items; each item is {term: string, definition: string}
+    - name: story.cards
+      type: array
+      description: Ordered list of card specs to render; each item is a Card object
+    - name: story.caption
+      type: string
+      description: IG post caption (includes headline, 1-sentence hook, hashtags)
+    - name: story.status
+      type: string
+      description: "Pipeline stage: fetched | ranked | rewritten | rendered | published | failed"
+    - name: story.published_at
+      type: string
+      description: ISO 8601 timestamp when successfully published to IG
+    - name: card
+      type: object
+      description: A single cardnews PNG slide within a story carousel
+    - name: card.type
+      type: string
+      description: "Slide role: hook | body | key_terms | source_cta"
+    - name: card.index
+      type: number
+      description: 0-based position within the carousel
+    - name: card.content
+      type: object
+      description: Structured payload passed to the HTML template (title, body, vocab list, etc.)
+    - name: card.image_path
+      type: string
+      description: Absolute local path to the rendered PNG file
+    - name: run
+      type: object
+      description: A single scheduled pipeline execution
+    - name: run.id
+      type: string
+      description: UUID v4
+    - name: run.started_at
+      type: string
+      description: ISO 8601 timestamp
+    - name: run.items_fetched
+      type: number
+      description: Total RSS items ingested this run
+    - name: run.items_selected
+      type: number
+      description: Articles chosen for cardnews generation after LLM ranking
+    - name: run.items_published
+      type: number
+      description: Stories successfully published to IG
+    - name: run.errors
+      type: array
+      description: List of error objects {story_id, stage, message} for failed items
+
+evaluation_principles:
+  - name: content_quality
+    description: >
+      Simplified prose accurately reflects the source article, is accessible to
+      B1–B2 English learners, and defines jargon inline without being
+      condescending.
+    weight: 0.35
+  - name: vocab_relevance
+    description: >
+      Key terms are genuinely difficult or important words from the article;
+      definitions are concise, English-only, and correct.
+    weight: 0.25
+  - name: visual_fidelity
+    description: >
+      Cards render at the correct pixel dimensions, typography is legible
+      at small mobile size, and no layout overflow occurs.
+    weight: 0.20
+  - name: pipeline_reliability
+    description: >
+      End-to-end run completes without fatal errors; per-story failures are
+      isolated, logged with full context, and do not prevent other stories
+      from publishing.
+    weight: 0.15
+  - name: ig_publish_success
+    description: >
+      Carousel and caption are accepted by the Meta Graph API; any API errors
+      (rate limit, media format, auth expiry) are surfaced clearly.
+    weight: 0.05
+
+exit_conditions:
+  - name: success
+    description: All selected stories for the run were published to IG
+    criteria: run.items_published == run.items_selected AND run.items_selected > 0
+  - name: partial_success
+    description: At least one story published; remaining failures logged and skipped
+    criteria: run.items_published >= 1 AND run.items_published < run.items_selected
+  - name: failure
+    description: >
+      No stories published — fatal upstream failure (LLM API unavailable,
+      IG auth expired, RSS unreachable). Operator must intervene.
+    criteria: run.items_published == 0 AND run.items_selected > 0
+
+metadata:
+  version: "1.0.0"
+  created_at: "2026-04-22"
+  ambiguity_score: 0.14
+  interview_source: conversation
+  project: cardnews-generator
+  notes: >
+    Ambiguity score 0.14 — all architectural decisions resolved in interview.
+    Remaining unknowns (specific RSS source URLs, exact LLM model names,
+    exact N per day, exact IG slide dimensions 1080x1080 vs 1080x1350,
+    HTML template design) are runtime/config parameters, not spec ambiguities.
+    Multi-channel publishing (web, email) and multi-tenant creator SaaS are
+    explicitly deferred to v2+.
