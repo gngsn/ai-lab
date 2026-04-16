@@ -1,0 +1,14 @@
+output/
+data/
+.env
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+node_modules/
+renderer/node_modules/
+*.db
+*.db-shm
+*.db-wal
+cron_state.json

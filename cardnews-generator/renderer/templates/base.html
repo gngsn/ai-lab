@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  Card template reference — each type's layout is generated dynamically in render.js
+  using these shared design tokens.
+
+  Types: hook | body | key_terms | source_cta
+  Dimensions: 1080×1080 px (default) or 1080×1350 px
+
+  Color palette:
+    Background dark:  #1a1a2e
+    Background mid:   #16213e
+    Accent navy:      #0f3460
+    Accent red:       #e94560
+    Surface light:    #f8f9fa
+    Text primary:     #1a1a2e
+    Text on dark:     #ffffff
+-->
+<head>
+  <meta charset="UTF-8">
+  <style>
+    /* Shared base styles */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .card { width: 100%; height: 100%; padding: 72px; display: flex; flex-direction: column; justify-content: center; gap: 24px; }
+    .badge { display: inline-block; padding: 6px 18px; border-radius: 999px; font-size: 20px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+    /* hook */
+    .hook { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); color: #fff; }
+    .hook .title  { font-size: 52px; font-weight: 800; line-height: 1.15; }
+    .hook .teaser { font-size: 34px; font-weight: 400; line-height: 1.5; opacity: 0.85; }
+
+    /* body */
+    .body-card { background: #f8f9fa; color: #1a1a2e; }
+    .body-card .body { font-size: 36px; font-weight: 400; line-height: 1.55; }
+
+    /* key_terms */
+    .key-terms { background: #0f3460; color: #fff; }
+    .key-terms .term       { font-size: 32px; margin-bottom: 16px; }
+    .key-terms .term strong { font-size: 36px; font-weight: 700; }
+
+    /* source_cta */
+    .source-cta { background: #1a1a2e; color: #fff; text-align: center; align-items: center; }
+    .source-cta .cta { font-size: 30px; font-weight: 600; opacity: 0.75; }
+    .source-cta .url { font-size: 24px; opacity: 0.55; word-break: break-all; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <!-- hook example -->
+  <div class="card hook">
+    <span class="badge" style="background:#e94560; color:#fff; margin-bottom:12px;">Tech News</span>
+    <div class="title">Article Headline Here</div>
+    <div class="teaser">Opening teaser sentence that hooks the reader…</div>
+  </div>
+</body>
+</html>

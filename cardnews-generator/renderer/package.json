@@ -1,0 +1,13 @@
+{
+  "name": "cardnews-renderer",
+  "version": "1.0.0",
+  "description": "HTML/CSS card renderer using Playwright",
+  "main": "render.js",
+  "scripts": {
+    "render": "node render.js",
+    "install-browsers": "npx playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.48.0"
+  }
+}

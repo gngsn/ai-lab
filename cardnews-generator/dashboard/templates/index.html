@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cardnews Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #0f1117; color: #e2e8f0;
+      min-height: 100vh; padding: 40px 24px;
+    }
+    h1 { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+    .subtitle { font-size: 14px; color: #64748b; margin-bottom: 40px; }
+
+    .controls {
+      display: flex; gap: 16px; align-items: center; margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 20px; border-radius: 999px; font-size: 14px; font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .badge.on  { background: #14532d; color: #4ade80; }
+    .badge.off { background: #450a0a; color: #f87171; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot.on  { background: #4ade80; }
+    .dot.off { background: #f87171; }
+
+    button {
+      padding: 10px 22px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      border: none; cursor: pointer; transition: opacity 0.15s;
+    }
+    button:hover:not(:disabled) { opacity: 0.85; }
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-enable  { background: #16a34a; color: #fff; }
+    .btn-disable { background: #dc2626; color: #fff; }
+    .btn-run     { background: #2563eb; color: #fff; }
+
+    table {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+    }
+    th {
+      text-align: left; padding: 10px 14px; background: #1e293b;
+      color: #94a3b8; font-weight: 600; font-size: 12px; letter-spacing: 0.5px;
+    }
+    td { padding: 10px 14px; border-bottom: 1px solid #1e293b; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #1e293b33; }
+
+    .section-title {
+      font-size: 16px; font-weight: 700; margin-bottom: 12px; color: #94a3b8;
+      letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .card {
+      background: #1e293b; border-radius: 12px; overflow: hidden;
+    }
+    .empty { padding: 24px; text-align: center; color: #475569; font-size: 14px; }
+
+    .spinner {
+      display: inline-block; width: 12px; height: 12px;
+      border: 2px solid #fff4; border-top-color: #fff;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      margin-right: 6px; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .err-count { color: #f87171; font-weight: 700; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 4px; margin-bottom: 28px; }
+    .tab {
+      padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      cursor: pointer; border: none; background: #1e293b; color: #64748b;
+      transition: background 0.15s, color 0.15s;
+    }
+    .tab.active { background: #2563eb; color: #fff; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Manual form */
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: #94a3b8;
+            letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; }
+    input[type=text], textarea {
+      width: 100%; background: #0f1117; border: 1px solid #334155;
+      border-radius: 8px; color: #e2e8f0; font-size: 14px;
+      padding: 10px 14px; font-family: inherit; resize: vertical;
+    }
+    input[type=text]:focus, textarea:focus {
+      outline: none; border-color: #2563eb;
+    }
+    .toggle-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+    }
+    .toggle-row input[type=checkbox] { width: 16px; height: 16px; accent-color: #2563eb; }
+    .toggle-row span { font-size: 13px; color: #94a3b8; }
+    .btn-generate { background: #7c3aed; color: #fff; }
+    .result-box {
+      margin-top: 20px; padding: 16px; background: #0f1117;
+      border-radius: 8px; border: 1px solid #1e293b; font-size: 13px;
+    }
+    .result-box a {
+      color: #60a5fa; text-decoration: none; font-weight: 600;
+    }
+    .result-box a:hover { text-decoration: underline; }
+    .card-thumbs { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+    .card-thumbs img { border-radius: 6px; width: 120px; height: 120px; object-fit: cover; }
+  </style>
+</head>
+<body>
+  <h1>Cardnews Generator</h1>
+  <p class="subtitle">Automated English tech-news Instagram pipeline</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('auto')">Auto Pipeline</button>
+    <button class="tab" onclick="switchTab('manual')">Manual Input</button>
+  </div>
+
+  <!-- Auto Pipeline tab -->
+  <div class="tab-panel active" id="tab-auto">
+
+  <div class="controls">
+    <span class="badge {{ 'on' if cron_enabled else 'off' }}" id="cron-badge">
+      <span class="dot {{ 'on' if cron_enabled else 'off' }}" id="cron-dot"></span>
+      Cron <span id="cron-label">{{ 'ON' if cron_enabled else 'OFF' }}</span>
+    </span>
+
+    <button class="btn-enable"  id="btn-enable"  onclick="setCron(true)"
+      {{ '' if not cron_enabled else 'disabled' }}>Enable Cron</button>
+    <button class="btn-disable" id="btn-disable" onclick="setCron(false)"
+      {{ '' if cron_enabled else 'disabled' }}>Disable Cron</button>
+
+    <button class="btn-run" id="btn-run" onclick="runNow()"
+      {{ 'disabled' if is_running else '' }}>
+      {{ '<span class=\'spinner\'></span>Running…' if is_running else '▶ Run Now' }}
+    </button>
+  </div>
+
+  <div class="section-title">Recent Runs</div>
+  <div class="card">
+    <table id="runs-table">
+      <thead>
+        <tr>
+          <th>Started</th>
+          <th>Fetched</th>
+          <th>Selected</th>
+          <th>Published</th>
+          <th>Errors</th>
+          <th>Duration</th>
+        </tr>
+      </thead>
+      <tbody id="runs-body">
+        <tr><td colspan="6" class="empty">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div><!-- .card runs -->
+  </div><!-- #tab-auto -->
+
+  <!-- Manual Input tab -->
+  <div class="tab-panel" id="tab-manual">
+    <div class="section-title" style="margin-bottom:20px;">Create Cardnews Manually</div>
+    <div class="card" style="padding:28px;">
+
+      <div class="form-group">
+        <label>Title *</label>
+        <input type="text" id="m-title" placeholder="Article headline…">
+      </div>
+
+      <div class="form-group">
+        <label>Article Body *</label>
+        <textarea id="m-body" rows="6" placeholder="Paste the full article text here…"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Simplified Body <span style="color:#475569;font-weight:400;text-transform:none;">(optional — leave blank to use body as-is or let LLM rewrite)</span></label>
+        <textarea id="m-simplified" rows="4" placeholder="Already simplified? Paste here to skip LLM rewrite…"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Key Terms <span style="color:#475569;font-weight:400;text-transform:none;">(optional JSON — e.g. [{"term":"API","definition":"..."}])</span></label>
+        <textarea id="m-terms" rows="2" placeholder='[{"term": "...", "definition": "..."}]'></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>IG Caption <span style="color:#475569;font-weight:400;text-transform:none;">(optional)</span></label>
+        <input type="text" id="m-caption" placeholder="Caption text + hashtags…">
+      </div>
+
+      <div class="toggle-row">
+        <input type="checkbox" id="m-use-llm" checked>
+        <span>Use LLM rewrite (requires ANTHROPIC_API_KEY — unchecked uses your input as-is)</span>
+      </div>
+
+      <button class="btn-generate" id="btn-generate" onclick="generateManual()">
+        Generate Cards
+      </button>
+
+      <div class="result-box" id="manual-result" style="display:none;"></div>
+    </div>
+  </div><!-- #tab-manual -->
+
+<script>
+  async function setCron(enabled) {
+    const endpoint = enabled ? '/cron/enable' : '/cron/disable';
+    await fetch(endpoint, { method: 'POST' });
+    document.getElementById('cron-label').textContent = enabled ? 'ON' : 'OFF';
+    const badge = document.getElementById('cron-badge');
+    const dot   = document.getElementById('cron-dot');
+    badge.className = 'badge ' + (enabled ? 'on' : 'off');
+    dot.className   = 'dot '  + (enabled ? 'on' : 'off');
+    document.getElementById('btn-enable').disabled  = enabled;
+    document.getElementById('btn-disable').disabled = !enabled;
+  }
+
+  async function runNow() {
+    const btn = document.getElementById('btn-run');
+    btn.disabled = true;
+    btn.innerHTML = "<span class='spinner'></span>Running…";
+    const res = await fetch('/run', { method: 'POST' });
+    if (res.status === 409) {
+      alert('A pipeline run is already in progress.');
+      btn.disabled = false;
+      btn.textContent = '▶ Run Now';
+      return;
+    }
+    // Poll until done
+    const poll = setInterval(async () => {
+      const runs = await fetch('/runs').then(r => r.json());
+      renderRuns(runs);
+      // Check if the latest run has a finished_at
+      if (runs.length > 0 && runs[0].finished_at) {
+        clearInterval(poll);
+        btn.disabled = false;
+        btn.textContent = '▶ Run Now';
+      }
+    }, 3000);
+  }
+
+  function fmt(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleString();
+  }
+
+  function duration(start, end) {
+    if (!start || !end) return '—';
+    const s = Math.round((new Date(end) - new Date(start)) / 1000);
+    return s >= 60 ? Math.floor(s/60) + 'm ' + (s%60) + 's' : s + 's';
+  }
+
+  function renderRuns(runs) {
+    const tbody = document.getElementById('runs-body');
+    if (!runs || runs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">No runs yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = runs.map(r => {
+      let errors = [];
+      try { errors = JSON.parse(r.errors || '[]'); } catch(_) {}
+      return `<tr>
+        <td>${fmt(r.started_at)}</td>
+        <td>${r.items_fetched ?? '—'}</td>
+        <td>${r.items_selected ?? '—'}</td>
+        <td>${r.items_published ?? '—'}</td>
+        <td class="${errors.length ? 'err-count' : ''}">${errors.length}</td>
+        <td>${duration(r.started_at, r.finished_at)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Initial load
+  fetch('/runs').then(r => r.json()).then(renderRuns).catch(() => {
+    document.getElementById('runs-body').innerHTML =
+      '<tr><td colspan="6" class="empty">Could not load runs.</td></tr>';
+  });
+
+  // Tab switching
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', ['auto','manual'][i] === name);
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => {
+      p.classList.toggle('active', p.id === 'tab-' + name);
+    });
+  }
+
+  // Manual generation
+  async function generateManual() {
+    const title = document.getElementById('m-title').value.trim();
+    const body  = document.getElementById('m-body').value.trim();
+    if (!title || !body) { alert('Title and Body are required.'); return; }
+
+    let key_terms = null;
+    const termsRaw = document.getElementById('m-terms').value.trim();
+    if (termsRaw) {
+      try { key_terms = JSON.parse(termsRaw); }
+      catch(_) { alert('Key Terms must be valid JSON array.'); return; }
+    }
+
+    const btn = document.getElementById('btn-generate');
+    btn.disabled = true;
+    btn.innerHTML = "<span class='spinner'></span>Generating…";
+
+    const payload = {
+      title,
+      body,
+      simplified_body: document.getElementById('m-simplified').value.trim() || null,
+      key_terms,
+      caption: document.getElementById('m-caption').value.trim() || null,
+      use_llm: document.getElementById('m-use-llm').checked,
+    };
+
+    try {
+      const res = await fetch('/manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Unknown error');
+
+      const box = document.getElementById('manual-result');
+      box.style.display = 'block';
+      box.innerHTML = `
+        <p style="margin-bottom:10px;">
+          Cards generated for story <code>${data.story_id.slice(0,8)}…</code>
+        </p>
+        <p style="margin-bottom:14px;">
+          <a href="/manual/export/${data.story_id}" download>
+            Download ZIP (${data.image_paths.length} PNGs + caption)
+          </a>
+        </p>
+        <p style="font-size:12px;color:#475569;">Output path: ${data.image_paths[0]?.replace(/card_\d+\.png$/, '') || '—'}</p>
+      `;
+    } catch(e) {
+      alert('Error: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Generate Cards';
+    }
+  }
+</script>
+</body>
+</html>
