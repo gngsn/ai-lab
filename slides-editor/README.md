@@ -34,6 +34,79 @@ python3 -m http.server 8000
 
 ---
 
+## Keyboard shortcuts
+
+각 페이지에서 <kbd>?</kbd> 키로 모달 확인. 공통 요약:
+
+| Page | Keys | Action |
+|---|---|---|
+| **Edit** | `E` | Toggle edit mode (canvas) |
+| | `H` | History drawer |
+| | `⌘S` / `Ctrl+S` | Save version |
+| | Drag in list | Reorder |
+| **Present** | `↓→PgDn Space` | Next / fragment |
+| | `↑←PgUp` | Prev / hide fragment |
+| | `Home / End` | First / last slide |
+| **Script** (read) | `↓→ / j` | Next (manual mode) |
+| | `↑← / k` | Prev (manual mode) |
+| | Click sync badge | Auto ↔ manual toggle |
+| **Notes** (script-edit) | `⌘S / Ctrl+S` | Save version |
+| | `H` | History drawer |
+| **All** | `?` | This help |
+
+---
+
+## Deployment (Vercel)
+
+```bash
+# one-time
+vercel login
+vercel link
+
+# env vars (set once per project)
+vercel env add SUPABASE_URL       production
+vercel env add SUPABASE_ANON_KEY  production
+vercel env add OWNER_PASSPHRASE   production
+
+# deploy
+vercel --prod
+```
+
+The `buildCommand` (`node scripts/build-config.mjs`) materializes
+`js/config.local.js` from those env vars at build time. The committed
+`js/config.local.js` (if any) is overwritten on Vercel.
+
+> ⚠ Before public deployment, see the **Security posture** section below.
+> The current `dev_anon_all` RLS policy lets anyone with the deployed
+> page hit the database. Tier 2 hardening required.
+
+---
+
+## Importing existing material (M8)
+
+Bring an HTML slide deck and (optionally) a Marp-style notes Markdown into
+a deck row:
+
+```bash
+node scripts/import.mjs --deck=my-talk \
+  --slides=path/to/slides.html \
+  --notes=path/to/notes.md \
+  --title="My Talk"
+```
+
+- **Slides format**: any HTML with one or more `<section …>` blocks. Common
+  attrs are read: `data-title` → slides.title, `data-section-id` /
+  `data-edit-id` → stable id, else slug(title) → `s-NNN`.
+- **Notes format**: Markdown with `---` separators between sections. Top
+  frontmatter (`--- … ---`) is dropped. Each chunk's first `## title` line
+  is stripped. Chunks are matched to slides by index.
+- **Idempotent**: re-running with the same input replaces all slides for that
+  deck (notes are upserted by section_id).
+- **`--dry-run`** prints the parse summary without touching the DB.
+- **No npm install needed** — Node 18+ only.
+
+---
+
 ## Security posture
 
 **Tier 1 (current, M7):** Client-side passphrase gate (`OWNER_PASSPHRASE`)
@@ -60,7 +133,8 @@ deck. Before public deployment, replace with:
 - [x] **M5** — 히스토리 / 롤백
 - [x] **M6** — Export (HTML / PDF / Marp)
 - [x] **M7** — 공유 + 권한 (Tier 1: client gate + share_token + sanitize)
-- [ ] **M8** — 데이터 마이그레이션
+- [x] **M8** — 데이터 import (HTML/Markdown → deck)
+- [x] **M9** — 폴리시 (`?` 단축키 모달, build-config, 배포 가이드)
 - [ ] **M9** — 폴리시 + 배포
 
 ---

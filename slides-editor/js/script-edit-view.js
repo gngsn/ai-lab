@@ -4,6 +4,7 @@
 import { marked } from "https://esm.sh/marked@11";
 import * as notesRepo from "./repo/notes-repo.js";
 import { HistoryUI, saveVersionPrompt } from "./history-ui.js";
+import { bindShortcutsHelp } from "./shortcuts-help.js";
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -178,6 +179,13 @@ export function mountScriptEditView({ deck, deckId, sections }) {
       $("save-version").click();
     }
   });
+
+  bindShortcutsHelp("Notes (script-edit)", [
+    { keys: ["⌘S", "Ctrl+S"], desc: "Save version (manual snapshot)" },
+    { keys: ["H"], desc: "Toggle history drawer" },
+    { keys: ["Click section"], desc: "Switch (auto-saves pending edit)" },
+    { keys: ["?"], desc: "This help" },
+  ]);
 
   // Best-effort flush on tab close / refresh.
   window.addEventListener("beforeunload", () => {

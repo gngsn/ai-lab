@@ -1,0 +1,75 @@
+/* Shortcuts modal — shared across all pages. Self-contained styling
+   so we don't depend on host-page CSS variables. */
+
+.sh-modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 6000;
+}
+.sh-modal-bg.show { display: flex; }
+
+.sh-modal {
+  background: #141414;
+  border: 1px solid #1f1f1f;
+  border-radius: 8px;
+  padding: 18px 22px 14px;
+  min-width: 360px;
+  max-width: 560px;
+  font-family:
+    "IBM Plex Sans KR", -apple-system, "SF Pro", sans-serif;
+  color: #c8c8c8;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.sh-modal header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #1f1f1f;
+}
+.sh-modal h2 {
+  font-size: 14px; font-weight: 600; color: #f0f0f0;
+  margin: 0;
+}
+.sh-modal h2 span {
+  color: #777; font-weight: 400; font-size: 12px;
+}
+.sh-modal .sh-close {
+  background: transparent; border: 0;
+  color: #777; font-size: 22px;
+  cursor: pointer; padding: 0 4px; line-height: 1;
+}
+.sh-modal .sh-close:hover { color: #f0f0f0; }
+
+.sh-modal table { width: 100%; border-collapse: collapse; }
+.sh-modal td {
+  padding: 6px 4px;
+  font-size: 12px;
+  vertical-align: top;
+}
+.sh-modal .sh-keys { width: 160px; white-space: nowrap; }
+
+.sh-modal kbd {
+  display: inline-block;
+  min-width: 16px;
+  padding: 2px 7px;
+  margin-right: 3px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: #5db8a6;
+  line-height: 1.4;
+}
+
+.sh-modal footer {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #1f1f1f;
+  font-size: 11px;
+  color: #777;
+}

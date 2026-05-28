@@ -1,0 +1,11 @@
+{
+  "name": "slides-editor",
+  "version": "0.9.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-config.mjs",
+    "dev": "python3 -m http.server 8000",
+    "import": "node scripts/import.mjs"
+  }
+}

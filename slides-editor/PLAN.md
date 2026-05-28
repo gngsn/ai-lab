@@ -231,13 +231,3 @@ import 스크립트는 Node 18+ + `@supabase/supabase-js`. 단발성이므로 de
 - 협업 편집 (CRDT) — 본 SPEC 비목표
 - 이미지 호스팅 (Supabase Storage 또는 R2 연동)
 
----
-
-## 7. 즉시 다음 액션 (M0 진입 전 확인)
-
-PLAN 승인 후 바로 시작할 수 있도록 아래 항목만 확정해주세요.
-
-1. **호스팅**: Vercel static으로 진행할까요, 다른 곳(Cloudflare Pages 등) 선호가 있나요?
-2. **Supabase 프로젝트**: 기존 v4/v5에서 쓰던 프로젝트를 재사용할지, 새로 만들지?
-3. **시드 덱**: v4 Kprintf2026 슬라이드를 첫 시드로 import할지, 빈 덱부터 시작할지?
-4. **passphrase**: 일단 환경변수 1개로 만족하는지, 아니면 M0에서 곧바로 Supabase Auth로 갈지?

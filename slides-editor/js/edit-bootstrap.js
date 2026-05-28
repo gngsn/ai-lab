@@ -7,6 +7,16 @@ import * as notesRepo from "./repo/notes-repo.js";
 import { ensureAuthed } from "./auth.js";
 import { HistoryUI, saveVersionPrompt } from "./history-ui.js";
 import { exportHtml, exportPdf, exportNotesMd } from "./export.js";
+import { bindShortcutsHelp } from "./shortcuts-help.js";
+
+bindShortcutsHelp("Edit", [
+  { keys: ["E"], desc: "Toggle edit mode (canvas)" },
+  { keys: ["H"], desc: "Toggle history drawer" },
+  { keys: ["⌘S", "Ctrl+S"], desc: "Save version (manual snapshot)" },
+  { keys: ["?"], desc: "This help" },
+  { keys: ["Click"], desc: "Select slide in list" },
+  { keys: ["Drag"], desc: "Reorder slides in list" },
+]);
 
 // ── auth gate ──────────────────────────────────────────────────────
 if (!ensureAuthed()) {
@@ -423,17 +433,8 @@ document.addEventListener("keydown", (e) => {
   } else if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
     e.preventDefault();
     $("save-version").click();
-  } else if (e.key === "?" || (e.shiftKey && e.key === "/")) {
-    alert(
-      "Keyboard:\n" +
-        "  E       — toggle edit mode\n" +
-        "  H       — toggle history drawer\n" +
-        "  ⌘/Ctrl+S — Save version\n" +
-        "  Click   — select slide\n" +
-        "  Drag    — reorder in list\n" +
-        "  ?       — this help\n",
-    );
   }
+  // `?` help is bound globally via bindShortcutsHelp above.
 });
 
 // ── history drawer ─────────────────────────────────────────────────

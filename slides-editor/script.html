@@ -10,6 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="./css/shortcuts-help.css" />
     <style>
       /* Ported from v5/script.html with mint accent unified to var(--accent). */
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -159,6 +160,17 @@
       import { listByDeck as listSlides } from "./js/repo/slide-repo.js";
       import { listByDeck as listNotes } from "./js/repo/notes-repo.js";
       import { mountScriptView } from "./js/script-view.js";
+      import { bindShortcutsHelp } from "./js/shortcuts-help.js";
+
+      bindShortcutsHelp("Script", [
+        { keys: ["↓", "→", "PgDn", "j"], desc: "Next section (manual)" },
+        { keys: ["↑", "←", "PgUp", "k"], desc: "Previous section (manual)" },
+        { keys: ["Click section"], desc: "Jump to section (manual)" },
+        { keys: ["Click sync"], desc: "Toggle auto / manual mode" },
+        { keys: ["A−", "A+"], desc: "Font size" },
+        { keys: ["HL"], desc: "Toggle highlight dimming" },
+        { keys: ["?"], desc: "This help" },
+      ]);
 
       if (!ensureAuthed()) {
         document.body.innerHTML =

@@ -69,6 +69,8 @@ if (html.includes("<!-- slides -->")) {
 
 const RUNTIME_URL = new URL("./js/slide-runtime.js", location.href).href;
 const SYNC_URL = new URL("./js/sync.js", location.href).href;
+const HELP_URL = new URL("./js/shortcuts-help.js", location.href).href;
+const HELP_CSS = new URL("./css/shortcuts-help.css", location.href).href;
 
 // Print CSS is always injected (only applies on @media print).
 // In ?print=1 mode we additionally apply the same rules on screen so the
@@ -134,9 +136,19 @@ const printBoot = `
 `;
 
 const interactiveBoot = `
+<link rel="stylesheet" href="${HELP_CSS}" />
 <script type="module">
   import { SlidePresentation } from "${RUNTIME_URL}";
   import { createSlideSync } from "${SYNC_URL}";
+  import { bindShortcutsHelp } from "${HELP_URL}";
+
+  bindShortcutsHelp("Present", [
+    { keys: ["↓", "→", "PgDn", "Space"], desc: "Next slide / advance fragment" },
+    { keys: ["↑", "←", "PgUp"], desc: "Previous slide / hide last fragment" },
+    { keys: ["Home"], desc: "Jump to first slide" },
+    { keys: ["End"], desc: "Jump to last slide" },
+    { keys: ["?"], desc: "This help" },
+  ]);
 
   const syncId = new URLSearchParams(location.search).get("sync");
   const counter = document.getElementById("__se_counter");

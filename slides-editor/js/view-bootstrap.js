@@ -85,6 +85,8 @@ if (html.includes("<!-- slides -->")) {
 }
 
 const RUNTIME_URL = new URL("./js/slide-runtime.js", location.href).href;
+const HELP_URL = new URL("./js/shortcuts-help.js", location.href).href;
+const HELP_CSS = new URL("./css/shortcuts-help.css", location.href).href;
 
 // View has runtime (nav/fragments) but no edit, no sync, no chrome.
 // A faint footer notes the read-only state.
@@ -95,8 +97,16 @@ const overlay = `
 `;
 
 const bootScript = `
+<link rel="stylesheet" href="${HELP_CSS}" />
 <script type="module">
   import { SlidePresentation } from "${RUNTIME_URL}";
+  import { bindShortcutsHelp } from "${HELP_URL}";
+  bindShortcutsHelp("View (shared)", [
+    { keys: ["↓", "→", "PgDn", "Space"], desc: "Next slide / advance fragment" },
+    { keys: ["↑", "←", "PgUp"], desc: "Previous slide / hide last fragment" },
+    { keys: ["Home", "End"], desc: "Jump to first / last slide" },
+    { keys: ["?"], desc: "This help" },
+  ]);
   new SlidePresentation({});
 <\/script>
 `;

@@ -1,4 +1,6 @@
 {
+  "buildCommand": "node scripts/build-config.mjs",
+  "outputDirectory": ".",
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
@@ -10,6 +12,12 @@
       "source": "/(css|js)/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/js/config.local.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
       ]
     }
   ]
