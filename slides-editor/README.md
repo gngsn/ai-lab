@@ -16,6 +16,7 @@
    - `migrations/002_history.sql` — slide_history / notes_history
    - `migrations/003_dev_rls.sql` — **RLS 유지 + anon 허용 정책 부여** ← 빠뜨리면 0 rows 보임
    - `migrations/004_rpc.sql` — reorder_slides RPC (M3 이상)
+   - `migrations/005_storage.sql` — `slides-images` 버킷 + dev RLS 정책 (이미지 호스팅)
    - `migrations/seed.sql` — 검증용 샘플 덱 1개
 4. M6에서 `dev_anon_all` 정책을 owner + share_token 기반 정책으로 교체합니다. 그 전까지는 RLS 토글은 켜져 있지만 anon이 모든 row를 read/write할 수 있는 상태(단일 사용자 dev 가정).
 
@@ -52,6 +53,7 @@ python3 -m http.server 8000
 | | Click sync badge | Auto ↔ manual toggle |
 | **Notes** (script-edit) | `⌘S / Ctrl+S` | Save version |
 | | `H` | History drawer |
+| **Edit** | `I` | Image library |
 | **All** | `?` | This help |
 
 ---
@@ -79,6 +81,21 @@ The `buildCommand` (`node scripts/build-config.mjs`) materializes
 > ⚠ Before public deployment, see the **Security posture** section below.
 > The current `dev_anon_all` RLS policy lets anyone with the deployed
 > page hit the database. Tier 2 hardening required.
+
+---
+
+## Image hosting
+
+이미지는 Supabase Storage의 `slides-images` 버킷(public-read)에 저장됩니다.
+
+- **활성화**: `migrations/005_storage.sql` 실행 (한 번)
+- **사용**: edit.html → `🖼 Images` (또는 `I` 키) → 드래그-앤-드롭 또는 `+ Upload`
+- **삽입**: 카드의 `↩` → iframe의 현재 selection 위치에 `<img>` 자동 insert + autosave
+- **복사**: `📋` → public URL 클립보드, HTML에 직접 paste 가능
+- **삭제**: `🗑` (영구). slides의 `<img src>` 참조는 깨지므로 주의
+- **경로**: `{deck_id}/{ts36}-{safe-name}` — 같은 파일명도 timestamp 접두사로 충돌 없음
+
+> Tier 1: anon이 업로드/삭제 가능. Tier 2 에서 owner 인증 후로 제한 필요.
 
 ---
 

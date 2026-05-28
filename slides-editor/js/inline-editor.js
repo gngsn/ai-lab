@@ -65,10 +65,53 @@ export class InlineEditor {
       });
     });
 
+    // Listen for cross-frame insert-image commands from the parent's
+    // image-library modal. Inserts an <img> at the current selection
+    // inside this section (or appends if no selection), then schedules a save.
+    window.addEventListener("message", (e) => {
+      if (e.data?.type === "edit:insert-image" && this.section) {
+        this.insertImage(e.data.url, e.data.alt || "");
+      }
+    });
+
     this.postReady();
 
     // Flush save before unload (covers iframe re-mount / nav).
     window.addEventListener("beforeunload", () => this.commitSave(/* sync */));
+  }
+
+  insertImage(url, alt = "") {
+    if (!url) return;
+    const img = document.createElement("img");
+    img.src = url;
+    if (alt) img.alt = alt;
+    img.style.maxWidth = "100%";
+
+    // Try to place at the current selection if it's inside our section.
+    const sel = document.getSelection();
+    let placed = false;
+    if (sel?.rangeCount) {
+      const range = sel.getRangeAt(0);
+      if (this.section.contains(range.commonAncestorContainer)) {
+        range.deleteContents();
+        range.insertNode(img);
+        // Move caret after the inserted image
+        range.setStartAfter(img);
+        range.setEndAfter(img);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        placed = true;
+      }
+    }
+    if (!placed) {
+      // Fall back: append into the largest editable container, then section root.
+      const target =
+        this.editables.find((el) => /^(DIV|P|UL|OL)$/.test(el.tagName)) ||
+        this.section.querySelector("div") ||
+        this.section;
+      target.appendChild(img);
+    }
+    this.scheduleSave();
   }
 
   ensureEditIds() {

@@ -92,6 +92,72 @@
       .dropdown-menu button:hover,
       .dropdown-menu a:hover { background: #1e1e1e; color: var(--text); }
 
+      /* Image library */
+      .drop-zone {
+        border: 1px dashed var(--border); border-radius: 6px;
+        padding: 18px; text-align: center;
+        color: var(--text-mid); font-size: 12px;
+        margin-bottom: 8px; transition: border-color .15s, color .15s, background .15s;
+      }
+      .drop-zone.dragging {
+        border-color: var(--accent); color: var(--accent);
+        background: rgba(93, 184, 166, 0.08);
+      }
+      .image-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 8px; overflow-y: auto; padding: 4px 0;
+        flex: 1;
+      }
+      .img-card {
+        position: relative;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+        display: flex; flex-direction: column;
+      }
+      .img-card .thumb {
+        background: #000; aspect-ratio: 1;
+        display: grid; place-items: center;
+        overflow: hidden;
+      }
+      .img-card .thumb img {
+        max-width: 100%; max-height: 100%;
+        object-fit: contain;
+      }
+      .img-card .meta {
+        font-size: 10px; color: var(--text-mid);
+        padding: 4px 6px;
+        display: flex; justify-content: space-between;
+        gap: 4px;
+        font-family: "JetBrains Mono", monospace;
+      }
+      .img-card .meta .nm {
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .img-card .actions {
+        position: absolute; top: 4px; right: 4px;
+        display: none; gap: 2px;
+      }
+      .img-card:hover .actions { display: flex; }
+      .img-card .actions button {
+        background: rgba(20, 20, 20, 0.92);
+        border: 1px solid var(--border);
+        color: var(--text); font-size: 11px;
+        padding: 3px 6px; border-radius: 3px;
+        cursor: pointer; line-height: 1;
+      }
+      .img-card .actions button:hover { background: #1e1e1e; border-color: var(--accent); }
+      .img-card.uploading { opacity: .5; }
+      .img-card.uploading::after {
+        content: "uploading…";
+        position: absolute; inset: 0;
+        display: grid; place-items: center;
+        font-size: 11px; color: var(--warn);
+        background: rgba(20, 20, 20, 0.6);
+      }
+
       /* Body grid */
       #body {
         display: grid;
@@ -239,6 +305,7 @@
           </div>
         </details>
         <button class="btn" id="share-btn" title="Share link…">🔗 Share</button>
+        <button class="btn" id="images-btn" title="Image library">🖼 Images</button>
         <span class="spacer"></span>
         <a class="btn" id="script-link" href="#" target="_blank">⌨ Script</a>
         <a class="btn" id="present-link" href="#" target="_blank">▶ Present</a>
@@ -308,6 +375,34 @@
     <aside class="hist-drawer" id="hist-drawer">
       <div id="history-panel"></div>
     </aside>
+
+    <div class="modal-bg" id="images-modal-bg">
+      <div
+        class="modal"
+        style="width: min(820px, 92vw); height: min(640px, 88vh)"
+      >
+        <header style="display:flex;align-items:center;gap:8px">
+          <h2>Images</h2>
+          <span style="font-size:11px;color:var(--text-mid)"
+            >deck: <code id="images-deck-id">—</code></span
+          >
+          <span style="flex:1"></span>
+          <button class="btn" id="images-upload-btn">+ Upload</button>
+          <input
+            type="file"
+            id="images-upload-input"
+            accept="image/*"
+            multiple
+            hidden
+          />
+          <button class="btn" id="images-close">Close</button>
+        </header>
+        <div id="images-drop-zone" class="drop-zone">
+          Drop images here, or click <b>+ Upload</b>. Click a card for actions.
+        </div>
+        <div id="images-grid" class="image-grid"></div>
+      </div>
+    </div>
 
     <div class="modal-bg" id="share-modal-bg">
       <div

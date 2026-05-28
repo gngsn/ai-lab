@@ -9,6 +9,7 @@
 
 import { getDeck } from "./repo/deck-repo.js";
 import { listByDeck } from "./repo/slide-repo.js";
+import { tagSection } from "./slide-render.js";
 import DOMPurify from "https://esm.sh/dompurify@3";
 
 const params = new URLSearchParams(location.search);
@@ -65,16 +66,8 @@ const cleanFrame = (html) =>
     .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
     .replace(/javascript:/gi, "");
 
-const escAttr = (s) => String(s).replace(/"/g, "&quot;");
 const slidesHtml = slides
-  .map((s) =>
-    cleanSlide(
-      s.content.replace(
-        /<section\b/i,
-        `<section data-section-id="${escAttr(s.section_id)}"`,
-      ),
-    ),
-  )
+  .map((s) => cleanSlide(tagSection(s.content, s.section_id)))
   .join("\n");
 
 let html = cleanFrame(deck.frame_html);

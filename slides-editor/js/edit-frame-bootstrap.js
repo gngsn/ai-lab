@@ -3,6 +3,7 @@
 // optionally injects the inline-editor runtime when ?edit=1.
 import { getDeck } from "./repo/deck-repo.js";
 import { getOne } from "./repo/slide-repo.js";
+import { tagSection } from "./slide-render.js";
 
 const params = new URLSearchParams(location.search);
 const deckId = params.get("deck");
@@ -27,11 +28,7 @@ try {
   fatal(`Load failed: ${err.message}`);
 }
 
-const escAttr = (s) => String(s).replace(/"/g, "&quot;");
-const slideHtml = slide.content.replace(
-  /<section\b/i,
-  `<section data-section-id="${escAttr(slide.section_id)}"`,
-);
+const slideHtml = tagSection(slide.content, slide.section_id);
 
 let html = deck.frame_html;
 if (html.includes("<!-- slides -->")) {

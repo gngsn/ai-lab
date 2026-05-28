@@ -4,6 +4,7 @@
 import * as deckRepo from "./repo/deck-repo.js";
 import * as slideRepo from "./repo/slide-repo.js";
 import * as notesRepo from "./repo/notes-repo.js";
+import * as storageRepo from "./repo/storage-repo.js";
 import { ensureAuthed } from "./auth.js";
 import { HistoryUI, saveVersionPrompt } from "./history-ui.js";
 import { exportHtml, exportPdf, exportNotesMd } from "./export.js";
@@ -12,6 +13,7 @@ import { bindShortcutsHelp } from "./shortcuts-help.js";
 bindShortcutsHelp("Edit", [
   { keys: ["E"], desc: "Toggle edit mode (canvas)" },
   { keys: ["H"], desc: "Toggle history drawer" },
+  { keys: ["I"], desc: "Open image library" },
   { keys: ["⌘S", "Ctrl+S"], desc: "Save version (manual snapshot)" },
   { keys: ["?"], desc: "This help" },
   { keys: ["Click"], desc: "Select slide in list" },
@@ -298,6 +300,129 @@ $("prop-title").addEventListener("input", (e) => {
   }, 600);
 });
 
+// ── image library ──────────────────────────────────────────────────
+async function refreshImagesGrid() {
+  const grid = $("images-grid");
+  grid.innerHTML =
+    '<div style="opacity:.5;font-size:12px;padding:1em;grid-column:1/-1">loading…</div>';
+  try {
+    const images = await storageRepo.listImages(deckId);
+    if (images.length === 0) {
+      grid.innerHTML =
+        '<div style="opacity:.5;font-size:12px;padding:1em;grid-column:1/-1">No images yet — drop files or click <b>+ Upload</b>.</div>';
+      return;
+    }
+    grid.innerHTML = images
+      .map(
+        (img) => `
+      <div class="img-card" data-path="${escapeHtml(img.path)}" data-url="${escapeHtml(img.url)}">
+        <div class="thumb"><img src="${escapeHtml(img.url)}" alt="" loading="lazy" /></div>
+        <div class="actions">
+          <button class="act-copy" title="Copy URL">📋</button>
+          <button class="act-insert" title="Insert into current slide">↩</button>
+          <button class="act-del" title="Delete">🗑</button>
+        </div>
+        <div class="meta">
+          <span class="nm">${escapeHtml(img.name)}</span>
+          <span>${img.size != null ? Math.round(img.size / 1024) + "KB" : ""}</span>
+        </div>
+      </div>`,
+      )
+      .join("");
+    grid.querySelectorAll(".img-card").forEach((card) => {
+      const url = card.dataset.url;
+      const path = card.dataset.path;
+      card.querySelector(".act-copy").onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(url);
+          toast("URL copied", "ok");
+        } catch (err) {
+          toast("Copy failed: " + err.message, "err");
+        }
+      };
+      card.querySelector(".act-insert").onclick = () => {
+        $("canvas").contentWindow?.postMessage(
+          { type: "edit:insert-image", url, alt: card.querySelector(".nm")?.textContent || "" },
+          "*",
+        );
+        $("images-modal-bg").classList.remove("show");
+        toast("Inserted into current slide", "ok");
+      };
+      card.querySelector(".act-del").onclick = async () => {
+        if (!confirm(`Delete '${card.querySelector(".nm")?.textContent}'? This cannot be undone.`)) return;
+        try {
+          await storageRepo.deleteImage(path);
+          toast("Deleted", "ok");
+          await refreshImagesGrid();
+        } catch (err) {
+          toast("Delete failed: " + err.message, "err");
+        }
+      };
+    });
+  } catch (err) {
+    grid.innerHTML = `<div style="color:#ef4444;font-size:12px;padding:1em;grid-column:1/-1">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function uploadFiles(files) {
+  const list = Array.from(files || []).filter((f) => f.type.startsWith("image/"));
+  if (list.length === 0) return;
+  setStatus(`uploading ${list.length} image(s)…`);
+  let ok = 0, fail = 0;
+  for (const file of list) {
+    try {
+      await storageRepo.uploadImage(deckId, file);
+      ok++;
+    } catch (err) {
+      console.warn("[image upload]", file.name, err);
+      fail++;
+    }
+  }
+  if (fail === 0) {
+    setStatus(`uploaded ${ok}`, "ok");
+    toast(`Uploaded ${ok} image(s)`, "ok");
+  } else {
+    setStatus(`uploaded ${ok}, failed ${fail}`, "err");
+    toast(`${fail} upload(s) failed`, "err");
+  }
+  await refreshImagesGrid();
+}
+
+$("images-btn").addEventListener("click", async () => {
+  $("images-deck-id").textContent = deckId;
+  $("images-modal-bg").classList.add("show");
+  await refreshImagesGrid();
+});
+$("images-close").addEventListener("click", () =>
+  $("images-modal-bg").classList.remove("show"),
+);
+$("images-modal-bg").addEventListener("click", (e) => {
+  if (e.target === $("images-modal-bg")) $("images-modal-bg").classList.remove("show");
+});
+$("images-upload-btn").addEventListener("click", () =>
+  $("images-upload-input").click(),
+);
+$("images-upload-input").addEventListener("change", (e) => {
+  uploadFiles(e.target.files);
+  e.target.value = ""; // allow re-uploading the same file
+});
+
+// Drag-drop into the drop zone
+const dropZone = $("images-drop-zone");
+["dragenter", "dragover"].forEach((ev) =>
+  dropZone.addEventListener(ev, (e) => {
+    e.preventDefault();
+    dropZone.classList.add("dragging");
+  }),
+);
+["dragleave", "drop"].forEach((ev) =>
+  dropZone.addEventListener(ev, () => dropZone.classList.remove("dragging")),
+);
+dropZone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  uploadFiles(e.dataTransfer?.files);
+});
+
 // ── share modal ────────────────────────────────────────────────────
 function shareUrlFor(token) {
   const base = location.href.replace(/[^/]*$/, "");
@@ -430,6 +555,9 @@ document.addEventListener("keydown", (e) => {
   } else if (e.key === "h" || e.key === "H") {
     e.preventDefault();
     $("history-toggle").click();
+  } else if (e.key === "i" || e.key === "I") {
+    e.preventDefault();
+    $("images-btn").click();
   } else if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
     e.preventDefault();
     $("save-version").click();

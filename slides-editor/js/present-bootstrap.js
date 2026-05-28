@@ -16,6 +16,7 @@
 import { getDeck } from "./repo/deck-repo.js";
 import { listByDeck } from "./repo/slide-repo.js";
 import { ensureAuthed } from "./auth.js";
+import { tagSection } from "./slide-render.js";
 
 if (!ensureAuthed()) {
   document.body.innerHTML =
@@ -48,15 +49,11 @@ try {
 
 if (!deck.frame_html) fatal(`Deck '${deckId}' has no frame_html.`);
 
-// Tag each <section> with data-section-id so runtime/sync can read it from DOM.
-const escAttr = (s) => String(s).replace(/"/g, "&quot;");
+// Tag every section: ensure data-section-id (for runtime/sync identity) AND
+// `class="slide"` (for nav selector + print CSS). Sections from imported decks
+// that already had either are unchanged.
 const slidesHtml = slides
-  .map((s) =>
-    s.content.replace(
-      /<section\b/i,
-      `<section data-section-id="${escAttr(s.section_id)}"`,
-    ),
-  )
+  .map((s) => tagSection(s.content, s.section_id))
   .join("\n");
 
 let html = deck.frame_html;

@@ -12,6 +12,13 @@ export class SlidePresentation {
     );
     this.touchStartY = null;
     this.wheelLock = false;
+    // True while `goTo()` is animating a programmatic scroll. The intersection
+    // observer must NOT update currentSlide while we're mid-flight, otherwise
+    // passing through intermediate slides fires extra emitSlideChange events
+    // (= sync broadcast spam) and the runtime ends up resolving to whichever
+    // slide the viewport last crossed instead of the requested target.
+    this.navLock = false;
+    this._navLockTimer = 0;
     this.onSlideChange = onSlideChange;
 
     this.setupIntersectionObserver();
@@ -34,6 +41,8 @@ export class SlidePresentation {
         entries.forEach((entry) => {
           if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
             entry.target.classList.add("visible");
+            // Skip when goTo() is mid-flight — see navLock comment in ctor.
+            if (this.navLock) return;
             if (!this.mobileMedia.matches) {
               const idx = this.slides.indexOf(entry.target);
               if (idx !== -1 && idx !== this.currentSlide) {
@@ -78,6 +87,8 @@ export class SlidePresentation {
 
   setupKeyboardNav() {
     document.addEventListener("keydown", (e) => {
+      // Ignore OS autorepeat — holding ↓ otherwise skips through slides.
+      if (e.repeat) return;
       // Skip when editing text inline (M3+).
       if (e.target?.getAttribute?.("contenteditable") === "true") return;
       switch (e.key) {
@@ -146,6 +157,14 @@ export class SlidePresentation {
 
   goTo(idx) {
     if (idx < 0 || idx >= this.slides.length) return;
+    // Lock the intersection observer for the duration of the smooth scroll
+    // so it doesn't reset currentSlide to an in-between slide.
+    this.navLock = true;
+    clearTimeout(this._navLockTimer);
+    this._navLockTimer = setTimeout(() => {
+      this.navLock = false;
+    }, 700);
+
     if (this.mobileMedia.matches && this.mainEl) {
       this.mainEl.scrollTo({ top: idx * 720, behavior: "smooth" });
     } else {
