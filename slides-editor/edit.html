@@ -215,6 +215,22 @@
         background: #0c0c0c;
         box-shadow: 0 4px 24px rgba(0,0,0,.5);
       }
+      /* HTML edit mode swaps the iframe for a raw textarea. */
+      #canvas-wrap.html-mode {
+        display: block; padding: 0;
+      }
+      #canvas-wrap.html-mode #canvas { display: none; }
+      #html-editor {
+        display: none; width: 100%; height: 100%;
+        background: #0a0a0a; color: var(--text);
+        border: 0; outline: 0;
+        padding: 18px 22px; box-sizing: border-box;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 13px; line-height: 1.7;
+        resize: none; tab-size: 2;
+      }
+      #canvas-wrap.html-mode #html-editor { display: block; }
+      #html-editor:focus { outline: 0; }
 
       /* Props */
       #props {
@@ -291,6 +307,7 @@
       <header id="toolbar">
         <span class="title" id="deck-title">…</span>
         <button class="btn" id="edit-toggle">Edit · on (E)</button>
+        <button class="btn" id="html-toggle" title="Raw HTML mode (M)">&lt;/&gt; HTML</button>
         <button class="btn" id="save-version" title="Save version (⌘S)">★ Save version</button>
         <button class="btn" id="history-toggle" title="History (H)">⏱ History</button>
         <button class="btn" id="frame-edit">Frame…</button>
@@ -313,7 +330,14 @@
       </header>
       <main id="body">
         <aside id="slide-list"></aside>
-        <div id="canvas-wrap"><iframe id="canvas" src="about:blank"></iframe></div>
+        <div id="canvas-wrap">
+          <iframe id="canvas" src="about:blank"></iframe>
+          <textarea
+            id="html-editor"
+            spellcheck="false"
+            placeholder="<section ...>...</section>"
+          ></textarea>
+        </div>
         <aside id="props">
           <h3>Slide</h3>
           <div class="field">

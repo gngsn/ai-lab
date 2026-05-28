@@ -89,7 +89,39 @@ const overlay = `
 </div>
 `;
 
+// Same fallback as present-bootstrap — see comments there.
+const noFallback =
+  new URLSearchParams(location.search).get("nofallback") === "1";
+const fallbackStyle = noFallback
+  ? ""
+  : `
+<style id="__se_fallback">
+  @media screen {
+    html, body {
+      overflow: hidden !important;
+      height: 100% !important;
+    }
+    main {
+      display: block !important;
+      height: 100vh !important;
+      max-height: 100vh !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      scroll-snap-type: y mandatory !important;
+      scroll-behavior: smooth !important;
+      transform: none !important;
+    }
+    section[data-section-id] {
+      scroll-snap-stop: always !important;
+      scroll-snap-align: start !important;
+      min-height: 100vh !important;
+    }
+  }
+</style>
+`;
+
 const bootScript = `
+${fallbackStyle}
 <link rel="stylesheet" href="${HELP_CSS}" />
 <script type="module">
   import { SlidePresentation } from "${RUNTIME_URL}";

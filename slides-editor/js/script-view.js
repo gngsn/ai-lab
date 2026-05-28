@@ -129,6 +129,8 @@ export function mountScriptView({ deck, sections, syncId }) {
 
   // Keyboard nav (matches present.html keys for muscle memory)
   document.addEventListener("keydown", (e) => {
+    // OS autorepeat would otherwise jump multiple sections per key hold.
+    if (e.repeat) return;
     if (e.target?.tagName === "INPUT" || e.target?.tagName === "TEXTAREA") return;
     switch (e.key) {
       case "ArrowDown":

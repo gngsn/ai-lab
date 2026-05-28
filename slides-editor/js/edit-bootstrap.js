@@ -12,6 +12,7 @@ import { bindShortcutsHelp } from "./shortcuts-help.js";
 
 bindShortcutsHelp("Edit", [
   { keys: ["E"], desc: "Toggle edit mode (canvas)" },
+  { keys: ["M"], desc: "Toggle raw HTML mode" },
   { keys: ["H"], desc: "Toggle history drawer" },
   { keys: ["I"], desc: "Open image library" },
   { keys: ["⌘S", "Ctrl+S"], desc: "Save version (manual snapshot)" },
@@ -50,6 +51,7 @@ let deck = null;
 let slides = [];
 let currentSectionId = null;
 let editMode = true;
+let htmlMode = false; // raw <section>…</section> edit in textarea
 
 // ── ui helpers ─────────────────────────────────────────────────────
 function toast(msg, kind = "") {
@@ -116,16 +118,7 @@ function renderSlideList() {
       .join("") + '<button id="add-slide">+ New slide</button>';
 
   list.querySelectorAll(".slide-item").forEach((el) => {
-    el.addEventListener("click", async () => {
-      const sid = el.dataset.sectionId;
-      if (sid === currentSectionId) return;
-      await flushNotesSave(); // never lose in-progress note edits
-      currentSectionId = sid;
-      renderSlideList();
-      renderProps();
-      await loadNotesForCurrent();
-      showSlide(currentSectionId);
-    });
+    el.addEventListener("click", () => switchSlide(el.dataset.sectionId));
     el.addEventListener("dragstart", (e) => {
       e.dataTransfer.setData("text/plain", el.dataset.sectionId);
       e.dataTransfer.effectAllowed = "move";
@@ -173,6 +166,24 @@ function showSlide(sectionId) {
   $("canvas").src =
     `./edit-frame.html?deck=${encodeURIComponent(deckId)}` +
     `&section=${encodeURIComponent(sectionId)}${q}`;
+}
+
+// Unified slide-selection path. Flushes pending notes + html buffers so
+// nothing gets lost when moving away. Branches on htmlMode to populate
+// the right surface (iframe vs textarea).
+async function switchSlide(sid) {
+  if (sid === currentSectionId) return;
+  await flushNotesSave();
+  await flushHtmlSave();
+  currentSectionId = sid;
+  renderSlideList();
+  renderProps();
+  await loadNotesForCurrent();
+  if (htmlMode) {
+    await loadCurrentSlideHtml();
+  } else {
+    showSlide(currentSectionId);
+  }
 }
 
 // ── mutations ──────────────────────────────────────────────────────
@@ -537,9 +548,93 @@ $("edit-toggle").addEventListener("click", () => {
   editMode = !editMode;
   $("edit-toggle").classList.toggle("active", editMode);
   $("edit-toggle").textContent = editMode ? "Edit · on (E)" : "Edit · off (E)";
-  showSlide(currentSectionId);
+  if (!htmlMode) showSlide(currentSectionId);
 });
 $("edit-toggle").classList.add("active");
+
+// ── HTML edit mode (raw <section>…</section> in textarea) ────────
+let htmlPending = null; // { sid, content }
+let htmlSaveTimer = 0;
+
+async function loadCurrentSlideHtml() {
+  const ta = $("html-editor");
+  if (!currentSectionId) {
+    ta.value = "";
+    return;
+  }
+  try {
+    const slide = await slideRepo.getOne(deckId, currentSectionId);
+    ta.value = slide.content;
+    htmlPending = null;
+  } catch (err) {
+    toast("HTML load failed: " + err.message, "err");
+  }
+}
+
+async function flushHtmlSave() {
+  if (!htmlPending) return;
+  clearTimeout(htmlSaveTimer);
+  htmlSaveTimer = 0;
+  const { sid, content } = htmlPending;
+  htmlPending = null;
+  if (!/<section\b/i.test(content) || !/<\/section\s*>/i.test(content)) {
+    setStatus("HTML missing <section>", "err");
+    toast(
+      "HTML must contain a single <section>…</section> block.",
+      "err",
+    );
+    // Re-queue so the buffer isn't lost
+    htmlPending = { sid, content };
+    return;
+  }
+  try {
+    await slideRepo.updateContent(deckId, sid, content);
+    setStatus("HTML saved · " + new Date().toLocaleTimeString(), "ok");
+    // Refresh slide list in case title attr changed
+    const fresh = await slideRepo.listByDeck(deckId);
+    slides = fresh;
+    renderSlideList();
+    renderProps();
+  } catch (err) {
+    setStatus("HTML save failed", "err");
+    toast("HTML save failed: " + err.message, "err");
+  }
+}
+
+$("html-editor").addEventListener("input", (e) => {
+  if (!currentSectionId) return;
+  htmlPending = { sid: currentSectionId, content: e.target.value };
+  setStatus("HTML: saving…");
+  clearTimeout(htmlSaveTimer);
+  htmlSaveTimer = setTimeout(flushHtmlSave, 800);
+});
+
+async function setHtmlMode(on) {
+  if (on === htmlMode) return;
+  if (on) {
+    // Ask iframe to flush any pending inline-editor save, then fetch fresh DB
+    // content so the textarea reflects the latest visual edits.
+    $("canvas").contentWindow?.postMessage({ type: "edit:flush" }, "*");
+    await new Promise((r) => setTimeout(r, 300));
+    htmlMode = true;
+    $("canvas-wrap").classList.add("html-mode");
+    $("html-toggle").classList.add("active");
+    await loadCurrentSlideHtml();
+    $("html-editor").focus();
+  } else {
+    await flushHtmlSave();
+    htmlMode = false;
+    $("canvas-wrap").classList.remove("html-mode");
+    $("html-toggle").classList.remove("active");
+    showSlide(currentSectionId); // reload iframe with new content
+  }
+}
+
+$("html-toggle").addEventListener("click", () => setHtmlMode(!htmlMode));
+
+window.addEventListener("beforeunload", () => {
+  if (htmlPending) flushHtmlSave();
+});
 
 // ── keyboard shortcuts ─────────────────────────────────────────────
 document.addEventListener("keydown", (e) => {
@@ -558,6 +653,9 @@ document.addEventListener("keydown", (e) => {
   } else if (e.key === "i" || e.key === "I") {
     e.preventDefault();
     $("images-btn").click();
+  } else if (e.key === "m" || e.key === "M") {
+    e.preventDefault();
+    $("html-toggle").click();
   } else if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
     e.preventDefault();
     $("save-version").click();

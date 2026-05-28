@@ -65,12 +65,15 @@ export class InlineEditor {
       });
     });
 
-    // Listen for cross-frame insert-image commands from the parent's
-    // image-library modal. Inserts an <img> at the current selection
-    // inside this section (or appends if no selection), then schedules a save.
+    // Cross-frame IPC from the parent (edit.html):
+    //   edit:insert-image — insert <img src=...> at current caret
+    //   edit:flush        — commit any pending debounced save immediately
+    //                       (used when parent toggles HTML mode)
     window.addEventListener("message", (e) => {
       if (e.data?.type === "edit:insert-image" && this.section) {
         this.insertImage(e.data.url, e.data.alt || "");
+      } else if (e.data?.type === "edit:flush") {
+        this.commitSave();
       }
     });
 

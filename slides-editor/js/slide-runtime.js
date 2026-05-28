@@ -138,18 +138,37 @@ export class SlidePresentation {
   }
 
   setupWheelNav() {
-    // Throttle wheel input — one slide step per gesture.
+    // One slide step per gesture. A "gesture" lasts as long as wheel events
+    // keep arriving with < 250ms gaps — covers Mac trackpad inertia, which
+    // can stretch a single swipe to ~800ms. A fixed 700ms lock would let
+    // late inertia events fire a second advance.
+    let lastWheelAt = 0;
+    const SETTLE_MS = 250;
+
+    const release = () => {
+      if (Date.now() - lastWheelAt >= SETTLE_MS) {
+        this.wheelLock = false;
+      } else {
+        setTimeout(release, 100);
+      }
+    };
+
     document.addEventListener(
       "wheel",
       (e) => {
-        if (this.wheelLock) return;
+        const now = Date.now();
+        if (this.wheelLock) {
+          // Inertia continuation — keep extending the settle window so we
+          // don't release the lock prematurely.
+          lastWheelAt = now;
+          return;
+        }
         if (Math.abs(e.deltaY) < 30) return;
         this.wheelLock = true;
+        lastWheelAt = now;
         if (e.deltaY > 0) this.next();
         else this.prev();
-        setTimeout(() => {
-          this.wheelLock = false;
-        }, 700);
+        setTimeout(release, SETTLE_MS);
       },
       { passive: true },
     );

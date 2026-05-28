@@ -54,6 +54,7 @@ python3 -m http.server 8000
 | **Notes** (script-edit) | `⌘S / Ctrl+S` | Save version |
 | | `H` | History drawer |
 | **Edit** | `I` | Image library |
+| **Edit** | `M` | Toggle raw HTML mode |
 | **All** | `?` | This help |
 
 ---

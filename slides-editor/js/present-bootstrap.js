@@ -69,6 +69,50 @@ const SYNC_URL = new URL("./js/sync.js", location.href).href;
 const HELP_URL = new URL("./js/shortcuts-help.js", location.href).href;
 const HELP_CSS = new URL("./css/shortcuts-help.css", location.href).href;
 
+// Screen-mode fallback. !important is used because imported decks often have
+// strong rules (e.g. .coral / .center-all chapter dividers) that would
+// otherwise win — and we MUST force:
+//   - scroll-snap-stop:always — browser actually stops at every slide
+//   - scroll-snap-align:start — make every section a snap target
+//   - min-height:100vh        — divider slides whose deck CSS collapses them
+//   - display:block           — override display:contents / inline
+//   - position:relative       — pull absolute/fixed slides back into flow
+// If a deck legitimately needs different sizing, append ?nofallback=1 to
+// disable this block.
+const noFallback = params.get("nofallback") === "1";
+const fallbackStyle = noFallback
+  ? ""
+  : `
+<style id="__se_fallback">
+  @media screen {
+    /* Make <main> the scroll container. Imported v5-style decks expect
+       a controller that calls main.style.transform=translateY(-idx*100vh).
+       Our runtime uses scrollIntoView() — so we need main to actually
+       scroll (overflow-y:auto), to be exactly viewport-tall, and to clear
+       any stale translateY left over from the deck CSS. */
+    html, body {
+      overflow: hidden !important;
+      height: 100% !important;
+    }
+    main {
+      display: block !important;
+      height: 100vh !important;
+      max-height: 100vh !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      scroll-snap-type: y mandatory !important;
+      scroll-behavior: smooth !important;
+      transform: none !important;
+    }
+    section[data-section-id] {
+      scroll-snap-stop: always !important;
+      scroll-snap-align: start !important;
+      min-height: 100vh !important;
+    }
+  }
+</style>
+`;
+
 // Print CSS is always injected (only applies on @media print).
 // In ?print=1 mode we additionally apply the same rules on screen so the
 // page renders as a vertical stack of full-bleed slides ready for print preview.
@@ -174,7 +218,10 @@ const interactiveBoot = `
 
 const bootScript = isPrint ? printBoot : interactiveBoot;
 
-html = html.replace(/<\/body>/i, `${printStyle}${overlay}${bootScript}</body>`);
+html = html.replace(
+  /<\/body>/i,
+  `${fallbackStyle}${printStyle}${overlay}${bootScript}</body>`,
+);
 
 if (deck.title && /<title>[^<]*<\/title>/i.test(html)) {
   html = html.replace(/<title>[^<]*<\/title>/i, `<title>${deck.title}</title>`);
