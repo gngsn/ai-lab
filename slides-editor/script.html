@@ -123,6 +123,13 @@
       <button class="btn" id="increaseFont" title="글자 크게">A+</button>
       <div class="sep"></div>
       <button class="btn" id="toggleHL" title="하이라이트 on/off">HL</button>
+      <a
+        class="btn"
+        id="editNotesLink"
+        href="#"
+        title="노트 편집 (script-edit.html)"
+        >✎ Notes</a
+      >
       <div class="spacer"></div>
       <div id="sync-badge" title="클릭하여 수동/자동 전환">
         <span class="sync-dot"></span>
@@ -158,6 +165,9 @@
       }
 
       if (!deckId) fatal("Missing ?deck=<deck_id> in URL.");
+
+      document.getElementById("editNotesLink").href =
+        `./script-edit.html?deck=${encodeURIComponent(deckId)}`;
 
       try {
         const [deck, slides, notes] = await Promise.all([

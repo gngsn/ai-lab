@@ -40,7 +40,7 @@ python3 -m http.server 8000
 - [x] **M1** — 슬라이드 read + present
 - [x] **M2** — 스크립트 read + sync
 - [x] **M3** — 슬라이드 inline edit
-- [ ] **M4** — 노트 편집
+- [x] **M4** — 노트 편집
 - [ ] **M5** — 히스토리 / 롤백
 - [ ] **M6** — Export (HTML / PDF / Marp)
 - [ ] **M7** — 공유 + 권한
@@ -58,6 +58,7 @@ slides-editor/
 ├─ script.html             # M2 — teleprompter + Realtime sync receiver
 ├─ edit.html               # M3 — inline editor (desktop only; mobile → script)
 ├─ edit-frame.html         # M3 — single-slide iframe used by edit.html
+├─ script-edit.html        # M4 — fullscreen notes editor (markdown + preview)
 ├─ migrations/
 │  ├─ 001_init.sql
 │  ├─ 002_history.sql
@@ -67,6 +68,7 @@ slides-editor/
 │  ├─ sync.js              # Realtime broadcast (used in M2)
 │  ├─ slide-runtime.js     # v4 SlidePresentation port
 │  ├─ script-view.js       # v5 teleprompter port (uses slides+notes join)
+│  ├─ script-edit-view.js  # M4 notes editor mount (marked@11 preview)
 │  ├─ inline-editor.js     # v4 InlineEditor port (runs inside edit-frame iframe)
 │  ├─ auth.js              # M3 passphrase gate (localStorage)
 │  ├─ present-bootstrap.js # loads deck → rewrites document

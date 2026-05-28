@@ -73,6 +73,8 @@ async function refresh({ keepIframe = false } = {}) {
   $("deck-title").textContent = deck.title || deckId;
   $("present-link").href = `./present.html?deck=${encodeURIComponent(deckId)}`;
   $("script-link").href = `./script.html?deck=${encodeURIComponent(deckId)}`;
+  $("notes-fullscreen-link").href =
+    `./script-edit.html?deck=${encodeURIComponent(deckId)}`;
   document.title = `Edit · ${deck.title || deckId}`;
 
   if (!currentSectionId || !slides.find((s) => s.section_id === currentSectionId)) {
@@ -80,6 +82,7 @@ async function refresh({ keepIframe = false } = {}) {
   }
   renderSlideList();
   renderProps();
+  await loadNotesForCurrent();
   if (!keepIframe) showSlide(currentSectionId);
 }
 
@@ -98,12 +101,14 @@ function renderSlideList() {
       .join("") + '<button id="add-slide">+ New slide</button>';
 
   list.querySelectorAll(".slide-item").forEach((el) => {
-    el.addEventListener("click", () => {
+    el.addEventListener("click", async () => {
       const sid = el.dataset.sectionId;
       if (sid === currentSectionId) return;
+      await flushNotesSave(); // never lose in-progress note edits
       currentSectionId = sid;
       renderSlideList();
       renderProps();
+      await loadNotesForCurrent();
       showSlide(currentSectionId);
     });
     el.addEventListener("dragstart", (e) => {
@@ -212,6 +217,54 @@ $("delete-slide").addEventListener("click", async () => {
   } catch (err) {
     toast("Delete failed: " + err.message, "err");
   }
+});
+
+// ── notes (per-slide, debounced upsert) ───────────────────────────
+let notesPending = null; // { sid, content }
+let notesSaveTimer = 0;
+
+async function loadNotesForCurrent() {
+  const ta = $("notes-textarea");
+  if (!currentSectionId) {
+    ta.value = "";
+    ta.disabled = true;
+    return;
+  }
+  try {
+    const note = await notesRepo.getOne(deckId, currentSectionId);
+    ta.value = note?.content || "";
+    ta.disabled = false;
+  } catch (err) {
+    ta.value = "";
+    ta.disabled = false;
+    toast("Notes load failed: " + err.message, "err");
+  }
+}
+
+async function flushNotesSave() {
+  if (!notesPending) return;
+  clearTimeout(notesSaveTimer);
+  notesSaveTimer = 0;
+  const { sid, content } = notesPending;
+  notesPending = null;
+  try {
+    await notesRepo.upsert(deckId, sid, content);
+    setStatus(`notes saved · ${new Date().toLocaleTimeString()}`, "ok");
+  } catch (err) {
+    setStatus("notes save failed", "err");
+    toast("Notes save failed: " + err.message, "err");
+  }
+}
+
+$("notes-textarea").addEventListener("input", (e) => {
+  notesPending = { sid: currentSectionId, content: e.target.value };
+  setStatus("notes: saving…");
+  clearTimeout(notesSaveTimer);
+  notesSaveTimer = setTimeout(flushNotesSave, 800);
+});
+
+window.addEventListener("beforeunload", () => {
+  if (notesPending) flushNotesSave();
 });
 
 // ── title field (debounced) ───────────────────────────────────────

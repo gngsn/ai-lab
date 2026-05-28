@@ -10,6 +10,17 @@ export async function listByDeck(deckId) {
   return data;
 }
 
+export async function getOne(deckId, sectionId) {
+  const { data, error } = await supabase
+    .from("notes")
+    .select("*")
+    .eq("deck_id", deckId)
+    .eq("section_id", sectionId)
+    .maybeSingle();
+  if (error) throw error;
+  return data; // null if no row
+}
+
 export async function upsert(deckId, sectionId, content) {
   const { error } = await supabase
     .from("notes")

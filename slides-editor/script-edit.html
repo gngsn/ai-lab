@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Notes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=JetBrains+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      :root {
+        --accent: #5db8a6;
+        --bg: #0c0c0c;
+        --surface: #141414;
+        --surface-2: #1a1a1a;
+        --border: #1f1f1f;
+        --text: #c8c8c8;
+        --text-mid: #777;
+        --text-bright: #f0f0f0;
+        --danger: #ef4444;
+        --ok: #22c55e;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "IBM Plex Sans KR", sans-serif;
+        height: 100vh; overflow: hidden;
+      }
+      #app { display: grid; grid-template-rows: 48px 1fr; height: 100vh; }
+
+      /* Toolbar */
+      #toolbar {
+        display: flex; align-items: center; gap: 8px;
+        padding: 0 14px; background: var(--surface);
+        border-bottom: 1px solid var(--border);
+      }
+      #toolbar .title {
+        font-size: 14px; font-weight: 500;
+        color: var(--text-bright); margin-right: 8px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        max-width: 240px;
+      }
+      #toolbar .spacer { flex: 1; }
+      .btn {
+        display: inline-flex; align-items: center; gap: 4px;
+        background: transparent; border: 1px solid var(--border);
+        color: var(--text-mid); padding: 5px 10px; border-radius: 5px;
+        font-size: 12px; font-family: inherit; cursor: pointer;
+        text-decoration: none;
+        transition: background .12s, color .12s, border-color .12s;
+      }
+      .btn:hover { background: #1e1e1e; color: var(--text); border-color: #333; }
+      .btn.active { background: #1e2e1e; color: var(--accent); border-color: var(--accent); }
+
+      #status {
+        font-size: 11px; font-family: "JetBrains Mono", monospace;
+        color: var(--text-mid); min-width: 160px; text-align: right;
+      }
+      #status[data-kind="ok"]  { color: var(--ok); }
+      #status[data-kind="err"] { color: var(--danger); }
+
+      /* Body grid: sections | textarea | preview */
+      #editor-grid {
+        display: grid;
+        grid-template-columns: 240px 1fr 1fr;
+        height: calc(100vh - 48px);
+      }
+      body.hide-preview #editor-grid { grid-template-columns: 240px 1fr 0; }
+      body.hide-preview #edit-preview { display: none; }
+
+      /* Section list */
+      #edit-sections {
+        background: var(--surface); border-right: 1px solid var(--border);
+        overflow-y: auto; padding: 8px;
+      }
+      .edit-sec {
+        display: flex; align-items: center; gap: 6px;
+        padding: 8px 10px; margin-bottom: 4px;
+        border-radius: 5px; cursor: pointer;
+        font-size: 13px; color: var(--text-mid);
+        border: 1px solid transparent;
+        user-select: none;
+      }
+      .edit-sec:hover { background: var(--surface-2); color: var(--text); }
+      .edit-sec.active {
+        background: #1e2e1e; color: var(--text-bright);
+        border-color: var(--accent);
+      }
+      .edit-sec .o {
+        font-size: 10px; color: var(--text-mid);
+        font-family: "JetBrains Mono", monospace;
+        min-width: 18px; text-align: right;
+      }
+      .edit-sec .t {
+        flex: 1; overflow: hidden;
+        text-overflow: ellipsis; white-space: nowrap;
+      }
+
+      /* Editor pane (textarea) */
+      #edit-pane {
+        display: flex; flex-direction: column;
+        background: var(--bg); border-right: 1px solid var(--border);
+        overflow: hidden;
+      }
+      #edit-heading {
+        font-size: 13px; padding: 12px 16px;
+        color: var(--accent); border-bottom: 1px solid var(--border);
+        font-weight: 600;
+      }
+      #edit-textarea {
+        flex: 1; width: 100%;
+        background: transparent;
+        color: var(--text-bright);
+        border: 0; outline: 0; resize: none;
+        padding: 16px;
+        font-family: "IBM Plex Sans KR", sans-serif;
+        font-size: 15px; line-height: 1.75;
+        word-break: keep-all;
+      }
+      #edit-textarea:disabled { opacity: .4; }
+
+      /* Preview */
+      #edit-preview {
+        overflow-y: auto; padding: 16px 20px;
+        font-size: 14px; line-height: 1.7;
+        color: var(--text);
+        word-break: keep-all;
+      }
+      #edit-preview h1, #edit-preview h2, #edit-preview h3 {
+        color: var(--text-bright); margin: 1em 0 .4em;
+      }
+      #edit-preview h1 { font-size: 1.5em; }
+      #edit-preview h2 { font-size: 1.25em; }
+      #edit-preview h3 { font-size: 1.1em; }
+      #edit-preview p { margin: .6em 0; }
+      #edit-preview ul, #edit-preview ol { margin: .6em 0 .6em 1.4em; }
+      #edit-preview li { margin: .2em 0; }
+      #edit-preview blockquote {
+        margin: .6em 0; padding: .4em 0 .4em 1em;
+        border-left: 2px solid var(--accent); color: var(--text);
+      }
+      #edit-preview code {
+        font-family: "JetBrains Mono", monospace;
+        font-size: .9em; padding: 1px 5px;
+        background: var(--surface-2); color: var(--accent);
+        border-radius: 3px;
+      }
+      #edit-preview pre {
+        background: var(--surface); padding: 12px 14px;
+        border-radius: 4px; overflow-x: auto;
+        font-family: "JetBrains Mono", monospace;
+        font-size: .85em;
+      }
+      #edit-preview strong { color: var(--text-bright); }
+      #edit-preview em { font-style: italic; color: var(--accent); }
+      #edit-preview hr {
+        border: 0; border-top: 1px solid var(--border); margin: 1.5em 0;
+      }
+
+      /* Mobile: stack sections on top, hide preview by default */
+      @media (max-width: 900px) {
+        #editor-grid { grid-template-columns: 1fr; grid-template-rows: 140px 1fr; }
+        body.hide-preview #editor-grid { grid-template-rows: 140px 1fr; }
+        #edit-sections {
+          border-right: 0; border-bottom: 1px solid var(--border);
+          display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden;
+        }
+        .edit-sec {
+          flex: 0 0 auto; flex-direction: column;
+          min-width: 110px; align-items: flex-start;
+          margin-bottom: 0;
+        }
+        .edit-sec .t { white-space: normal; }
+        #edit-pane { border-right: 0; }
+        #edit-preview {
+          position: fixed; inset: 48px 0 0 0;
+          background: var(--bg); z-index: 50;
+        }
+        body.hide-preview #edit-preview { display: none; }
+        body:not(.hide-preview) #edit-preview { display: block; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header id="toolbar">
+        <span class="title" id="deck-title">…</span>
+        <span class="spacer"></span>
+        <a class="btn" id="slides-link" href="#" target="_blank">✎ Slides</a>
+        <a class="btn" id="read-link" href="#">↩ Read</a>
+        <a class="btn" id="present-link" href="#" target="_blank">▶ Present</a>
+        <button class="btn" id="preview-toggle">Preview</button>
+        <span id="status">—</span>
+      </header>
+      <main id="editor-grid">
+        <aside id="edit-sections"></aside>
+        <section id="edit-pane">
+          <div id="edit-heading">—</div>
+          <textarea
+            id="edit-textarea"
+            spellcheck="false"
+            placeholder="노트를 입력하세요. Markdown 지원."
+          ></textarea>
+        </section>
+        <section id="edit-preview"></section>
+      </main>
+    </div>
+
+    <script src="./js/config.local.js"></script>
+    <script type="module">
+      import * as deckRepo from "./js/repo/deck-repo.js";
+      import * as slideRepo from "./js/repo/slide-repo.js";
+      import * as notesRepo from "./js/repo/notes-repo.js";
+      import { ensureAuthed } from "./js/auth.js";
+      import { mountScriptEditView } from "./js/script-edit-view.js";
+
+      if (!ensureAuthed()) {
+        document.body.innerHTML =
+          '<p style="padding:2rem;color:#ef4444;font-family:monospace">' +
+          "Edit access denied.</p>";
+        throw new Error("auth");
+      }
+
+      const params = new URLSearchParams(location.search);
+      const deckId = params.get("deck");
+      if (!deckId) {
+        document.body.innerHTML =
+          '<p style="padding:2rem;color:#ef4444">Missing ?deck=&lt;deck_id&gt;</p>';
+        throw new Error("no deck");
+      }
+
+      try {
+        const [deck, slides, notes] = await Promise.all([
+          deckRepo.getDeck(deckId),
+          slideRepo.listByDeck(deckId),
+          notesRepo.listByDeck(deckId),
+        ]);
+        const notesByKey = new Map(notes.map((n) => [n.section_id, n.content]));
+        const sections = slides.map((s) => ({
+          section_id: s.section_id,
+          order: s.order,
+          title: s.title,
+          body: notesByKey.get(s.section_id) || "",
+        }));
+        mountScriptEditView({ deck, deckId, sections });
+      } catch (err) {
+        document.body.innerHTML =
+          `<p style="padding:2rem;color:#ef4444">Load failed: ${err.message}</p>`;
+      }
+    </script>
+  </body>
+</html>
