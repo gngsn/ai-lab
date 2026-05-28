@@ -1,0 +1,10 @@
+# local secrets (Supabase keys, owner passphrase)
+js/config.local.js
+
+# tooling artifacts
+.DS_Store
+node_modules/
+.env
+.env.local
+.vercel/
+*.log

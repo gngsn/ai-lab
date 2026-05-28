@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>slides-editor</title>
+    <style>
+      :root {
+        --bg: #0c0c0c;
+        --surface: #141414;
+        --text: #f0f0f0;
+        --muted: #888;
+        --accent: #5db8a6;
+        --ok: #22c55e;
+        --bad: #ef4444;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-monospace, "JetBrains Mono", "SF Mono", monospace;
+        line-height: 1.65;
+      }
+      .wrap {
+        max-width: 720px;
+        margin: 4rem auto;
+        padding: 0 1.5rem;
+      }
+      h1 { font-size: 1.5rem; margin: 0 0 0.4rem; }
+      h2 { font-size: 1rem; margin: 2rem 0 0.6rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+      a { color: var(--accent); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      code {
+        background: var(--surface);
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 0.9em;
+      }
+      ul { padding-left: 1.2rem; margin: 0.4rem 0; }
+      .ok  { color: var(--ok); }
+      .bad { color: var(--bad); }
+      .pill {
+        display: inline-block;
+        padding: 0.1rem 0.5rem;
+        background: var(--surface);
+        border-radius: 999px;
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin-left: 0.4rem;
+      }
+      pre {
+        background: var(--surface);
+        padding: 0.8rem 1rem;
+        border-radius: 6px;
+        overflow-x: auto;
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>slides-editor <span class="pill">M0</span></h1>
+      <p id="status">checking Supabase connection…</p>
+
+      <h2>Decks</h2>
+      <ul id="deck-list"><li>loading…</li></ul>
+
+      <h2>Docs</h2>
+      <ul>
+        <li><a href="./SPEC.md">SPEC.md</a></li>
+        <li><a href="./PLAN.md">PLAN.md</a></li>
+        <li><a href="./README.md">README.md</a></li>
+      </ul>
+
+      <h2>Next</h2>
+      <p>M1 — <code>present.html</code> 슬라이드 read + 키보드 navigation.</p>
+    </div>
+
+    <script src="./js/config.local.js"></script>
+    <script type="module">
+      import { supabase } from "./js/supabase.js";
+      const status = document.getElementById("status");
+      const list = document.getElementById("deck-list");
+      try {
+        const { data, error } = await supabase
+          .from("decks")
+          .select("deck_id,title,updated_at")
+          .order("updated_at", { ascending: false });
+        if (error) throw error;
+        status.innerHTML = `<span class="ok">✓ connected</span> — ${data.length} deck(s)`;
+        list.innerHTML = data.length
+          ? data
+              .map(
+                (d) =>
+                  `<li><code>${d.deck_id}</code> — ${d.title}</li>`,
+              )
+              .join("")
+          : "<li>(none — run <code>migrations/seed.sql</code> for a sample deck)</li>";
+      } catch (err) {
+        status.innerHTML = `<span class="bad">✗ ${err.message}</span>`;
+        list.innerHTML = "<li>—</li>";
+        console.error(err);
+      }
+    </script>
+  </body>
+</html>

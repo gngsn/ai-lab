@@ -1,0 +1,5 @@
+// Copy to `config.local.js` and fill in.
+// `config.local.js` is gitignored.
+window.SUPABASE_URL      = "https://YOUR-PROJECT-REF.supabase.co";
+window.SUPABASE_ANON_KEY = "YOUR-ANON-KEY";
+window.OWNER_PASSPHRASE  = "set-me"; // M6 인증에서 사용
