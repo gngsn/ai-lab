@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Notes</title>
+    <style>
+      body {
+        background: #0c0c0c; color: #c8c8c8;
+        font-family: -apple-system, "IBM Plex Sans KR", sans-serif;
+        margin: 0; padding: 0;
+      }
+      header {
+        position: sticky; top: 0; z-index: 10;
+        background: #141414; border-bottom: 1px solid #1f1f1f;
+        padding: 10px 14px;
+        display: flex; align-items: center; gap: 8px;
+      }
+      .title {
+        font-size: 14px; font-weight: 500; color: #f0f0f0;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        max-width: 320px;
+      }
+      .spacer { flex: 1; }
+      .btn {
+        background: transparent; border: 1px solid #1f1f1f;
+        color: #777; padding: 5px 10px; border-radius: 5px;
+        font: 12px "JetBrains Mono", ui-monospace, monospace;
+        cursor: pointer; text-decoration: none;
+        transition: background .12s, color .12s, border-color .12s;
+      }
+      .btn:hover { background: #1e1e1e; color: #c8c8c8; border-color: #333; }
+      .btn.ok { color: #22c55e; border-color: #22c55e; }
+      main { max-width: 920px; margin: 0 auto; padding: 24px 20px 80px; }
+      .hint {
+        color: #777; font-size: 11px; margin: 12px 0 8px;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        line-height: 1.6;
+      }
+      .hint code {
+        color: #5db8a6; background: #141414;
+        padding: 1px 5px; border-radius: 3px;
+      }
+      pre {
+        white-space: pre-wrap; word-break: break-all;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 12px; line-height: 1.7;
+        color: #c8c8c8;
+        background: #141414; border: 1px solid #1f1f1f;
+        border-radius: 6px; padding: 16px 18px;
+        margin: 0;
+      }
+      .err {
+        color: #ef4444; padding: 2rem;
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span class="title" id="deck-title">…</span>
+      <span class="spacer"></span>
+      <a class="btn" id="script-link" href="#" target="_blank">⌨ Script</a>
+      <button class="btn" id="copy-btn">Copy</button>
+      <button class="btn" id="download-btn">Download .md</button>
+    </header>
+    <main>
+      <p class="hint">
+        Marp 형식 — 그대로 <code>marp notes.md -o notes.pdf</code>로 변환 가능합니다.
+      </p>
+      <pre id="content">loading…</pre>
+    </main>
+
+    <script src="./js/config.local.js"></script>
+    <script type="module">
+      import { buildNotesMd, exportNotesMd } from "./js/export.js";
+
+      const $ = (id) => document.getElementById(id);
+      const params = new URLSearchParams(location.search);
+      const deckId = params.get("deck");
+      if (!deckId) {
+        document.body.innerHTML =
+          '<p class="err">Missing ?deck=&lt;deck_id&gt;</p>';
+        throw new Error("no deck");
+      }
+
+      $("script-link").href = `./script.html?deck=${encodeURIComponent(deckId)}`;
+
+      try {
+        const { deck, content } = await buildNotesMd(deckId);
+        $("deck-title").textContent = deck.title || deckId;
+        document.title = `Notes · ${deck.title || deckId}`;
+        // textContent → plain text (HTML escaped automatically).
+        $("content").textContent = content;
+
+        $("copy-btn").addEventListener("click", async () => {
+          try {
+            await exportNotesMd(deckId, { copy: true });
+            const btn = $("copy-btn");
+            const orig = btn.textContent;
+            btn.textContent = "✓ Copied";
+            btn.classList.add("ok");
+            setTimeout(() => {
+              btn.textContent = orig;
+              btn.classList.remove("ok");
+            }, 1400);
+          } catch (err) {
+            alert("Copy failed: " + err.message);
+          }
+        });
+        $("download-btn").addEventListener("click", () => exportNotesMd(deckId));
+      } catch (err) {
+        document.body.innerHTML = `<p class="err">${err.message}</p>`;
+      }
+    </script>
+  </body>
+</html>

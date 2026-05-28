@@ -10,6 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=JetBrains+Mono&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="./css/history-ui.css" />
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
       :root {
@@ -194,6 +195,8 @@
         <a class="btn" id="read-link" href="#">↩ Read</a>
         <a class="btn" id="present-link" href="#" target="_blank">▶ Present</a>
         <button class="btn" id="preview-toggle">Preview</button>
+        <button class="btn" id="save-version" title="Save version (⌘S)">★ Save</button>
+        <button class="btn" id="history-toggle" title="History (H)">⏱ History</button>
         <span id="status">—</span>
       </header>
       <main id="editor-grid">
@@ -209,6 +212,10 @@
         <section id="edit-preview"></section>
       </main>
     </div>
+
+    <aside class="hist-drawer" id="hist-drawer">
+      <div id="history-panel"></div>
+    </aside>
 
     <script src="./js/config.local.js"></script>
     <script type="module">

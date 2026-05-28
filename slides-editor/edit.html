@@ -10,6 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=JetBrains+Mono&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="./css/history-ui.css" />
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
       :root {
@@ -64,6 +65,31 @@
       .btn.active { background: #1e2e1e; color: var(--accent); border-color: var(--accent); }
       .btn.danger:hover { color: var(--danger); border-color: var(--danger); }
       .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+      /* Export dropdown */
+      .dropdown { position: relative; }
+      .dropdown > summary {
+        list-style: none; cursor: pointer; user-select: none;
+      }
+      .dropdown > summary::-webkit-details-marker,
+      .dropdown > summary::marker { display: none; }
+      .dropdown-menu {
+        position: absolute; top: calc(100% + 4px); right: 0;
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 5px; padding: 4px;
+        display: flex; flex-direction: column; gap: 2px;
+        min-width: 160px; z-index: 200;
+        box-shadow: 0 4px 12px rgba(0,0,0,.4);
+      }
+      .dropdown-menu button,
+      .dropdown-menu a {
+        background: transparent; border: 0; color: var(--text-mid);
+        padding: 7px 10px; text-align: left;
+        font-size: 12px; font-family: inherit; cursor: pointer;
+        border-radius: 3px; text-decoration: none;
+      }
+      .dropdown-menu button:hover,
+      .dropdown-menu a:hover { background: #1e1e1e; color: var(--text); }
 
       /* Body grid */
       #body {
@@ -198,7 +224,19 @@
       <header id="toolbar">
         <span class="title" id="deck-title">…</span>
         <button class="btn" id="edit-toggle">Edit · on (E)</button>
+        <button class="btn" id="save-version" title="Save version (⌘S)">★ Save version</button>
+        <button class="btn" id="history-toggle" title="History (H)">⏱ History</button>
         <button class="btn" id="frame-edit">Frame…</button>
+        <details class="dropdown" id="export-dropdown">
+          <summary class="btn">⬇ Export</summary>
+          <div class="dropdown-menu">
+            <button data-export="html">HTML (self-contained)</button>
+            <button data-export="pdf">PDF (browser print)</button>
+            <button data-export="md">Notes (.md)</button>
+            <button data-export="md-copy">Copy notes to clipboard</button>
+            <a id="export-notes-link" href="#" target="_blank">Open notes view ↗</a>
+          </div>
+        </details>
         <span class="spacer"></span>
         <a class="btn" id="script-link" href="#" target="_blank">⌨ Script</a>
         <a class="btn" id="present-link" href="#" target="_blank">▶ Present</a>
@@ -264,6 +302,10 @@
         </div>
       </div>
     </div>
+
+    <aside class="hist-drawer" id="hist-drawer">
+      <div id="history-panel"></div>
+    </aside>
 
     <div id="toast"></div>
 

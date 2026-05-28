@@ -130,6 +130,14 @@
         title="노트 편집 (script-edit.html)"
         >✎ Notes</a
       >
+      <a
+        class="btn"
+        id="marpLink"
+        href="#"
+        title="Marp(.md) 조회"
+        target="_blank"
+        >View as Marp</a
+      >
       <div class="spacer"></div>
       <div id="sync-badge" title="클릭하여 수동/자동 전환">
         <span class="sync-dot"></span>
@@ -168,6 +176,8 @@
 
       document.getElementById("editNotesLink").href =
         `./script-edit.html?deck=${encodeURIComponent(deckId)}`;
+      document.getElementById("marpLink").href =
+        `./notes.html?deck=${encodeURIComponent(deckId)}`;
 
       try {
         const [deck, slides, notes] = await Promise.all([

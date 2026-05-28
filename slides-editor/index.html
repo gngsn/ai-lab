@@ -60,7 +60,7 @@
   </head>
   <body>
     <div class="wrap">
-      <h1>slides-editor <span class="pill">M4</span></h1>
+      <h1>slides-editor <span class="pill">M6</span></h1>
       <p id="status">checking Supabase connection…</p>
 
       <h2>Decks</h2>
@@ -74,7 +74,7 @@
       </ul>
 
       <h2>Next</h2>
-      <p>M5 — 히스토리 / 롤백 (자동 row + Save version 스냅샷).</p>
+      <p>M7 — 공유 + 권한 (passphrase 게이트 정비, share_token, /view 뷰).</p>
     </div>
 
     <script src="./js/config.local.js"></script>
@@ -99,7 +99,8 @@
                   ` · <a href="./edit.html?deck=${id}">✎ Edit</a>` +
                   ` · <a href="./script-edit.html?deck=${id}">✏ Notes</a>` +
                   ` · <a href="./present.html?deck=${id}&sync=${room}">▶ Present</a>` +
-                  ` · <a href="./script.html?deck=${id}&sync=${room}">⌨ Script</a></li>`
+                  ` · <a href="./script.html?deck=${id}&sync=${room}">⌨ Script</a>` +
+                  ` · <a href="./notes.html?deck=${id}">📝 Marp</a></li>`
                 );
               })
               .join("")

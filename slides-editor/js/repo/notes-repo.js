@@ -1,5 +1,6 @@
 // Repo for the `notes` table.
 import { supabase } from "../supabase.js";
+import * as historyRepo from "./history-repo.js";
 
 export async function listByDeck(deckId) {
   const { data, error } = await supabase
@@ -29,4 +30,8 @@ export async function upsert(deckId, sectionId, content) {
       { onConflict: "deck_id,section_id" },
     );
   if (error) throw error;
+  // History append is best-effort.
+  historyRepo
+    .appendAutoNote({ deck_id: deckId, section_id: sectionId, content })
+    .catch((err) => console.warn("[history] notes auto-append:", err));
 }

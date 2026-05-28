@@ -3,6 +3,7 @@
 // sections always flushes the pending save first.
 import { marked } from "https://esm.sh/marked@11";
 import * as notesRepo from "./repo/notes-repo.js";
+import { HistoryUI, saveVersionPrompt } from "./history-ui.js";
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -117,6 +118,66 @@ export function mountScriptEditView({ deck, deckId, sections }) {
 
   renderList();
   renderEditor();
+
+  // ── history drawer ──────────────────────────────────────────────
+  const historyUI = new HistoryUI({
+    deckId,
+    panelEl: $("history-panel"),
+    currentSectionGetter: () => currentSid,
+    onRestored: async ({ section_id, source }) => {
+      // Refresh local snapshot for the restored section
+      if (source === "notes") {
+        try {
+          const note = await notesRepo.getOne(deckId, section_id);
+          const sec = sections.find((s) => s.section_id === section_id);
+          if (sec) sec.body = note?.content || "";
+        } catch (e) {
+          console.warn(e);
+        }
+      }
+      if (section_id === currentSid) renderEditor();
+      setStatus("restored", "ok");
+    },
+  });
+
+  $("history-toggle").addEventListener("click", () => {
+    const open = $("hist-drawer").classList.toggle("open");
+    $("history-toggle").classList.toggle("active", open);
+    if (open) historyUI.refresh();
+  });
+
+  $("save-version").addEventListener("click", async () => {
+    try {
+      await flushSave(); // capture in-progress notes into the snapshot
+      const ts = await saveVersionPrompt(deckId);
+      if (ts === null) return;
+      setStatus("version saved", "ok");
+      if ($("hist-drawer").classList.contains("open")) historyUI.refresh();
+    } catch (err) {
+      setStatus("save version failed", "err");
+      console.error(err);
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (
+      e.target?.tagName === "TEXTAREA" ||
+      e.target?.tagName === "INPUT"
+    ) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
+        e.preventDefault();
+        $("save-version").click();
+      }
+      return;
+    }
+    if (e.key === "h" || e.key === "H") {
+      e.preventDefault();
+      $("history-toggle").click();
+    } else if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
+      e.preventDefault();
+      $("save-version").click();
+    }
+  });
 
   // Best-effort flush on tab close / refresh.
   window.addEventListener("beforeunload", () => {

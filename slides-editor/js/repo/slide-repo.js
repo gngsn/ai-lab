@@ -1,5 +1,6 @@
 // Repo for the `slides` table.
 import { supabase } from "../supabase.js";
+import * as historyRepo from "./history-repo.js";
 
 export async function listByDeck(deckId) {
   const { data, error } = await supabase
@@ -29,6 +30,10 @@ export async function updateContent(deckId, sectionId, content) {
     .eq("deck_id", deckId)
     .eq("section_id", sectionId);
   if (error) throw error;
+  // History append is best-effort — never fail the save itself.
+  historyRepo
+    .appendAutoSlide({ deck_id: deckId, section_id: sectionId, content })
+    .catch((err) => console.warn("[history] slide auto-append:", err));
 }
 
 export async function updateMeta(deckId, sectionId, { title } = {}) {

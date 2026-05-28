@@ -41,8 +41,8 @@ python3 -m http.server 8000
 - [x] **M2** — 스크립트 read + sync
 - [x] **M3** — 슬라이드 inline edit
 - [x] **M4** — 노트 편집
-- [ ] **M5** — 히스토리 / 롤백
-- [ ] **M6** — Export (HTML / PDF / Marp)
+- [x] **M5** — 히스토리 / 롤백
+- [x] **M6** — Export (HTML / PDF / Marp)
 - [ ] **M7** — 공유 + 권한
 - [ ] **M8** — 데이터 마이그레이션
 - [ ] **M9** — 폴리시 + 배포
@@ -59,6 +59,7 @@ slides-editor/
 ├─ edit.html               # M3 — inline editor (desktop only; mobile → script)
 ├─ edit-frame.html         # M3 — single-slide iframe used by edit.html
 ├─ script-edit.html        # M4 — fullscreen notes editor (markdown + preview)
+├─ notes.html              # M6 — Marp(.md) read-only view (Copy/Download)
 ├─ migrations/
 │  ├─ 001_init.sql
 │  ├─ 002_history.sql
@@ -70,6 +71,8 @@ slides-editor/
 │  ├─ script-view.js       # v5 teleprompter port (uses slides+notes join)
 │  ├─ script-edit-view.js  # M4 notes editor mount (marked@11 preview)
 │  ├─ inline-editor.js     # v4 InlineEditor port (runs inside edit-frame iframe)
+│  ├─ history-ui.js        # M5 history drawer (timeline + view + restore)
+│  ├─ export.js            # M6 buildHtml/exportHtml, exportPdf, buildNotesMd
 │  ├─ auth.js              # M3 passphrase gate (localStorage)
 │  ├─ present-bootstrap.js # loads deck → rewrites document
 │  ├─ edit-bootstrap.js    # M3 editor controller (slide list, IPC, mutations)
@@ -77,7 +80,8 @@ slides-editor/
 │  ├─ repo/
 │  │  ├─ deck-repo.js       # + updateTitle, updateFrameHtml
 │  │  ├─ slide-repo.js      # + getOne/updateContent/updateMeta/insert/delete/reorder
-│  │  └─ notes-repo.js      # + upsert
+│  │  ├─ notes-repo.js      # + upsert (M5: auto-history on every write)
+│  │  └─ history-repo.js    # M5 appendAuto/appendManualBatch/listAllHistory
 │  └─ config.local.js.example
 ├─ vercel.json
 ├─ SPEC.md

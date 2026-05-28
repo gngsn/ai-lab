@@ -1,0 +1,110 @@
+/* History drawer styles — shared by edit.html and script-edit.html.
+   Variables (--accent, --bg, etc.) inherited from the host page. */
+
+.hist-drawer {
+  position: fixed;
+  top: 48px; right: 0; bottom: 0;
+  width: 420px; max-width: 100vw;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  transform: translateX(100%);
+  transition: transform .2s ease;
+  z-index: 800;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.hist-drawer.open { transform: translateX(0); }
+
+#history-panel {
+  flex: 1; overflow-y: auto; padding: 10px 12px;
+  font-size: 12px;
+}
+
+.hist-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.hist-head strong {
+  font-size: 12px; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--text-mid);
+}
+
+.hist-filter {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--text-mid);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.hist-filter input { margin: 0; }
+.hist-filter code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px; color: var(--accent);
+}
+
+.hist-list { list-style: none; padding: 0; margin: 0; }
+.hist-row {
+  padding: 7px 0;
+  border-bottom: 1px solid #181818;
+}
+.hist-line {
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap;
+}
+.h-kind {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px; width: 14px; text-align: center;
+}
+.h-kind.manual { color: #e8a55a; }
+.h-kind.auto   { color: var(--text-mid); }
+
+.h-src {
+  font-size: 9px; text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 1px 5px; border-radius: 3px;
+}
+.h-src.slide { background: rgba(93,184,166,.15); color: var(--accent); }
+.h-src.notes { background: rgba(232,165,90,.15); color: #e8a55a; }
+
+.h-sec {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px; color: var(--text-mid);
+  max-width: 120px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.h-time {
+  font-size: 10px; color: var(--text-mid);
+  font-family: "JetBrains Mono", monospace;
+}
+.h-msg {
+  font-size: 11px; color: var(--text);
+  flex: 1; min-width: 100%; padding-left: 22px;
+}
+.h-actions {
+  margin-left: auto; display: flex; gap: 4px;
+}
+.h-actions button {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-mid); padding: 2px 7px; border-radius: 3px;
+  font-size: 10px; font-family: inherit; cursor: pointer;
+}
+.h-actions button:hover {
+  background: #1e1e1e; color: var(--text); border-color: #333;
+}
+
+.hist-content {
+  margin-top: 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px; line-height: 1.5;
+  background: var(--bg); color: var(--text-mid);
+  padding: 8px 10px; border-radius: 4px;
+  white-space: pre-wrap; word-break: break-all;
+  max-height: 260px; overflow: auto;
+}
+
+.hist-empty {
+  list-style: none; padding: 18px 0;
+  text-align: center; color: var(--text-mid);
+  font-style: italic;
+}
+.hist-err { color: var(--danger); padding: 12px; }

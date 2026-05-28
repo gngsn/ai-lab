@@ -5,6 +5,8 @@ import * as deckRepo from "./repo/deck-repo.js";
 import * as slideRepo from "./repo/slide-repo.js";
 import * as notesRepo from "./repo/notes-repo.js";
 import { ensureAuthed } from "./auth.js";
+import { HistoryUI, saveVersionPrompt } from "./history-ui.js";
+import { exportHtml, exportPdf, exportNotesMd } from "./export.js";
 
 // ── auth gate ──────────────────────────────────────────────────────
 if (!ensureAuthed()) {
@@ -75,6 +77,7 @@ async function refresh({ keepIframe = false } = {}) {
   $("script-link").href = `./script.html?deck=${encodeURIComponent(deckId)}`;
   $("notes-fullscreen-link").href =
     `./script-edit.html?deck=${encodeURIComponent(deckId)}`;
+  $("export-notes-link").href = `./notes.html?deck=${encodeURIComponent(deckId)}`;
   document.title = `Edit · ${deck.title || deckId}`;
 
   if (!currentSectionId || !slides.find((s) => s.section_id === currentSectionId)) {
@@ -340,15 +343,88 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "e" || e.key === "E") {
     e.preventDefault();
     $("edit-toggle").click();
+  } else if (e.key === "h" || e.key === "H") {
+    e.preventDefault();
+    $("history-toggle").click();
+  } else if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
+    e.preventDefault();
+    $("save-version").click();
   } else if (e.key === "?" || (e.shiftKey && e.key === "/")) {
     alert(
       "Keyboard:\n" +
         "  E       — toggle edit mode\n" +
+        "  H       — toggle history drawer\n" +
+        "  ⌘/Ctrl+S — Save version\n" +
         "  Click   — select slide\n" +
         "  Drag    — reorder in list\n" +
-        "  ⌘+S     — (M5) Save version\n" +
         "  ?       — this help\n",
     );
+  }
+});
+
+// ── history drawer ─────────────────────────────────────────────────
+const historyUI = new HistoryUI({
+  deckId,
+  panelEl: $("history-panel"),
+  currentSectionGetter: () => currentSectionId,
+  onRestored: async ({ section_id }) => {
+    toast("Restored", "ok");
+    // Refresh the slide content / iframe / notes textarea
+    if (section_id === currentSectionId) {
+      await loadNotesForCurrent();
+      showSlide(currentSectionId);
+    } else {
+      await refresh();
+    }
+  },
+});
+
+$("history-toggle").addEventListener("click", () => {
+  const open = $("hist-drawer").classList.toggle("open");
+  $("history-toggle").classList.toggle("active", open);
+  if (open) historyUI.refresh();
+});
+
+// ── export dropdown ───────────────────────────────────────────────
+document.querySelectorAll("[data-export]").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const kind = btn.dataset.export;
+    const drop = btn.closest("details");
+    try {
+      if (kind === "html") {
+        const r = await exportHtml(deckId);
+        toast(`Saved ${r.filename}`, "ok");
+      } else if (kind === "pdf") {
+        exportPdf(deckId);
+        toast("Print window opened", "ok");
+      } else if (kind === "md") {
+        const r = await exportNotesMd(deckId);
+        toast(`Saved ${r.filename}`, "ok");
+      } else if (kind === "md-copy") {
+        await exportNotesMd(deckId, { copy: true });
+        toast("Copied notes to clipboard", "ok");
+      }
+    } catch (err) {
+      toast("Export failed: " + err.message, "err");
+    } finally {
+      if (drop) drop.open = false;
+    }
+  });
+});
+// Close the dropdown when clicking elsewhere.
+document.addEventListener("click", (e) => {
+  const drop = $("export-dropdown");
+  if (drop && drop.open && !drop.contains(e.target)) drop.open = false;
+});
+
+$("save-version").addEventListener("click", async () => {
+  try {
+    const ts = await saveVersionPrompt(deckId);
+    if (ts === null) return;
+    toast("Version saved", "ok");
+    if ($("hist-drawer").classList.contains("open")) historyUI.refresh();
+  } catch (err) {
+    toast("Save version failed: " + err.message, "err");
   }
 });
 
