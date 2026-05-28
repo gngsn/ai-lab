@@ -60,7 +60,7 @@
   </head>
   <body>
     <div class="wrap">
-      <h1>slides-editor <span class="pill">M6</span></h1>
+      <h1>slides-editor <span class="pill">M7</span></h1>
       <p id="status">checking Supabase connection…</p>
 
       <h2>Decks</h2>
@@ -74,12 +74,20 @@
       </ul>
 
       <h2>Next</h2>
-      <p>M7 — 공유 + 권한 (passphrase 게이트 정비, share_token, /view 뷰).</p>
+      <p>M8 — 데이터 마이그레이션 (v4 slides.html / v5 script-data.js → 시드 덱).</p>
     </div>
 
     <script src="./js/config.local.js"></script>
     <script type="module">
+      import { ensureAuthed } from "./js/auth.js";
       import { supabase } from "./js/supabase.js";
+
+      if (!ensureAuthed()) {
+        document.body.innerHTML =
+          '<p style="padding:2rem;color:#ef4444;font-family:monospace">' +
+          "Access denied — deck list is owner-only.</p>";
+        throw new Error("auth");
+      }
       const status = document.getElementById("status");
       const list = document.getElementById("deck-list");
       try {
@@ -94,13 +102,18 @@
               .map((d) => {
                 const id = encodeURIComponent(d.deck_id);
                 const room = `r${d.deck_id.slice(0, 6)}`;
+                const viewLink = d.share_token
+                  ? ` · <a href="./view.html?deck=${id}&token=${encodeURIComponent(d.share_token)}" target="_blank">🔗 View (shared)</a>`
+                  : "";
                 return (
                   `<li><code>${d.deck_id}</code> — ${d.title}` +
                   ` · <a href="./edit.html?deck=${id}">✎ Edit</a>` +
                   ` · <a href="./script-edit.html?deck=${id}">✏ Notes</a>` +
                   ` · <a href="./present.html?deck=${id}&sync=${room}">▶ Present</a>` +
                   ` · <a href="./script.html?deck=${id}&sync=${room}">⌨ Script</a>` +
-                  ` · <a href="./notes.html?deck=${id}">📝 Marp</a></li>`
+                  ` · <a href="./notes.html?deck=${id}">📝 Marp</a>` +
+                  viewLink +
+                  `</li>`
                 );
               })
               .join("")

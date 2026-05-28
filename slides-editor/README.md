@@ -34,6 +34,22 @@ python3 -m http.server 8000
 
 ---
 
+## Security posture
+
+**Tier 1 (current, M7):** Client-side passphrase gate (`OWNER_PASSPHRASE`)
+on owner pages. Public share via `view.html?deck=X&token=Y` (DOMPurify
+sanitized). Suitable for local use or trusted networks.
+
+**Tier 2 (future):** Anon key is currently visible to anyone hitting the
+deployed site, and the `dev_anon_all` RLS policy lets it read/write every
+deck. Before public deployment, replace with:
+  - Supabase Auth (magic link or email) for owner
+  - RLS scoped by `auth.uid()` for owner ops
+  - RPC `public_view(deck_id, token)` (security definer) for share-token reads
+  - Drop `dev_anon_all`, grant only the RPC to `anon`
+
+---
+
 ## Roadmap
 
 - [x] **M0** — 셋업
@@ -43,7 +59,7 @@ python3 -m http.server 8000
 - [x] **M4** — 노트 편집
 - [x] **M5** — 히스토리 / 롤백
 - [x] **M6** — Export (HTML / PDF / Marp)
-- [ ] **M7** — 공유 + 권한
+- [x] **M7** — 공유 + 권한 (Tier 1: client gate + share_token + sanitize)
 - [ ] **M8** — 데이터 마이그레이션
 - [ ] **M9** — 폴리시 + 배포
 
@@ -60,6 +76,7 @@ slides-editor/
 ├─ edit-frame.html         # M3 — single-slide iframe used by edit.html
 ├─ script-edit.html        # M4 — fullscreen notes editor (markdown + preview)
 ├─ notes.html              # M6 — Marp(.md) read-only view (Copy/Download)
+├─ view.html               # M7 — public viewer (?token=, slides only)
 ├─ migrations/
 │  ├─ 001_init.sql
 │  ├─ 002_history.sql
@@ -73,6 +90,7 @@ slides-editor/
 │  ├─ inline-editor.js     # v4 InlineEditor port (runs inside edit-frame iframe)
 │  ├─ history-ui.js        # M5 history drawer (timeline + view + restore)
 │  ├─ export.js            # M6 buildHtml/exportHtml, exportPdf, buildNotesMd
+│  ├─ view-bootstrap.js    # M7 share_token view loader (DOMPurify sanitize)
 │  ├─ auth.js              # M3 passphrase gate (localStorage)
 │  ├─ present-bootstrap.js # loads deck → rewrites document
 │  ├─ edit-bootstrap.js    # M3 editor controller (slide list, IPC, mutations)

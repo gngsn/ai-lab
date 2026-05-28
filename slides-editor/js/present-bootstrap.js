@@ -15,6 +15,14 @@
 
 import { getDeck } from "./repo/deck-repo.js";
 import { listByDeck } from "./repo/slide-repo.js";
+import { ensureAuthed } from "./auth.js";
+
+if (!ensureAuthed()) {
+  document.body.innerHTML =
+    '<p style="padding:2rem;color:#ef4444;font-family:monospace">' +
+    "Access denied — present is owner-only. Use view.html?token=… for sharing.</p>";
+  throw new Error("auth");
+}
 
 const params = new URLSearchParams(location.search);
 const pathMatch = location.pathname.match(/\/present\/([^/?]+)/);

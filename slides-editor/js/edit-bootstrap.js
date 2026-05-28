@@ -288,6 +288,80 @@ $("prop-title").addEventListener("input", (e) => {
   }, 600);
 });
 
+// ── share modal ────────────────────────────────────────────────────
+function shareUrlFor(token) {
+  const base = location.href.replace(/[^/]*$/, "");
+  return (
+    `${base}view.html?deck=${encodeURIComponent(deckId)}` +
+    `&token=${encodeURIComponent(token)}`
+  );
+}
+
+async function rotateShareToken({ silent = false } = {}) {
+  const t = crypto.randomUUID();
+  try {
+    await deckRepo.setShareToken(deckId, t);
+    deck.share_token = t;
+    $("share-url").value = shareUrlFor(t);
+    if (!silent) toast("New share link", "ok");
+    return t;
+  } catch (err) {
+    toast("Token generation failed: " + err.message, "err");
+    throw err;
+  }
+}
+
+$("share-btn").addEventListener("click", async () => {
+  if (!deck.share_token) {
+    if (!confirm("No share link yet. Generate one?")) return;
+    try {
+      await rotateShareToken({ silent: true });
+    } catch {
+      return;
+    }
+  } else {
+    $("share-url").value = shareUrlFor(deck.share_token);
+  }
+  $("share-modal-bg").classList.add("show");
+});
+
+$("share-copy").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText($("share-url").value);
+    toast("Copied", "ok");
+  } catch (err) {
+    toast("Copy failed: " + err.message, "err");
+  }
+});
+
+$("share-rotate").addEventListener("click", async () => {
+  if (!confirm("Rotate token? Existing share links will stop working.")) return;
+  try {
+    await rotateShareToken();
+  } catch {
+    /* toast already shown */
+  }
+});
+
+$("share-revoke").addEventListener("click", async () => {
+  if (!confirm("Revoke sharing entirely? View links will return 'invalid'.")) return;
+  try {
+    await deckRepo.setShareToken(deckId, null);
+    deck.share_token = null;
+    $("share-modal-bg").classList.remove("show");
+    toast("Share link revoked", "ok");
+  } catch (err) {
+    toast("Revoke failed: " + err.message, "err");
+  }
+});
+
+$("share-close").addEventListener("click", () =>
+  $("share-modal-bg").classList.remove("show"),
+);
+$("share-modal-bg").addEventListener("click", (e) => {
+  if (e.target === $("share-modal-bg")) $("share-modal-bg").classList.remove("show");
+});
+
 // ── frame_html modal ───────────────────────────────────────────────
 $("frame-edit").addEventListener("click", () => {
   $("frame-textarea").value = deck.frame_html;

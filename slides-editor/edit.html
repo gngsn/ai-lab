@@ -237,6 +237,7 @@
             <a id="export-notes-link" href="#" target="_blank">Open notes view ↗</a>
           </div>
         </details>
+        <button class="btn" id="share-btn" title="Share link…">🔗 Share</button>
         <span class="spacer"></span>
         <a class="btn" id="script-link" href="#" target="_blank">⌨ Script</a>
         <a class="btn" id="present-link" href="#" target="_blank">▶ Present</a>
@@ -306,6 +307,30 @@
     <aside class="hist-drawer" id="hist-drawer">
       <div id="history-panel"></div>
     </aside>
+
+    <div class="modal-bg" id="share-modal-bg">
+      <div
+        class="modal"
+        style="height: auto; width: min(560px, 90vw); gap: 12px"
+      >
+        <h2>Share link</h2>
+        <p>
+          Anyone with this link can <strong>read-only</strong> view the slides.
+          Notes are hidden. Rotating invalidates previous links.
+        </p>
+        <div class="field">
+          <label>Share URL</label>
+          <input id="share-url" readonly />
+        </div>
+        <div class="actions">
+          <button class="btn danger" id="share-revoke">Revoke</button>
+          <button class="btn" id="share-rotate">↻ Rotate</button>
+          <span style="flex: 1"></span>
+          <button class="btn" id="share-copy">Copy link</button>
+          <button class="btn" id="share-close">Close</button>
+        </div>
+      </div>
+    </div>
 
     <div id="toast"></div>
 

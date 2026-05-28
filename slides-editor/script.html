@@ -154,10 +154,18 @@
 
     <script src="./js/config.local.js"></script>
     <script type="module">
+      import { ensureAuthed } from "./js/auth.js";
       import { getDeck } from "./js/repo/deck-repo.js";
       import { listByDeck as listSlides } from "./js/repo/slide-repo.js";
       import { listByDeck as listNotes } from "./js/repo/notes-repo.js";
       import { mountScriptView } from "./js/script-view.js";
+
+      if (!ensureAuthed()) {
+        document.body.innerHTML =
+          '<p style="padding:2rem;color:#ef4444;font-family:monospace">' +
+          "Access denied — script (notes) view is owner-only.</p>";
+        throw new Error("auth");
+      }
 
       const params = new URLSearchParams(location.search);
       const deckId =

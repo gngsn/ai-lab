@@ -73,7 +73,14 @@
 
     <script src="./js/config.local.js"></script>
     <script type="module">
+      import { ensureAuthed } from "./js/auth.js";
       import { buildNotesMd, exportNotesMd } from "./js/export.js";
+
+      if (!ensureAuthed()) {
+        document.body.innerHTML =
+          '<p class="err">Access denied — Marp view is owner-only.</p>';
+        throw new Error("auth");
+      }
 
       const $ = (id) => document.getElementById(id);
       const params = new URLSearchParams(location.search);
