@@ -15,6 +15,7 @@
    - `migrations/001_init.sql` — decks / slides / notes
    - `migrations/002_history.sql` — slide_history / notes_history
    - `migrations/003_dev_rls.sql` — **RLS 유지 + anon 허용 정책 부여** ← 빠뜨리면 0 rows 보임
+   - `migrations/004_rpc.sql` — reorder_slides RPC (M3 이상)
    - `migrations/seed.sql` — 검증용 샘플 덱 1개
 4. M6에서 `dev_anon_all` 정책을 owner + share_token 기반 정책으로 교체합니다. 그 전까지는 RLS 토글은 켜져 있지만 anon이 모든 row를 read/write할 수 있는 상태(단일 사용자 dev 가정).
 
@@ -38,7 +39,7 @@ python3 -m http.server 8000
 - [x] **M0** — 셋업
 - [x] **M1** — 슬라이드 read + present
 - [x] **M2** — 스크립트 read + sync
-- [ ] **M3** — 슬라이드 inline edit
+- [x] **M3** — 슬라이드 inline edit
 - [ ] **M4** — 노트 편집
 - [ ] **M5** — 히스토리 / 롤백
 - [ ] **M6** — Export (HTML / PDF / Marp)
@@ -55,6 +56,8 @@ slides-editor/
 ├─ index.html              # setup check + deck list
 ├─ present.html            # M1 — read + nav (?deck=<id>[&sync=<room>])
 ├─ script.html             # M2 — teleprompter + Realtime sync receiver
+├─ edit.html               # M3 — inline editor (desktop only; mobile → script)
+├─ edit-frame.html         # M3 — single-slide iframe used by edit.html
 ├─ migrations/
 │  ├─ 001_init.sql
 │  ├─ 002_history.sql
@@ -64,11 +67,15 @@ slides-editor/
 │  ├─ sync.js              # Realtime broadcast (used in M2)
 │  ├─ slide-runtime.js     # v4 SlidePresentation port
 │  ├─ script-view.js       # v5 teleprompter port (uses slides+notes join)
+│  ├─ inline-editor.js     # v4 InlineEditor port (runs inside edit-frame iframe)
+│  ├─ auth.js              # M3 passphrase gate (localStorage)
 │  ├─ present-bootstrap.js # loads deck → rewrites document
+│  ├─ edit-bootstrap.js    # M3 editor controller (slide list, IPC, mutations)
+│  ├─ edit-frame-bootstrap.js  # M3 iframe loader (renders single slide)
 │  ├─ repo/
-│  │  ├─ deck-repo.js
-│  │  ├─ slide-repo.js
-│  │  └─ notes-repo.js
+│  │  ├─ deck-repo.js       # + updateTitle, updateFrameHtml
+│  │  ├─ slide-repo.js      # + getOne/updateContent/updateMeta/insert/delete/reorder
+│  │  └─ notes-repo.js      # + upsert
 │  └─ config.local.js.example
 ├─ vercel.json
 ├─ SPEC.md

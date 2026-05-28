@@ -19,3 +19,19 @@ export async function listDecks() {
   if (error) throw error;
   return data;
 }
+
+export async function updateTitle(deckId, title) {
+  const { error } = await supabase
+    .from("decks")
+    .update({ title })
+    .eq("deck_id", deckId);
+  if (error) throw error;
+}
+
+export async function updateFrameHtml(deckId, frameHtml) {
+  const { error } = await supabase
+    .from("decks")
+    .update({ frame_html: frameHtml })
+    .eq("deck_id", deckId);
+  if (error) throw error;
+}

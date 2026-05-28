@@ -9,3 +9,13 @@ export async function listByDeck(deckId) {
   if (error) throw error;
   return data;
 }
+
+export async function upsert(deckId, sectionId, content) {
+  const { error } = await supabase
+    .from("notes")
+    .upsert(
+      { deck_id: deckId, section_id: sectionId, content },
+      { onConflict: "deck_id,section_id" },
+    );
+  if (error) throw error;
+}

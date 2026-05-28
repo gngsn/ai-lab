@@ -60,7 +60,7 @@
   </head>
   <body>
     <div class="wrap">
-      <h1>slides-editor <span class="pill">M2</span></h1>
+      <h1>slides-editor <span class="pill">M3</span></h1>
       <p id="status">checking Supabase connection…</p>
 
       <h2>Decks</h2>
@@ -74,7 +74,7 @@
       </ul>
 
       <h2>Next</h2>
-      <p>M3 — <code>edit.html</code> 슬라이드 inline 편집.</p>
+      <p>M4 — 노트 편집 (script.html에 <code>?mode=edit</code> 추가).</p>
     </div>
 
     <script src="./js/config.local.js"></script>
@@ -96,6 +96,7 @@
                 const room = `r${d.deck_id.slice(0, 6)}`;
                 return (
                   `<li><code>${d.deck_id}</code> — ${d.title}` +
+                  ` · <a href="./edit.html?deck=${id}">✎ Edit</a>` +
                   ` · <a href="./present.html?deck=${id}&sync=${room}">▶ Present</a>` +
                   ` · <a href="./script.html?deck=${id}&sync=${room}">⌨ Script</a></li>`
                 );
