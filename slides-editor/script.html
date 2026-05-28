@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Script</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Ported from v5/script.html with mint accent unified to var(--accent). */
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      :root {
+        --accent: #5db8a6;
+        --bg: #0c0c0c;
+        --surface: #141414;
+        --border: #1f1f1f;
+        --text-dim: #3a3a3a;
+        --text-mid: #777;
+        --text: #c8c8c8;
+        --text-bright: #f0f0f0;
+      }
+      body {
+        background: var(--bg); color: var(--text);
+        font-family: "IBM Plex Sans KR", sans-serif;
+        line-height: 1.85; overflow-x: hidden;
+      }
+
+      #progress {
+        position: fixed; top: 0; left: 0; height: 2px;
+        background: var(--accent); transition: width 0.4s ease;
+        z-index: 200; width: 0%;
+      }
+
+      #header {
+        position: fixed; top: 2px; left: 0; right: 0; height: 50px;
+        background: var(--surface); border-bottom: 1px solid var(--border);
+        display: flex; align-items: center; padding: 0 18px; gap: 8px; z-index: 100;
+      }
+      .btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        background: transparent; border: 1px solid var(--border);
+        color: var(--text-mid); padding: 4px 11px; border-radius: 6px;
+        font-size: 13px; font-family: inherit; cursor: pointer;
+        transition: background .12s, color .12s, border-color .12s;
+        user-select: none; white-space: nowrap; height: 30px;
+      }
+      .btn:hover  { background: #1e1e1e; color: var(--text); border-color: #333; }
+      .btn:active { background: #252525; }
+      .btn-nav    { padding: 4px 14px; font-size: 15px; }
+      .btn-on     { background: #1e2e1e; color: var(--accent); border-color: var(--accent); }
+
+      .sep { width: 1px; height: 18px; background: var(--border); flex-shrink: 0; }
+      #slide-counter {
+        font-size: 12px; color: var(--text-mid);
+        font-variant-numeric: tabular-nums;
+        font-family: "JetBrains Mono", monospace;
+        min-width: 52px; text-align: center;
+      }
+      .spacer { flex: 1; }
+
+      #sync-badge {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 12px; color: var(--text-dim);
+        letter-spacing: 0.04em; transition: color 0.3s; cursor: pointer;
+      }
+      .sync-dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: var(--text-dim); transition: background 0.3s; flex-shrink: 0;
+      }
+      #sync-badge.live { color: var(--accent); }
+      #sync-badge.live .sync-dot {
+        background: var(--accent); box-shadow: 0 0 6px var(--accent);
+      }
+
+      #script {
+        max-width: 900px; margin: 0 auto; padding: 76px 28px 280px;
+      }
+      .sec {
+        padding: 26px 0; border-bottom: 1px solid #181818;
+        transition: opacity .3s ease, transform .3s ease; cursor: pointer;
+      }
+      .sec:not(.active):not(.adj) {
+        opacity: .13; transform: scale(.983) translateX(-4px);
+      }
+      .sec.adj    { opacity: .35; transform: scale(.991); }
+      .sec.active { opacity: 1;   transform: scale(1) translateX(0); }
+
+      #script.no-hl .sec        { opacity: 1 !important; transform: none !important; }
+      #script.no-hl .sec-label  { color: var(--text-dim) !important; }
+      #script.no-hl .sec-body   { color: var(--text) !important; }
+
+      .sec-label {
+        font-size: 10px; font-weight: 600; letter-spacing: .12em;
+        text-transform: uppercase; margin-bottom: 10px; color: var(--text-dim);
+      }
+      .sec.active .sec-label { color: var(--accent); }
+      .sec-body {
+        color: var(--text-mid); line-height: 1.95; word-break: keep-all;
+      }
+      .sec.active .sec-body { color: var(--text-bright); }
+
+      #error-banner {
+        position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+        background: #4a1c1c; color: #ffb4b4;
+        padding: .6rem 1rem; border-radius: 6px; font-size: 13px;
+        z-index: 300; display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="progress"></div>
+
+    <header id="header">
+      <button class="btn btn-nav" id="prevSlide" title="이전 장표 (← / k)">◀</button>
+      <button class="btn btn-nav" id="nextSlide" title="다음 장표 (→ / j)">▶</button>
+      <span id="slide-counter">— / —</span>
+      <div class="sep"></div>
+      <button class="btn" id="decreaseFont" title="글자 작게">A−</button>
+      <button class="btn" id="increaseFont" title="글자 크게">A+</button>
+      <div class="sep"></div>
+      <button class="btn" id="toggleHL" title="하이라이트 on/off">HL</button>
+      <div class="spacer"></div>
+      <div id="sync-badge" title="클릭하여 수동/자동 전환">
+        <span class="sync-dot"></span>
+        <span id="sync-label">sync off</span>
+        <span
+          id="mode-label"
+          style="margin-left: 4px; font-size: 10px; opacity: 0.5"
+        ></span>
+      </div>
+    </header>
+
+    <div id="error-banner"></div>
+    <div id="script"></div>
+
+    <script src="./js/config.local.js"></script>
+    <script type="module">
+      import { getDeck } from "./js/repo/deck-repo.js";
+      import { listByDeck as listSlides } from "./js/repo/slide-repo.js";
+      import { listByDeck as listNotes } from "./js/repo/notes-repo.js";
+      import { mountScriptView } from "./js/script-view.js";
+
+      const params = new URLSearchParams(location.search);
+      const deckId =
+        params.get("deck") ||
+        location.pathname.match(/\/script\/([^/?]+)/)?.[1];
+      const syncId = params.get("sync");
+
+      function fatal(msg) {
+        const banner = document.getElementById("error-banner");
+        banner.textContent = msg;
+        banner.style.display = "block";
+        throw new Error(msg);
+      }
+
+      if (!deckId) fatal("Missing ?deck=<deck_id> in URL.");
+
+      try {
+        const [deck, slides, notes] = await Promise.all([
+          getDeck(deckId),
+          listSlides(deckId),
+          listNotes(deckId),
+        ]);
+        const notesByKey = new Map(notes.map((n) => [n.section_id, n.content]));
+        const sections = slides.map((s) => ({
+          section_id: s.section_id,
+          order: s.order,
+          title: s.title,
+          body: notesByKey.get(s.section_id) || "",
+        }));
+        mountScriptView({ deck, sections, syncId });
+      } catch (err) {
+        fatal(`Failed to load deck '${deckId}': ${err.message}`);
+      }
+    </script>
+  </body>
+</html>

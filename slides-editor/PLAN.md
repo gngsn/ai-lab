@@ -112,7 +112,6 @@ slides-editor/
 - [ ] `script-view.js`: v5 인라인 스크립트를 모듈로 분리, active/adj 하이라이트, 폰트 +/-, HL 토글
 - [ ] `script.html`: deck 로드 → slides의 title을 헤딩으로, notes.content를 본문으로 렌더
 - [ ] `sync.js`: 채널명 `slides-editor-sync-<R>`, payload `{ section_id, index }`
-- [ ] 모바일 감지 + read 모드 강제
 - [ ] **검증**: 두 탭 — `present.html?sync=R`에서 `→` 누르면 `script.html?sync=R` 자동 추적
 
 ### M3 — 슬라이드 inline edit (핵심)
@@ -131,7 +130,7 @@ slides-editor/
 - [ ] script.html에 `?mode=edit` 추가 (데스크톱 기본)
 - [ ] 좌 섹션 리스트 + 우 textarea + 미리보기 (`marked` esm)
 - [ ] 자동 저장 + 모바일 풀스크린 진입 동작
-- [ ] **검증**: edit/read 모드 토글, 모바일에서 read 강제
+- [ ] **검증**: edit/read 모드 토글
 
 ### M5 — 히스토리/롤백
 - [ ] `history-repo.js`: `appendAuto(deck, section, kind, content)`, `appendManual(deck, message, snapshot[])`, `list(deck)`, `getDiff(rowId)`

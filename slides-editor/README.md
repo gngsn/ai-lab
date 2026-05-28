@@ -14,8 +14,9 @@
 3. **SQL editor**에서 순서대로 실행:
    - `migrations/001_init.sql` — decks / slides / notes
    - `migrations/002_history.sql` — slide_history / notes_history
+   - `migrations/003_dev_rls.sql` — **RLS 유지 + anon 허용 정책 부여** ← 빠뜨리면 0 rows 보임
    - `migrations/seed.sql` — 검증용 샘플 덱 1개
-4. RLS는 M6에서 도입. 그 전까지 anon key로 직접 read/write.
+4. M6에서 `dev_anon_all` 정책을 owner + share_token 기반 정책으로 교체합니다. 그 전까지는 RLS 토글은 켜져 있지만 anon이 모든 row를 read/write할 수 있는 상태(단일 사용자 dev 가정).
 
 ### 2. 로컬 설정
 ```bash
@@ -35,8 +36,8 @@ python3 -m http.server 8000
 ## Roadmap
 
 - [x] **M0** — 셋업
-- [ ] **M1** — 슬라이드 read + present
-- [ ] **M2** — 스크립트 read + sync
+- [x] **M1** — 슬라이드 read + present
+- [x] **M2** — 스크립트 read + sync
 - [ ] **M3** — 슬라이드 inline edit
 - [ ] **M4** — 노트 편집
 - [ ] **M5** — 히스토리 / 롤백
@@ -51,13 +52,23 @@ python3 -m http.server 8000
 
 ```
 slides-editor/
-├─ index.html              # M0 setup check
+├─ index.html              # setup check + deck list
+├─ present.html            # M1 — read + nav (?deck=<id>[&sync=<room>])
+├─ script.html             # M2 — teleprompter + Realtime sync receiver
 ├─ migrations/
 │  ├─ 001_init.sql
 │  ├─ 002_history.sql
 │  └─ seed.sql
 ├─ js/
-│  ├─ supabase.js
+│  ├─ supabase.js          # shared client
+│  ├─ sync.js              # Realtime broadcast (used in M2)
+│  ├─ slide-runtime.js     # v4 SlidePresentation port
+│  ├─ script-view.js       # v5 teleprompter port (uses slides+notes join)
+│  ├─ present-bootstrap.js # loads deck → rewrites document
+│  ├─ repo/
+│  │  ├─ deck-repo.js
+│  │  ├─ slide-repo.js
+│  │  └─ notes-repo.js
 │  └─ config.local.js.example
 ├─ vercel.json
 ├─ SPEC.md
