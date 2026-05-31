@@ -12,7 +12,7 @@ create table if not exists decks (
 );
 
 create table if not exists slides (
-  deck_id     varchar(200) not null references decks(deck_id) on delete cascade,
+  deck_id     varchar(200) not null,
   section_id  varchar(100) not null,
   "order"     smallint     not null check ("order" between 0 and 200),
   title       varchar(200) not null default 'Untitled',
@@ -31,9 +31,7 @@ create table if not exists notes (
   section_id  varchar(100) not null,
   content     text         not null default '',
   updated_at  timestamptz  not null default now(),
-  primary key (deck_id, section_id),
-  foreign key (deck_id, section_id)
-    references slides (deck_id, section_id) on delete cascade
+  primary key (deck_id, section_id)
 );
 
 -- shared updated_at trigger

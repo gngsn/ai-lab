@@ -18,7 +18,6 @@
   - [Image Hosting](#image-hosting)
   - [Importing Existing Material](#importing-existing-material)
   - [Security Posture](#security-posture)
-  - [Roadmap](#roadmap)
   - [Project Structure](#project-structure)
 
 ---
@@ -168,24 +167,6 @@ node scripts/import.mjs --deck=my-talk \
   - Remove `dev_anon_all`, grant only RPC to `anon`
 
 ---
-
-
-## Roadmap
-
-- [x] **M0** — Setup
-- [x] **M1** — Slide read + present
-- [x] **M2** — Script read + sync
-- [x] **M3** — Slide inline edit
-- [x] **M4** — Notes editing
-- [x] **M5** — History / rollback
-- [x] **M6** — Export (HTML / PDF / Marp)
-- [x] **M7** — Sharing + permissions (Tier 1: client gate + share_token + sanitize)
-- [x] **M8** — Data import (HTML/Markdown → deck)
-- [x] **M9** — Policy (`?` shortcut modal, build-config, deploy guide)
-- [ ] **M9** — Policy + deployment
-
----
-
 
 ## Project Structure
 

@@ -321,7 +321,7 @@
         <span class="title" id="deck-title">…</span>
         <button class="btn" id="edit-toggle">Edit · on (E)</button>
         <select id="mode-select" class="btn" style="width:auto;min-width:80px;">
-          <option value="" disabled selected>mode</option>
+          <option value="" selected>mode</option>
           <option value="aspect-169">16:9</option>
           <option value="html">html</option>
         </select>
@@ -420,16 +420,6 @@
           <button class="btn active" id="frame-save">Save</button>
         </div>
       </div>
-        .btn {
-          display: inline-flex; align-items: center; gap: 4px;
-          background: transparent; border: 1px solid var(--border);
-          color: var(--text-mid); padding: 2px 8px; border-radius: 5px;
-          font-size: 11px; font-family: inherit; cursor: pointer;
-          text-decoration: none;
-          transition: background .12s, color .12s, border-color .12s;
-          min-height: 28px;
-          min-width: 36px;
-        }
     </div>
 
     <aside class="hist-drawer" id="hist-drawer">

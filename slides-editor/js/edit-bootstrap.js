@@ -183,9 +183,14 @@ function renderSlideList() {
       .join("") + '<button id="add-slide">+ New slide</button>';
 
   list.querySelectorAll(".slide-item").forEach((el) => {
-    // Only switch slide if not clicking on an action button
+    // Only switch slide if not clicking on an action button (edit/delete)
     el.addEventListener("click", (evt) => {
-      if (evt.target.closest(".slide-action-btn")) return;
+      if (
+        evt.target.closest(".slide-action-edit") ||
+        evt.target.closest(".slide-action-delete") ||
+        evt.target.closest(".slide-actions") ||
+        evt.target.closest("details")
+      ) return;
       switchSlide(el.dataset.sectionId);
     });
     el.addEventListener("dragstart", (e) => {
