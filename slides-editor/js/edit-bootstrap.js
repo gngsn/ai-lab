@@ -190,7 +190,8 @@ function renderSlideList() {
         evt.target.closest(".slide-action-delete") ||
         evt.target.closest(".slide-actions") ||
         evt.target.closest("details")
-      ) return;
+      )
+        return;
       switchSlide(el.dataset.sectionId);
     });
     el.addEventListener("dragstart", (e) => {
@@ -648,29 +649,79 @@ $("frame-save").addEventListener("click", async () => {
   }
 });
 
-// ── edit on/off toggle (re-mounts iframe with/without ?edit=1) ────
-$("edit-toggle").addEventListener("click", () => {
-  editMode = !editMode;
-  $("edit-toggle").classList.toggle("active", editMode);
-  $("edit-toggle").textContent = editMode ? "Edit · on (E)" : "Edit · off (E)";
-  if (!htmlMode) showSlide(currentSectionId);
-});
-$("edit-toggle").classList.add("active");
+// Edit mode is always on; edit-toggle removed
 
-// ── HTML edit mode (raw <section>…</section> in textarea) ────────
+// ── HTML edit mode (raw <section>…</section> in textarea) with highlight.js ──
 let htmlPending = null; // { sid, content }
 let htmlSaveTimer = 0;
+
+// Add highlight overlay for html-editor
+function ensureHtmlHighlightOverlay() {
+  let ta = $("html-editor");
+  let overlay = document.getElementById("html-highlight-overlay");
+  if (!overlay) {
+    overlay = document.createElement("pre");
+    overlay.id = "html-highlight-overlay";
+    overlay.style.position = "absolute";
+    overlay.style.pointerEvents = "none";
+    overlay.style.margin = "0";
+    overlay.style.padding = ta.style.padding || "18px 22px";
+    overlay.style.background = "#0a0a0a";
+    overlay.style.color = "inherit";
+    overlay.style.fontFamily =
+      ta.style.fontFamily || "JetBrains Mono, ui-monospace, monospace";
+    overlay.style.fontSize = ta.style.fontSize || "13px";
+    overlay.style.lineHeight = ta.style.lineHeight || "1.7";
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
+    overlay.style.overflow = "auto";
+    overlay.style.zIndex = "1";
+    overlay.style.border = "none";
+    overlay.style.boxSizing = "border-box";
+    overlay.style.top = ta.offsetTop + "px";
+    overlay.style.left = ta.offsetLeft + "px";
+    overlay.className = "hljs";
+    ta.parentNode.insertBefore(overlay, ta);
+    ta.style.position = "relative";
+    ta.style.background = "transparent";
+    ta.style.zIndex = "2";
+    ta.style.color = "transparent";
+    ta.style.caretColor = "#f0f0f0";
+    ta.style.resize = "none";
+    ta.style.overflow = "auto";
+    ta.style.boxSizing = "border-box";
+    // Sync scroll
+    ta.addEventListener("scroll", () => {
+      overlay.scrollTop = ta.scrollTop;
+      overlay.scrollLeft = ta.scrollLeft;
+    });
+  }
+  return overlay;
+}
+
+function updateHtmlHighlight() {
+  const ta = $("html-editor");
+  const overlay = ensureHtmlHighlightOverlay();
+  // Escape HTML for display, then highlight
+  let code = ta.value.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  overlay.innerHTML = `<code class="language-xml">${code}</code>`;
+  if (window.hljs) {
+    window.hljs.highlightElement(overlay.querySelector("code"));
+  }
+}
 
 async function loadCurrentSlideHtml() {
   const ta = $("html-editor");
   if (!currentSectionId) {
     ta.value = "";
+    updateHtmlHighlight();
     return;
   }
   try {
     const slide = await slideRepo.getOne(deckId, currentSectionId);
     ta.value = slide.content;
     htmlPending = null;
+    updateHtmlHighlight();
   } catch (err) {
     toast("HTML load failed: " + err.message, "err");
   }
@@ -709,6 +760,23 @@ $("html-editor").addEventListener("input", (e) => {
   setStatus("HTML: saving…");
   clearTimeout(htmlSaveTimer);
   htmlSaveTimer = setTimeout(flushHtmlSave, 800);
+  updateHtmlHighlight();
+});
+
+// Manual save button for HTML editor
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = $("save-html-btn");
+  if (btn) {
+    btn.addEventListener("click", async () => {
+      await flushHtmlSave();
+      setStatus("HTML manually saved", "ok");
+    });
+  }
+});
+
+// Initial highlight overlay setup
+document.addEventListener("DOMContentLoaded", () => {
+  if ($("html-editor")) updateHtmlHighlight();
 });
 
 async function setHtmlMode(on) {
