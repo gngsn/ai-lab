@@ -1,13 +1,71 @@
+// Panel show/hide toggles
+document.addEventListener("DOMContentLoaded", () => {
+  const slideList = document.getElementById("slide-list");
+  const props = document.getElementById("props");
+  const btnSlideList = document.getElementById("toggle-slide-list");
+  const btnProps = document.getElementById("toggle-props");
+  if (btnSlideList && slideList) {
+    btnSlideList.addEventListener("click", () => {
+      slideList.classList.toggle("panel-hidden");
+    });
+  }
+  if (btnProps && props) {
+    btnProps.addEventListener("click", () => {
+      props.classList.toggle("panel-hidden");
+    });
+  }
+});
+// Mode select (16:9, html)
+document.addEventListener("DOMContentLoaded", () => {
+  const modeSelect = document.getElementById("mode-select");
+  const wrap = document.getElementById("canvas-wrap");
+  if (modeSelect && wrap) {
+    modeSelect.addEventListener("change", async () => {
+      // Remove both classes first
+      wrap.classList.remove("aspect-169", "html-mode");
+      if (modeSelect.value === "aspect-169") {
+        wrap.classList.add("aspect-169");
+        htmlMode = false;
+        showSlide(currentSectionId);
+      } else if (modeSelect.value === "html") {
+        wrap.classList.add("html-mode");
+        htmlMode = true;
+        await loadCurrentSlideHtml();
+        document.getElementById("html-editor").focus();
+      }
+    });
+    // Set initial state
+    modeSelect.dispatchEvent(new Event("change"));
+  }
+});
+
+// Defensive: Only add event listener if element exists (for legacy code)
+const deleteSlideBtn = document.getElementById("delete-slide");
+if (deleteSlideBtn) {
+  deleteSlideBtn.addEventListener("click", async () => {
+    if (!currentSectionId) return;
+    const s = slides.find((x) => x.section_id === currentSectionId);
+    if (!confirm(`Delete slide '${s?.title || currentSectionId}'?`)) return;
+    try {
+      await slideRepo.deleteSlide(deckId, currentSectionId);
+      currentSectionId = null;
+      await refresh();
+      toast("Deleted", "ok");
+    } catch (err) {
+      toast("Delete failed: " + err.message, "err");
+    }
+  });
+}
 // Main controller for edit.html.
 // Owns: passphrase gate, slide list (incl. DnD reorder), iframe canvas
 // switching, props panel, add/delete, frame_html modal, IPC with iframe.
-import * as deckRepo from "./repo/deck-repo.js";
-import * as slideRepo from "./repo/slide-repo.js";
-import * as notesRepo from "./repo/notes-repo.js";
-import * as storageRepo from "./repo/storage-repo.js";
 import { ensureAuthed } from "./auth.js";
+import { exportHtml, exportNotesMd, exportPdf } from "./export.js";
 import { HistoryUI, saveVersionPrompt } from "./history-ui.js";
-import { exportHtml, exportPdf, exportNotesMd } from "./export.js";
+import * as deckRepo from "./repo/deck-repo.js";
+import * as notesRepo from "./repo/notes-repo.js";
+import * as slideRepo from "./repo/slide-repo.js";
+import * as storageRepo from "./repo/storage-repo.js";
 import { bindShortcutsHelp } from "./shortcuts-help.js";
 
 bindShortcutsHelp("Edit", [
@@ -29,20 +87,12 @@ if (!ensureAuthed()) {
   throw new Error("auth failed");
 }
 
-// ── mobile redirect (slides editing is desktop-only per SPEC §4) ───
-const mobileQ = window.matchMedia(
-  "(max-width: 900px), (max-width: 1024px) and (orientation: landscape)",
-);
 const params = new URLSearchParams(location.search);
 const deckId = params.get("deck");
 if (!deckId) {
   document.body.innerHTML =
     '<p style="padding:2rem;color:#ef4444">Missing ?deck=&lt;deck_id&gt;</p>';
   throw new Error("no deck");
-}
-if (mobileQ.matches) {
-  location.replace(`./script.html?deck=${encodeURIComponent(deckId)}`);
-  throw new Error("mobile redirect");
 }
 
 // ── state ──────────────────────────────────────────────────────────
@@ -65,7 +115,9 @@ function escapeHtml(s) {
   return String(s).replace(
     /[&<>"']/g,
     (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ],
   );
 }
 function setStatus(text, kind = "") {
@@ -91,10 +143,14 @@ async function refresh({ keepIframe = false } = {}) {
   $("script-link").href = `./script.html?deck=${encodeURIComponent(deckId)}`;
   $("notes-fullscreen-link").href =
     `./script-edit.html?deck=${encodeURIComponent(deckId)}`;
-  $("export-notes-link").href = `./notes.html?deck=${encodeURIComponent(deckId)}`;
+  $("export-notes-link").href =
+    `./notes.html?deck=${encodeURIComponent(deckId)}`;
   document.title = `Edit · ${deck.title || deckId}`;
 
-  if (!currentSectionId || !slides.find((s) => s.section_id === currentSectionId)) {
+  if (
+    !currentSectionId ||
+    !slides.find((s) => s.section_id === currentSectionId)
+  ) {
     currentSectionId = slides[0]?.section_id || null;
   }
   renderSlideList();
@@ -113,12 +169,25 @@ function renderSlideList() {
          draggable="true" data-section-id="${escapeHtml(s.section_id)}">
       <span class="order">${i + 1}</span>
       <span class="title">${escapeHtml(s.title || s.section_id)}</span>
+      <span class="slide-actions">
+        <details class="dropdown slide-dropdown" style="display:inline-block;">
+          <summary class="btn" style="padding:0 8px;min-width:32px;text-align:center;">…</summary>
+          <div class="dropdown-menu" style="min-width:80px;right:0;left:auto;">
+            <button class="slide-action-edit" data-section-id="${escapeHtml(s.section_id)}">Edit</button>
+            <button class="slide-action-delete" data-section-id="${escapeHtml(s.section_id)}">Delete</button>
+          </div>
+        </details>
+      </span>
     </div>`,
       )
       .join("") + '<button id="add-slide">+ New slide</button>';
 
   list.querySelectorAll(".slide-item").forEach((el) => {
-    el.addEventListener("click", () => switchSlide(el.dataset.sectionId));
+    // Only switch slide if not clicking on an action button
+    el.addEventListener("click", (evt) => {
+      if (evt.target.closest(".slide-action-btn")) return;
+      switchSlide(el.dataset.sectionId);
+    });
     el.addEventListener("dragstart", (e) => {
       e.dataTransfer.setData("text/plain", el.dataset.sectionId);
       e.dataTransfer.effectAllowed = "move";
@@ -139,6 +208,35 @@ function renderSlideList() {
       if (fromId && fromId !== toId) await reorderTo(fromId, toId);
     });
   });
+  // Action dropdown
+  list.querySelectorAll(".slide-action-edit").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const sectionId = btn.dataset.sectionId;
+      switchSlide(sectionId);
+      // Close dropdown
+      btn.closest("details")?.removeAttribute("open");
+    });
+  });
+  list.querySelectorAll(".slide-action-delete").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const sectionId = btn.dataset.sectionId;
+      const s = slides.find((x) => x.section_id === sectionId);
+      if (!s) return;
+      if (!confirm(`Delete slide '${s.title || sectionId}'?`)) return;
+      try {
+        await slideRepo.deleteSlide(deckId, sectionId);
+        if (currentSectionId === sectionId) currentSectionId = null;
+        await refresh();
+        toast("Deleted", "ok");
+      } catch (err) {
+        toast("Delete failed: " + err.message, "err");
+      }
+      // Close dropdown
+      btn.closest("details")?.removeAttribute("open");
+    });
+  });
   $("add-slide").addEventListener("click", addSlide);
 }
 
@@ -154,7 +252,7 @@ function renderProps() {
   $("prop-title").value = s.title || "";
   $("prop-section-id").textContent = s.section_id;
   $("prop-order").textContent = s.order;
-  $("delete-slide").disabled = false;
+  // Slide actions now in slide list
 }
 
 function showSlide(sectionId) {
@@ -206,9 +304,7 @@ async function addSlide() {
   const sid = `s-${Date.now().toString(36)}-${Math.random()
     .toString(36)
     .slice(2, 6)}`;
-  const order = slides.length
-    ? Math.max(...slides.map((s) => s.order)) + 1
-    : 0;
+  const order = slides.length ? Math.max(...slides.map((s) => s.order)) + 1 : 0;
   const content =
     `<section class="slide" data-title="Untitled">` +
     `<div><h1 data-editable="true">새 슬라이드</h1>` +
@@ -230,20 +326,6 @@ async function addSlide() {
     toast("Add failed: " + err.message, "err");
   }
 }
-
-$("delete-slide").addEventListener("click", async () => {
-  if (!currentSectionId) return;
-  const s = slides.find((x) => x.section_id === currentSectionId);
-  if (!confirm(`Delete slide '${s?.title || currentSectionId}'?`)) return;
-  try {
-    await slideRepo.deleteSlide(deckId, currentSectionId);
-    currentSectionId = null;
-    await refresh();
-    toast("Deleted", "ok");
-  } catch (err) {
-    toast("Delete failed: " + err.message, "err");
-  }
-});
 
 // ── notes (per-slide, debounced upsert) ───────────────────────────
 let notesPending = null; // { sid, content }
@@ -353,14 +435,23 @@ async function refreshImagesGrid() {
       };
       card.querySelector(".act-insert").onclick = () => {
         $("canvas").contentWindow?.postMessage(
-          { type: "edit:insert-image", url, alt: card.querySelector(".nm")?.textContent || "" },
+          {
+            type: "edit:insert-image",
+            url,
+            alt: card.querySelector(".nm")?.textContent || "",
+          },
           "*",
         );
         $("images-modal-bg").classList.remove("show");
         toast("Inserted into current slide", "ok");
       };
       card.querySelector(".act-del").onclick = async () => {
-        if (!confirm(`Delete '${card.querySelector(".nm")?.textContent}'? This cannot be undone.`)) return;
+        if (
+          !confirm(
+            `Delete '${card.querySelector(".nm")?.textContent}'? This cannot be undone.`,
+          )
+        )
+          return;
         try {
           await storageRepo.deleteImage(path);
           toast("Deleted", "ok");
@@ -376,10 +467,13 @@ async function refreshImagesGrid() {
 }
 
 async function uploadFiles(files) {
-  const list = Array.from(files || []).filter((f) => f.type.startsWith("image/"));
+  const list = Array.from(files || []).filter((f) =>
+    f.type.startsWith("image/"),
+  );
   if (list.length === 0) return;
   setStatus(`uploading ${list.length} image(s)…`);
-  let ok = 0, fail = 0;
+  let ok = 0,
+    fail = 0;
   for (const file of list) {
     try {
       await storageRepo.uploadImage(deckId, file);
@@ -408,7 +502,8 @@ $("images-close").addEventListener("click", () =>
   $("images-modal-bg").classList.remove("show"),
 );
 $("images-modal-bg").addEventListener("click", (e) => {
-  if (e.target === $("images-modal-bg")) $("images-modal-bg").classList.remove("show");
+  if (e.target === $("images-modal-bg"))
+    $("images-modal-bg").classList.remove("show");
 });
 $("images-upload-btn").addEventListener("click", () =>
   $("images-upload-input").click(),
@@ -420,19 +515,21 @@ $("images-upload-input").addEventListener("change", (e) => {
 
 // Drag-drop into the drop zone
 const dropZone = $("images-drop-zone");
-["dragenter", "dragover"].forEach((ev) =>
-  dropZone.addEventListener(ev, (e) => {
+if (dropZone) {
+  ["dragenter", "dragover"].forEach((ev) =>
+    dropZone.addEventListener(ev, (e) => {
+      e.preventDefault();
+      dropZone.classList.add("dragging");
+    }),
+  );
+  ["dragleave", "drop"].forEach((ev) =>
+    dropZone.addEventListener(ev, () => dropZone.classList.remove("dragging")),
+  );
+  dropZone.addEventListener("drop", (e) => {
     e.preventDefault();
-    dropZone.classList.add("dragging");
-  }),
-);
-["dragleave", "drop"].forEach((ev) =>
-  dropZone.addEventListener(ev, () => dropZone.classList.remove("dragging")),
-);
-dropZone.addEventListener("drop", (e) => {
-  e.preventDefault();
-  uploadFiles(e.dataTransfer?.files);
-});
+    uploadFiles(e.dataTransfer?.files);
+  });
+}
 
 // ── share modal ────────────────────────────────────────────────────
 function shareUrlFor(token) {
@@ -490,7 +587,8 @@ $("share-rotate").addEventListener("click", async () => {
 });
 
 $("share-revoke").addEventListener("click", async () => {
-  if (!confirm("Revoke sharing entirely? View links will return 'invalid'.")) return;
+  if (!confirm("Revoke sharing entirely? View links will return 'invalid'."))
+    return;
   try {
     await deckRepo.setShareToken(deckId, null);
     deck.share_token = null;
@@ -505,7 +603,8 @@ $("share-close").addEventListener("click", () =>
   $("share-modal-bg").classList.remove("show"),
 );
 $("share-modal-bg").addEventListener("click", (e) => {
-  if (e.target === $("share-modal-bg")) $("share-modal-bg").classList.remove("show");
+  if (e.target === $("share-modal-bg"))
+    $("share-modal-bg").classList.remove("show");
 });
 
 // ── frame_html modal ───────────────────────────────────────────────
@@ -517,7 +616,8 @@ $("frame-cancel").addEventListener("click", () =>
   $("frame-modal-bg").classList.remove("show"),
 );
 $("frame-modal-bg").addEventListener("click", (e) => {
-  if (e.target === $("frame-modal-bg")) $("frame-modal-bg").classList.remove("show");
+  if (e.target === $("frame-modal-bg"))
+    $("frame-modal-bg").classList.remove("show");
 });
 $("frame-save").addEventListener("click", async () => {
   let val = $("frame-textarea").value;
@@ -579,10 +679,7 @@ async function flushHtmlSave() {
   htmlPending = null;
   if (!/<section\b/i.test(content) || !/<\/section\s*>/i.test(content)) {
     setStatus("HTML missing <section>", "err");
-    toast(
-      "HTML must contain a single <section>…</section> block.",
-      "err",
-    );
+    toast("HTML must contain a single <section>…</section> block.", "err");
     // Re-queue so the buffer isn't lost
     htmlPending = { sid, content };
     return;

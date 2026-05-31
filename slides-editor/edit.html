@@ -214,6 +214,19 @@
         width: 100%; height: 100%; border: 0;
         background: #0c0c0c;
         box-shadow: 0 4px 24px rgba(0,0,0,.5);
+        transition: width .2s, height .2s;
+      }
+      #canvas-wrap.aspect-169 {
+        background: #111;
+      }
+      #canvas-wrap.aspect-169 #canvas {
+        width: 100%;
+        max-width: 100vw;
+        aspect-ratio: 16 / 9;
+        height: auto;
+        max-height: 100%;
+        background: #111;
+        box-shadow: 0 4px 32px rgba(0,0,0,.7);
       }
       /* HTML edit mode swaps the iframe for a raw textarea. */
       #canvas-wrap.html-mode {
@@ -307,25 +320,34 @@
       <header id="toolbar">
         <span class="title" id="deck-title">…</span>
         <button class="btn" id="edit-toggle">Edit · on (E)</button>
-        <button class="btn" id="html-toggle" title="Raw HTML mode (M)">&lt;/&gt; HTML</button>
-        <button class="btn" id="save-version" title="Save version (⌘S)">★ Save version</button>
-        <button class="btn" id="history-toggle" title="History (H)">⏱ History</button>
-        <button class="btn" id="frame-edit">Frame…</button>
-        <details class="dropdown" id="export-dropdown">
-          <summary class="btn">⬇ Export</summary>
+        <select id="mode-select" class="btn" style="width:auto;min-width:80px;">
+          <option value="" disabled selected>mode</option>
+          <option value="aspect-169">16:9</option>
+          <option value="html">html</option>
+        </select>
+        <!-- Save and Export moved to More menu -->
+        <span class="spacer"></span>
+        <a class="btn" id="present-link" href="#" target="_blank">▶ Present</a>
+        <details class="dropdown" id="more-dropdown">
+          <summary class="btn">⋮ More</summary>
           <div class="dropdown-menu">
-            <button data-export="html">HTML (self-contained)</button>
-            <button data-export="pdf">PDF (browser print)</button>
-            <button data-export="md">Notes (.md)</button>
-            <button data-export="md-copy">Copy notes to clipboard</button>
-            <a id="export-notes-link" href="#" target="_blank">Open notes view ↗</a>
+            <button id="save-version" type="button">★ Save version</button>
+            <details class="dropdown" id="export-dropdown" style="position:static;display:block;">
+              <summary class="btn" style="padding:0 0 0 8px;font-size:12px;background:none;border:none;box-shadow:none;">⬇ Export</summary>
+              <div class="dropdown-menu" style="position:static;box-shadow:none;min-width:0;">
+                <button data-export="html">HTML (self-contained)</button>
+                <button data-export="pdf">PDF (browser print)</button>
+                <button data-export="md">Notes (.md)</button>
+                <button data-export="md-copy">Copy notes to clipboard</button>
+                <a id="export-notes-link" href="#" target="_blank">Open notes view ↗</a>
+              </div>
+            </details>
+            <button id="history-toggle" type="button">⏱ History</button>
+            <button id="frame-edit" type="button">Frame…</button>
+            <button id="share-btn" type="button">🔗 Share</button>
+            <button id="images-btn" type="button">🖼 Images</button>
           </div>
         </details>
-        <button class="btn" id="share-btn" title="Share link…">🔗 Share</button>
-        <button class="btn" id="images-btn" title="Image library">🖼 Images</button>
-        <span class="spacer"></span>
-        <a class="btn" id="script-link" href="#" target="_blank">⌨ Script</a>
-        <a class="btn" id="present-link" href="#" target="_blank">▶ Present</a>
         <span id="status">—</span>
       </header>
       <main id="body">
@@ -352,11 +374,7 @@
             <label>order</label>
             <code id="prop-order">—</code>
           </div>
-          <div style="margin-top: 18px">
-            <button class="btn danger" id="delete-slide" disabled>
-              Delete slide…
-            </button>
-          </div>
+          <!-- Slide actions moved to slide-item list -->
 
           <h3 style="margin-top: 24px">Notes</h3>
           <div class="field">
@@ -377,6 +395,14 @@
             style="margin-top: 4px"
             >Open full editor ↗</a
           >
+          <a
+            class="btn"
+            id="script-link"
+            href="#"
+            target="_blank"
+            style="margin-top: 4px"
+            >⌨ Script</a
+          >
         </aside>
       </main>
     </div>
@@ -394,6 +420,16 @@
           <button class="btn active" id="frame-save">Save</button>
         </div>
       </div>
+        .btn {
+          display: inline-flex; align-items: center; gap: 4px;
+          background: transparent; border: 1px solid var(--border);
+          color: var(--text-mid); padding: 2px 8px; border-radius: 5px;
+          font-size: 11px; font-family: inherit; cursor: pointer;
+          text-decoration: none;
+          transition: background .12s, color .12s, border-color .12s;
+          min-height: 28px;
+          min-width: 36px;
+        }
     </div>
 
     <aside class="hist-drawer" id="hist-drawer">
@@ -418,11 +454,30 @@
             accept="image/*"
             multiple
             hidden
+            .mode-section {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              background: var(--surface-2);
+              border: 1px solid var(--border);
+              border-radius: 7px;
+              padding: 2px 10px;
+              margin-right: 8px;
+              box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            }
+            .mode-section label {
+              font-size: 11px;
+              color: var(--text-mid);
+              margin-right: 4px;
+            }
           />
           <button class="btn" id="images-close">Close</button>
         </header>
-        <div id="images-drop-zone" class="drop-zone">
-          Drop images here, or click <b>+ Upload</b>. Click a card for actions.
+              <section class="mode-section">
+                <label>Modes:</label>
+                <button class="btn" id="aspect-toggle" title="16:9 Lock">16:9</button>
+                <button class="btn" id="html-toggle" title="Raw HTML mode (M)">&lt;/&gt; HTML</button>
+              </section>
         </div>
         <div id="images-grid" class="image-grid"></div>
       </div>
@@ -455,6 +510,7 @@
     <div id="toast"></div>
 
     <script src="./js/config.local.js"></script>
+    
     <script type="module" src="./js/edit-bootstrap.js"></script>
   </body>
 </html>

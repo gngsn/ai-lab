@@ -14,7 +14,9 @@
         --ok: #22c55e;
         --bad: #ef4444;
       }
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
         background: var(--bg);
@@ -27,19 +29,40 @@
         margin: 4rem auto;
         padding: 0 1.5rem;
       }
-      h1 { font-size: 1.5rem; margin: 0 0 0.4rem; }
-      h2 { font-size: 1rem; margin: 2rem 0 0.6rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
-      a { color: var(--accent); text-decoration: none; }
-      a:hover { text-decoration: underline; }
+      h1 {
+        font-size: 1.5rem;
+        margin: 0 0 0.4rem;
+      }
+      h2 {
+        font-size: 1rem;
+        margin: 2rem 0 0.6rem;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
       code {
         background: var(--surface);
         padding: 1px 6px;
         border-radius: 4px;
         font-size: 0.9em;
       }
-      ul { padding-left: 1.2rem; margin: 0.4rem 0; }
-      .ok  { color: var(--ok); }
-      .bad { color: var(--bad); }
+      ul {
+        padding-left: 1.2rem;
+        margin: 0.4rem 0;
+      }
+      .ok {
+        color: var(--ok);
+      }
+      .bad {
+        color: var(--bad);
+      }
       .pill {
         display: inline-block;
         padding: 0.1rem 0.5rem;
@@ -48,6 +71,58 @@
         font-size: 0.75rem;
         color: var(--muted);
         margin-left: 0.4rem;
+      }
+
+      /* Material Design Button Styles */
+      .md-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: inherit;
+        font-size: 1rem;
+        font-weight: 500;
+        border: none;
+        border-radius: 4px;
+        padding: 0.5rem 1.25rem;
+        cursor: pointer;
+        transition:
+          background 0.18s,
+          box-shadow 0.18s,
+          color 0.18s;
+        outline: none;
+        min-width: 64px;
+        min-height: 36px;
+        letter-spacing: 0.01em;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      }
+      .md-btn:active {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .md-btn.md-primary {
+        background: var(--accent);
+        color: #fff;
+        box-shadow: 0 2px 4px rgba(93, 184, 166, 0.1);
+      }
+      .md-btn.md-primary:hover {
+        background: #49a18d;
+      }
+      .md-btn.md-secondary {
+        background: var(--surface);
+        color: var(--accent);
+        border: 1.5px solid var(--accent);
+      }
+      .md-btn.md-secondary:hover {
+        background: #1a1a1a;
+      }
+      .md-btn.md-text {
+        background: none;
+        color: var(--accent);
+        box-shadow: none;
+        padding: 0.5rem 0.75rem;
+      }
+      .md-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
       pre {
         background: var(--surface);
@@ -64,19 +139,16 @@
       <p id="status">checking Supabase connection…</p>
 
       <h2>Decks</h2>
-      <ul id="deck-list"><li>loading…</li></ul>
+      <ul id="deck-list">
+        <li>loading…</li>
+      </ul>
 
       <h2>Docs</h2>
       <ul>
-        <li><a href="./SPEC.md">SPEC.md</a></li>
-        <li><a href="./PLAN.md">PLAN.md</a></li>
-        <li><a href="./README.md">README.md</a></li>
+        <li><a class="md-btn md-text" href="./SPEC.md">SPEC.md</a></li>
+        <li><a class="md-btn md-text" href="./PLAN.md">PLAN.md</a></li>
+        <li><a class="md-btn md-text" href="./README.md">README.md</a></li>
       </ul>
-
-      <h2>Status</h2>
-      <p>
-        모든 마일스톤 완료. 자세한 단축키는 각 페이지에서 <code>?</code> 키.
-      </p>
     </div>
 
     <script src="./js/config.local.js"></script>
@@ -109,11 +181,10 @@
                   : "";
                 return (
                   `<li><code>${d.deck_id}</code> — ${d.title}` +
-                  ` · <a href="./edit.html?deck=${id}">✎ Edit</a>` +
-                  ` · <a href="./script-edit.html?deck=${id}">✏ Notes</a>` +
-                  ` · <a href="./present.html?deck=${id}&sync=${room}">▶ Present</a>` +
-                  ` · <a href="./script.html?deck=${id}&sync=${room}">⌨ Script</a>` +
-                  ` · <a href="./notes.html?deck=${id}">📝 Marp</a>` +
+                  ` · <a class="md-btn md-primary" href="./edit.html?deck=${id}">✎ Edit</a>` +
+                  ` · <a class="md-btn md-secondary" href="./script-edit.html?deck=${id}">✏ Notes</a>` +
+                  ` · <a class="md-btn md-secondary" href="./present.html?deck=${id}&sync=${room}">▶ Present</a>` +
+                  ` · <a class="md-btn md-secondary" href="./script.html?deck=${id}&sync=${room}">⌨ Script</a>` +
                   viewLink +
                   `</li>`
                 );
