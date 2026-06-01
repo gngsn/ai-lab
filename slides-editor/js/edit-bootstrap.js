@@ -1,61 +1,7 @@
-// Panel show/hide toggles
-document.addEventListener("DOMContentLoaded", () => {
-  const slideList = document.getElementById("slide-list");
-  const props = document.getElementById("props");
-  const btnSlideList = document.getElementById("toggle-slide-list");
-  const btnProps = document.getElementById("toggle-props");
-  if (btnSlideList && slideList) {
-    btnSlideList.addEventListener("click", () => {
-      slideList.classList.toggle("panel-hidden");
-    });
-  }
-  if (btnProps && props) {
-    btnProps.addEventListener("click", () => {
-      props.classList.toggle("panel-hidden");
-    });
-  }
-});
-// Mode select (16:9, html)
-document.addEventListener("DOMContentLoaded", () => {
-  const modeSelect = document.getElementById("mode-select");
-  const wrap = document.getElementById("canvas-wrap");
-  if (modeSelect && wrap) {
-    modeSelect.addEventListener("change", async () => {
-      // Remove both classes first
-      wrap.classList.remove("aspect-169", "html-mode");
-      if (modeSelect.value === "aspect-169") {
-        wrap.classList.add("aspect-169");
-        htmlMode = false;
-        showSlide(currentSectionId);
-      } else if (modeSelect.value === "html") {
-        wrap.classList.add("html-mode");
-        htmlMode = true;
-        await loadCurrentSlideHtml();
-        document.getElementById("html-editor").focus();
-      }
-    });
-    // Set initial state
-    modeSelect.dispatchEvent(new Event("change"));
-  }
-});
-
-// Defensive: Only add event listener if element exists (for legacy code)
-const deleteSlideBtn = document.getElementById("delete-slide");
-if (deleteSlideBtn) {
-  deleteSlideBtn.addEventListener("click", async () => {
-    if (!currentSectionId) return;
-    const s = slides.find((x) => x.section_id === currentSectionId);
-    if (!confirm(`Delete slide '${s?.title || currentSectionId}'?`)) return;
-    try {
-      await slideRepo.deleteSlide(deckId, currentSectionId);
-      currentSectionId = null;
-      await refresh();
-      toast("Deleted", "ok");
-    } catch (err) {
-      toast("Delete failed: " + err.message, "err");
-    }
-  });
-}
+// Defensive: Removed legacy delete-slide button logic (no such element in DOM)
+// Mode-select handler is initialized below `refresh()` (see initModeSelect),
+// so currentSectionId / htmlMode / show- and load- helpers are all in scope
+// and the iframe canvas is already populated by the time mode applies.
 // Main controller for edit.html.
 // Owns: passphrase gate, slide list (incl. DnD reorder), iframe canvas
 // switching, props panel, add/delete, frame_html modal, IPC with iframe.
@@ -99,9 +45,20 @@ if (!deckId) {
 const $ = (id) => document.getElementById(id);
 let deck = null;
 let slides = [];
+let notes = new Map(); // sid → content string (populated at load, kept current by mutations)
 let currentSectionId = null;
 let editMode = true;
 let htmlMode = false; // raw <section>…</section> edit in textarea
+// Auto-save toggle. Persisted in localStorage so it survives reloads.
+// When OFF, debounced timers are NOT scheduled in any input handler — edits
+// stay buffered in *Pending and are only flushed by the manual Save button
+// or by `flushAllPending()` (e.g., on slide switch / beforeunload).
+let autoSave = localStorage.getItem("slidesEditor.autoSave") !== "false";
+
+// Tiny helper: find a slide object by section_id.
+function slideOf(sid) {
+  return slides.find((s) => s.section_id === sid) || null;
+}
 
 // ── ui helpers ─────────────────────────────────────────────────────
 function toast(msg, kind = "") {
@@ -129,10 +86,17 @@ function setStatus(text, kind = "") {
 // ── load + render ──────────────────────────────────────────────────
 async function refresh({ keepIframe = false } = {}) {
   try {
-    [deck, slides] = await Promise.all([
+    let allNotes;
+    [deck, slides, allNotes] = await Promise.all([
       deckRepo.getDeck(deckId),
       slideRepo.listByDeck(deckId),
+      notesRepo.listByDeck(deckId),
     ]);
+    // Populate notes cache from the full fetch.
+    notes.clear();
+    for (const n of allNotes) {
+      notes.set(n.section_id, n.content ?? "");
+    }
   } catch (err) {
     setStatus("load failed", "err");
     toast("Load failed: " + err.message, "err");
@@ -155,7 +119,7 @@ async function refresh({ keepIframe = false } = {}) {
   }
   renderSlideList();
   renderProps();
-  await loadNotesForCurrent();
+  loadNotesForCurrent(); // now reads from cache — synchronous, no await needed
   if (!keepIframe) showSlide(currentSectionId);
 }
 
@@ -173,7 +137,7 @@ function renderSlideList() {
         <details class="dropdown slide-dropdown" style="display:inline-block;">
           <summary class="btn" style="padding:0 8px;min-width:32px;text-align:center;">…</summary>
           <div class="dropdown-menu" style="min-width:80px;right:0;left:auto;">
-            <button class="slide-action-edit" data-section-id="${escapeHtml(s.section_id)}">Edit</button>
+            <button class="slide-action-duplicate" data-section-id="${escapeHtml(s.section_id)}">Duplicate</button>
             <button class="slide-action-delete" data-section-id="${escapeHtml(s.section_id)}">Delete</button>
           </div>
         </details>
@@ -186,7 +150,7 @@ function renderSlideList() {
     // Only switch slide if not clicking on an action button (edit/delete)
     el.addEventListener("click", (evt) => {
       if (
-        evt.target.closest(".slide-action-edit") ||
+        evt.target.closest(".slide-action-duplicate") ||
         evt.target.closest(".slide-action-delete") ||
         evt.target.closest(".slide-actions") ||
         evt.target.closest("details")
@@ -215,13 +179,13 @@ function renderSlideList() {
     });
   });
   // Action dropdown
-  list.querySelectorAll(".slide-action-edit").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
+  list.querySelectorAll(".slide-action-duplicate").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
       e.stopPropagation();
       const sectionId = btn.dataset.sectionId;
-      switchSlide(sectionId);
-      // Close dropdown
+      // Close dropdown first so it doesn't linger over the new slide.
       btn.closest("details")?.removeAttribute("open");
+      await duplicateSlide(sectionId);
     });
   });
   list.querySelectorAll(".slide-action-delete").forEach((btn) => {
@@ -231,12 +195,31 @@ function renderSlideList() {
       const s = slides.find((x) => x.section_id === sectionId);
       if (!s) return;
       if (!confirm(`Delete slide '${s.title || sectionId}'?`)) return;
+      // Snapshot for rollback.
+      const prevSlides = slides.slice();
+      const prevNotes = new Map(notes);
+      const prevCurrentSectionId = currentSectionId;
       try {
         await slideRepo.deleteSlide(deckId, sectionId);
-        if (currentSectionId === sectionId) currentSectionId = null;
-        await refresh();
+        // Local splice — no refetch.
+        const idx = slides.findIndex((x) => x.section_id === sectionId);
+        slides.splice(idx, 1);
+        notes.delete(sectionId);
+        if (currentSectionId === sectionId) {
+          // Pick adjacent slide: prefer same index (next), fall back to previous.
+          currentSectionId = slides[idx]?.section_id ?? slides[idx - 1]?.section_id ?? null;
+        }
+        renderSlideList();
+        renderProps();
+        loadNotesForCurrent();
         toast("Deleted", "ok");
       } catch (err) {
+        // Rollback local state.
+        slides = prevSlides;
+        notes = prevNotes;
+        currentSectionId = prevCurrentSectionId;
+        renderSlideList();
+        renderProps();
         toast("Delete failed: " + err.message, "err");
       }
       // Close dropdown
@@ -249,15 +232,14 @@ function renderSlideList() {
 function renderProps() {
   const s = slides.find((x) => x.section_id === currentSectionId);
   if (!s) {
-    $("prop-title").value = "";
-    $("prop-section-id").textContent = "—";
-    $("prop-order").textContent = "—";
-    $("delete-slide").disabled = true;
+    if ($("prop-title")) $("prop-title").value = "";
+    if ($("prop-section-id")) $("prop-section-id").textContent = "—";
+    if ($("prop-order")) $("prop-order").textContent = "—";
     return;
   }
-  $("prop-title").value = s.title || "";
-  $("prop-section-id").textContent = s.section_id;
-  $("prop-order").textContent = s.order;
+  if ($("prop-title")) $("prop-title").value = s.title || "";
+  if ($("prop-section-id")) $("prop-section-id").textContent = s.section_id;
+  if ($("prop-order")) $("prop-order").textContent = s.order;
   // Slide actions now in slide list
 }
 
@@ -282,9 +264,9 @@ async function switchSlide(sid) {
   currentSectionId = sid;
   renderSlideList();
   renderProps();
-  await loadNotesForCurrent();
+  loadNotesForCurrent(); // reads from cache — synchronous
   if (htmlMode) {
-    await loadCurrentSlideHtml();
+    loadCurrentSlideHtml(); // reads from cache — synchronous
   } else {
     showSlide(currentSectionId);
   }
@@ -292,16 +274,25 @@ async function switchSlide(sid) {
 
 // ── mutations ──────────────────────────────────────────────────────
 async function reorderTo(fromId, toId) {
-  const ids = slides.map((s) => s.section_id);
-  const fromIdx = ids.indexOf(fromId);
-  const toIdx = ids.indexOf(toId);
+  const fromIdx = slides.findIndex((s) => s.section_id === fromId);
+  const toIdx = slides.findIndex((s) => s.section_id === toId);
   if (fromIdx < 0 || toIdx < 0) return;
-  ids.splice(toIdx, 0, ids.splice(fromIdx, 1)[0]);
+  // Snapshot for rollback.
+  const prevSlides = slides.map((s) => ({ ...s }));
+  // Reorder local array.
+  const [moved] = slides.splice(fromIdx, 1);
+  slides.splice(toIdx, 0, moved);
+  // Mirror the order field (RPC assigns order = index, 0-based).
+  slides.forEach((s, i) => { s.order = i; });
+  renderSlideList(); // optimistic update — no iframe reload
   try {
+    const ids = slides.map((s) => s.section_id);
     await slideRepo.reorder(deckId, ids);
     toast("Reordered", "ok");
-    await refresh({ keepIframe: true });
   } catch (err) {
+    // Rollback local state.
+    slides = prevSlides;
+    renderSlideList();
     toast("Reorder failed: " + err.message, "err");
   }
 }
@@ -325,11 +316,67 @@ async function addSlide() {
       content,
     });
     await notesRepo.upsert(deckId, sid, "");
+    // Push into local caches — no refetch.
+    slides.push({ deck_id: deckId, section_id: sid, order, title: "Untitled", content });
+    notes.set(sid, "");
     currentSectionId = sid;
-    await refresh();
+    renderSlideList();
+    renderProps();
+    loadNotesForCurrent();
+    showSlide(currentSectionId);
     toast("Slide added", "ok");
   } catch (err) {
     toast("Add failed: " + err.message, "err");
+  }
+}
+
+// Duplicate a slide (content + notes), insert it right after the source,
+// then persist the new order. Mirrors the local-mutate + POST pattern of
+// addSlide / reorderTo so we don't have to refetch the whole deck.
+async function duplicateSlide(sourceSid) {
+  const src = slideOf(sourceSid);
+  if (!src) return;
+  const srcIdx = slides.findIndex((s) => s.section_id === sourceSid);
+  const newSid = `s-${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 6)}`;
+  const newTitle = `${src.title || "Untitled"} (copy)`;
+  const newContent = src.content;
+  const newNotes = notes.get(sourceSid) ?? "";
+  try {
+    // 1. Insert at the end first so the UNIQUE (deck_id, order) constraint
+    //    isn't violated by collisions in the middle of the list.
+    await slideRepo.insertSlide({
+      deck_id: deckId,
+      section_id: newSid,
+      order: slides.length,
+      title: newTitle,
+      content: newContent,
+    });
+    await notesRepo.upsert(deckId, newSid, newNotes);
+
+    // 2. Splice into the right position locally.
+    slides.splice(srcIdx + 1, 0, {
+      deck_id: deckId,
+      section_id: newSid,
+      order: srcIdx + 1,
+      title: newTitle,
+      content: newContent,
+    });
+    notes.set(newSid, newNotes);
+
+    // 3. Persist that order on the server (single-transaction RPC).
+    await slideRepo.reorder(deckId, slides.map((s) => s.section_id));
+    slides.forEach((s, i) => (s.order = i));
+
+    currentSectionId = newSid;
+    renderSlideList();
+    renderProps();
+    loadNotesForCurrent();
+    showSlide(newSid);
+    toast("Duplicated", "ok");
+  } catch (err) {
+    toast("Duplicate failed: " + err.message, "err");
   }
 }
 
@@ -337,22 +384,16 @@ async function addSlide() {
 let notesPending = null; // { sid, content }
 let notesSaveTimer = 0;
 
-async function loadNotesForCurrent() {
+function loadNotesForCurrent() {
   const ta = $("notes-textarea");
   if (!currentSectionId) {
     ta.value = "";
     ta.disabled = true;
     return;
   }
-  try {
-    const note = await notesRepo.getOne(deckId, currentSectionId);
-    ta.value = note?.content || "";
-    ta.disabled = false;
-  } catch (err) {
-    ta.value = "";
-    ta.disabled = false;
-    toast("Notes load failed: " + err.message, "err");
-  }
+  // Read from in-memory cache — no network round-trip.
+  ta.value = notes.get(currentSectionId) ?? "";
+  ta.disabled = false;
 }
 
 async function flushNotesSave() {
@@ -363,6 +404,7 @@ async function flushNotesSave() {
   notesPending = null;
   try {
     await notesRepo.upsert(deckId, sid, content);
+    notes.set(sid, content); // keep cache current
     setStatus(`notes saved · ${new Date().toLocaleTimeString()}`, "ok");
   } catch (err) {
     setStatus("notes save failed", "err");
@@ -372,9 +414,13 @@ async function flushNotesSave() {
 
 $("notes-textarea").addEventListener("input", (e) => {
   notesPending = { sid: currentSectionId, content: e.target.value };
-  setStatus("notes: saving…");
   clearTimeout(notesSaveTimer);
-  notesSaveTimer = setTimeout(flushNotesSave, 800);
+  if (autoSave) {
+    setStatus("notes: saving…");
+    notesSaveTimer = setTimeout(flushNotesSave, 800);
+  } else {
+    setStatus("notes: unsaved", "warn");
+  }
 });
 
 window.addEventListener("beforeunload", () => {
@@ -655,76 +701,26 @@ $("frame-save").addEventListener("click", async () => {
 let htmlPending = null; // { sid, content }
 let htmlSaveTimer = 0;
 
-// Add highlight overlay for html-editor
-function ensureHtmlHighlightOverlay() {
-  let ta = $("html-editor");
-  let overlay = document.getElementById("html-highlight-overlay");
-  if (!overlay) {
-    overlay = document.createElement("pre");
-    overlay.id = "html-highlight-overlay";
-    overlay.style.position = "absolute";
-    overlay.style.pointerEvents = "none";
-    overlay.style.margin = "0";
-    overlay.style.padding = ta.style.padding || "18px 22px";
-    overlay.style.background = "#0a0a0a";
-    overlay.style.color = "inherit";
-    overlay.style.fontFamily =
-      ta.style.fontFamily || "JetBrains Mono, ui-monospace, monospace";
-    overlay.style.fontSize = ta.style.fontSize || "13px";
-    overlay.style.lineHeight = ta.style.lineHeight || "1.7";
-    overlay.style.width = "100%";
-    overlay.style.height = "100%";
-    overlay.style.overflow = "auto";
-    overlay.style.zIndex = "1";
-    overlay.style.border = "none";
-    overlay.style.boxSizing = "border-box";
-    overlay.style.top = ta.offsetTop + "px";
-    overlay.style.left = ta.offsetLeft + "px";
-    overlay.className = "hljs";
-    ta.parentNode.insertBefore(overlay, ta);
-    ta.style.position = "relative";
-    ta.style.background = "transparent";
-    ta.style.zIndex = "2";
-    ta.style.color = "transparent";
-    ta.style.caretColor = "#f0f0f0";
-    ta.style.resize = "none";
-    ta.style.overflow = "auto";
-    ta.style.boxSizing = "border-box";
-    // Sync scroll
-    ta.addEventListener("scroll", () => {
-      overlay.scrollTop = ta.scrollTop;
-      overlay.scrollLeft = ta.scrollLeft;
-    });
-  }
-  return overlay;
-}
+// Syntax-highlight overlay: removed. The transparent-text + absolute-overlay
+// trick was fragile (positioning broke against canvas-wrap, transparent text
+// hid content when overlay misaligned) and left the textarea apparently
+// unusable. Plain textarea with the monospace CSS in edit.html is enough.
+// These no-ops keep the existing call sites harmless.
+function ensureHtmlHighlightOverlay() { return null; }
+function updateHtmlHighlight() { /* no-op */ }
 
-function updateHtmlHighlight() {
-  const ta = $("html-editor");
-  const overlay = ensureHtmlHighlightOverlay();
-  // Escape HTML for display, then highlight
-  let code = ta.value.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  overlay.innerHTML = `<code class="language-xml">${code}</code>`;
-  if (window.hljs) {
-    window.hljs.highlightElement(overlay.querySelector("code"));
-  }
-}
-
-async function loadCurrentSlideHtml() {
+function loadCurrentSlideHtml() {
   const ta = $("html-editor");
   if (!currentSectionId) {
     ta.value = "";
     updateHtmlHighlight();
     return;
   }
-  try {
-    const slide = await slideRepo.getOne(deckId, currentSectionId);
-    ta.value = slide.content;
-    htmlPending = null;
-    updateHtmlHighlight();
-  } catch (err) {
-    toast("HTML load failed: " + err.message, "err");
-  }
+  // Read from local slides cache — no network round-trip.
+  const slide = slideOf(currentSectionId);
+  ta.value = slide?.content ?? "";
+  htmlPending = null;
+  updateHtmlHighlight();
 }
 
 async function flushHtmlSave() {
@@ -742,10 +738,15 @@ async function flushHtmlSave() {
   }
   try {
     await slideRepo.updateContent(deckId, sid, content);
+    // Update local cache in-place — no refetch.
+    const s = slideOf(sid);
+    if (s) {
+      s.content = content;
+      // Sync title from data-title attribute if present in new content.
+      const m = content.match(/data-title="([^"]*)"/i);
+      if (m) s.title = m[1];
+    }
     setStatus("HTML saved · " + new Date().toLocaleTimeString(), "ok");
-    // Refresh slide list in case title attr changed
-    const fresh = await slideRepo.listByDeck(deckId);
-    slides = fresh;
     renderSlideList();
     renderProps();
   } catch (err) {
@@ -757,19 +758,58 @@ async function flushHtmlSave() {
 $("html-editor").addEventListener("input", (e) => {
   if (!currentSectionId) return;
   htmlPending = { sid: currentSectionId, content: e.target.value };
-  setStatus("HTML: saving…");
   clearTimeout(htmlSaveTimer);
-  htmlSaveTimer = setTimeout(flushHtmlSave, 800);
+  if (autoSave) {
+    setStatus("HTML: saving…");
+    htmlSaveTimer = setTimeout(flushHtmlSave, 800);
+  } else {
+    setStatus("HTML: unsaved", "warn");
+  }
   updateHtmlHighlight();
 });
 
-// Manual save button for HTML editor
+// Manual "Save now" — flushes every pending buffer (notes, HTML, and the
+// iframe's inline editor) regardless of the auto-save toggle. Used both as
+// the explicit save button and as the implicit safety on switchSlide /
+// beforeunload.
+async function flushAllPending() {
+  // Tell the iframe to commit any debounced inline-editor save first; it
+  // will post `edit:save` back here, which routes through the existing
+  // IPC handler. Then flush our own buffers.
+  $("canvas")?.contentWindow?.postMessage({ type: "edit:flush" }, "*");
+  await flushHtmlSave();
+  await flushNotesSave();
+}
+
+// Wire the Save-now button + the Auto-save toggle. Both targets live in the
+// toolbar of edit.html.
 document.addEventListener("DOMContentLoaded", () => {
-  const btn = $("save-html-btn");
-  if (btn) {
-    btn.addEventListener("click", async () => {
-      await flushHtmlSave();
-      setStatus("HTML manually saved", "ok");
+  const saveBtn = $("save-html-btn"); // id kept; button text now reads "Save now"
+  if (saveBtn) {
+    saveBtn.addEventListener("click", async () => {
+      try {
+        await flushAllPending();
+        setStatus("saved · " + new Date().toLocaleTimeString(), "ok");
+        toast("Saved", "ok");
+      } catch (err) {
+        setStatus("save failed", "err");
+        toast("Save failed: " + err.message, "err");
+      }
+    });
+  }
+
+  const toggle = $("autosave-toggle");
+  if (toggle) {
+    toggle.checked = autoSave;
+    toggle.addEventListener("change", () => {
+      autoSave = !!toggle.checked;
+      try { localStorage.setItem("slidesEditor.autoSave", autoSave ? "true" : "false"); } catch {}
+      setStatus(autoSave ? "auto-save: ON" : "auto-save: OFF");
+      // Propagate to the iframe inline editor so it stops/starts its own debounce.
+      $("canvas")?.contentWindow?.postMessage(
+        { type: "edit:set-autosave", value: autoSave },
+        "*",
+      );
     });
   }
 });
@@ -780,27 +820,10 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function setHtmlMode(on) {
-  if (on === htmlMode) return;
-  if (on) {
-    // Ask iframe to flush any pending inline-editor save, then fetch fresh DB
-    // content so the textarea reflects the latest visual edits.
-    $("canvas").contentWindow?.postMessage({ type: "edit:flush" }, "*");
-    await new Promise((r) => setTimeout(r, 300));
-    htmlMode = true;
-    $("canvas-wrap").classList.add("html-mode");
-    $("html-toggle").classList.add("active");
-    await loadCurrentSlideHtml();
-    $("html-editor").focus();
-  } else {
-    await flushHtmlSave();
-    htmlMode = false;
-    $("canvas-wrap").classList.remove("html-mode");
-    $("html-toggle").classList.remove("active");
-    showSlide(currentSectionId); // reload iframe with new content
-  }
+  // Deprecated: html-toggle is removed. Mode switching is now handled by mode-select only.
+  // This function is no longer used.
+  return;
 }
-
-$("html-toggle").addEventListener("click", () => setHtmlMode(!htmlMode));
 
 window.addEventListener("beforeunload", () => {
   if (htmlPending) flushHtmlSave();
@@ -814,21 +837,15 @@ document.addEventListener("keydown", (e) => {
     e.target?.getAttribute?.("contenteditable") === "true"
   )
     return;
-  if (e.key === "e" || e.key === "E") {
+  if (e.key === "h" || e.key === "H") {
     e.preventDefault();
-    $("edit-toggle").click();
-  } else if (e.key === "h" || e.key === "H") {
-    e.preventDefault();
-    $("history-toggle").click();
+    $("history-toggle")?.click();
   } else if (e.key === "i" || e.key === "I") {
     e.preventDefault();
-    $("images-btn").click();
-  } else if (e.key === "m" || e.key === "M") {
-    e.preventDefault();
-    $("html-toggle").click();
+    $("images-btn")?.click();
   } else if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
     e.preventDefault();
-    $("save-version").click();
+    $("save-version")?.click();
   }
   // `?` help is bound globally via bindShortcutsHelp above.
 });
@@ -838,14 +855,42 @@ const historyUI = new HistoryUI({
   deckId,
   panelEl: $("history-panel"),
   currentSectionGetter: () => currentSectionId,
-  onRestored: async ({ section_id }) => {
+  onRestored: async ({ section_id, source }) => {
     toast("Restored", "ok");
-    // Refresh the slide content / iframe / notes textarea
     if (section_id === currentSectionId) {
-      await loadNotesForCurrent();
+      // Current slide: reload notes textarea from cache (history-ui already
+      // wrote to DB; cache may be stale for notes, so refetch just this one).
+      if (source === "notes") {
+        try {
+          const n = await notesRepo.getOne(deckId, section_id);
+          notes.set(section_id, n?.content ?? "");
+        } catch { /* best-effort */ }
+      } else {
+        // Slide content restored: patch local cache.
+        try {
+          const fresh = await slideRepo.getOne(deckId, section_id);
+          const s = slideOf(section_id);
+          if (s) { s.content = fresh.content; s.title = fresh.title; }
+          renderSlideList();
+          renderProps();
+        } catch { /* best-effort */ }
+      }
+      loadNotesForCurrent();
       showSlide(currentSectionId);
     } else {
-      await refresh();
+      // Non-current slide: targeted fetch of that one slide + note, patch caches.
+      try {
+        const [fresh, freshNote] = await Promise.all([
+          slideRepo.getOne(deckId, section_id),
+          notesRepo.getOne(deckId, section_id),
+        ]);
+        const s = slideOf(section_id);
+        if (s) { s.content = fresh.content; s.title = fresh.title; }
+        notes.set(section_id, freshNote?.content ?? "");
+        renderSlideList(); // title may have changed
+      } catch (err) {
+        toast("Restore patch failed: " + err.message, "err");
+      }
     }
   },
 });
@@ -909,15 +954,19 @@ window.addEventListener("message", async (e) => {
     case "edit:dirty":
       setStatus("saving…");
       break;
-    case "edit:save":
+    case "edit:save": {
       try {
         await slideRepo.updateContent(m.deck_id, m.section_id, m.content);
+        // Update local cache in-place so subsequent renders show new content.
+        const _s = slideOf(m.section_id);
+        if (_s) _s.content = m.content;
         setStatus("saved · " + new Date().toLocaleTimeString(), "ok");
       } catch (err) {
         setStatus("save failed", "err");
         toast("Save failed: " + err.message, "err");
       }
       break;
+    }
     case "edit:noop":
       setStatus("no changes");
       break;
@@ -925,13 +974,67 @@ window.addEventListener("message", async (e) => {
       setStatus(
         `ready · ${m.editable_count} editable${m.editable_count === 1 ? "" : "s"}`,
       );
+      // Hand the current auto-save state to the fresh inline editor so it
+      // doesn't run its 800ms debounce when the user has turned it off.
+      e.source?.postMessage(
+        { type: "edit:set-autosave", value: autoSave },
+        "*",
+      );
       break;
     case "edit-frame:error":
       setStatus("frame error", "err");
       toast("Frame: " + m.message, "err");
       break;
+    case "edit-frame:request-data": {
+      // Serve cached deck + slide so the iframe doesn't refetch on every
+      // navigation. If our caches aren't populated yet (initial load), stay
+      // silent — the iframe will time out and fall back to a direct fetch.
+      if (!deck) break;
+      const _s = slideOf(m.sectionId);
+      if (!_s) break;
+      e.source?.postMessage(
+        { type: "edit-frame:data", id: m.id, deck, slide: _s },
+        "*",
+      );
+      break;
+    }
   }
 });
 
+// ── mode select (16:9 vs raw-html) ─────────────────────────────────
+// Switches the canvas between iframe (16:9) and a raw <section> textarea.
+// Flushes pending HTML before switching out of html mode so nothing is lost.
+function initModeSelect() {
+  const sel = $("mode-select");
+  const wrap = $("canvas-wrap");
+  if (!sel || !wrap) return;
+
+  async function apply() {
+    const m = sel.value;
+    // Pending HTML edits should land before we leave html mode.
+    if (htmlMode && m !== "html") await flushHtmlSave();
+    wrap.classList.remove("aspect-169", "html-mode");
+    if (m === "html") {
+      wrap.classList.add("html-mode");
+      htmlMode = true;
+      loadCurrentSlideHtml(); // reads from cache — synchronous
+      // Focus after the next paint so display:block has actually taken effect.
+      requestAnimationFrame(() => $("html-editor")?.focus());
+    } else if (m === "aspect-169") {
+      wrap.classList.add("aspect-169");
+      htmlMode = false;
+      if (currentSectionId) showSlide(currentSectionId);
+    } else {
+      // "" (placeholder) or unknown → no class, iframe fills the canvas.
+      htmlMode = false;
+      if (currentSectionId) showSlide(currentSectionId);
+    }
+  }
+
+  sel.addEventListener("change", apply);
+  apply(); // honor the <option selected> default ("aspect-169")
+}
+
 // ── init ───────────────────────────────────────────────────────────
 await refresh();
+initModeSelect();

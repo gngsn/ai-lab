@@ -53,6 +53,11 @@ export class InlineEditor {
     this.ensureEditIds();
     this.savePending = null;
     this.lastSavedHtml = this.serializeSection();
+    // Auto-save: parent flips this via `edit:set-autosave` on `edit:ready`
+    // and whenever the toolbar toggle changes. When OFF, scheduleSave still
+    // notifies the parent that the section is dirty but never sets the
+    // debounce timer — the user has to press the toolbar's Save now button.
+    this.autoSave = true;
 
     this.editables.forEach((el) => {
       el.setAttribute("contenteditable", "true");
@@ -66,14 +71,25 @@ export class InlineEditor {
     });
 
     // Cross-frame IPC from the parent (edit.html):
-    //   edit:insert-image — insert <img src=...> at current caret
-    //   edit:flush        — commit any pending debounced save immediately
-    //                       (used when parent toggles HTML mode)
+    //   edit:insert-image  — insert <img src=...> at current caret
+    //   edit:flush         — commit any pending debounced save immediately
+    //                        (used when parent toggles HTML mode, on Save now,
+    //                        and on switchSlide / beforeunload)
+    //   edit:set-autosave  — toggle the 800ms debounce timer on/off; OFF lets
+    //                        the user accumulate edits and save manually
     window.addEventListener("message", (e) => {
       if (e.data?.type === "edit:insert-image" && this.section) {
         this.insertImage(e.data.url, e.data.alt || "");
       } else if (e.data?.type === "edit:flush") {
         this.commitSave();
+      } else if (e.data?.type === "edit:set-autosave") {
+        this.autoSave = !!e.data.value;
+        // If turning OFF mid-debounce, cancel the pending timer so the
+        // buffered content stays buffered until the user saves manually.
+        if (!this.autoSave) {
+          clearTimeout(this.savePending);
+          this.savePending = null;
+        }
       }
     });
 
@@ -157,11 +173,14 @@ export class InlineEditor {
   }
 
   scheduleSave() {
+    // Always tell the parent the section is dirty so it can show an unsaved
+    // indicator even when auto-save is off.
     parent.postMessage(
       { type: "edit:dirty", section_id: this.sectionId },
       "*",
     );
     clearTimeout(this.savePending);
+    if (!this.autoSave) return;
     this.savePending = setTimeout(() => this.commitSave(), SAVE_DEBOUNCE_MS);
   }
 

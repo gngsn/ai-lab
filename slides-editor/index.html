@@ -135,7 +135,6 @@
   </head>
   <body>
     <div class="wrap">
-      <h1>slides-editor <span class="pill">M9</span></h1>
       <p id="status">checking Supabase connection…</p>
 
       <h2>Decks</h2>
@@ -160,7 +159,7 @@
       try {
         const { data, error } = await supabase
           .from("decks")
-          .select("deck_id,title,updated_at")
+          .select("deck_id,title,updated_at,share_token")
           .order("updated_at", { ascending: false });
         if (error) throw error;
         status.innerHTML = `<span class="ok">✓ connected</span> — ${data.length} deck(s)`;
