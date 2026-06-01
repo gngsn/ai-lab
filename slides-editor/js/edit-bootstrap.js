@@ -104,9 +104,13 @@ async function refresh({ keepIframe = false } = {}) {
   }
   $("deck-title").textContent = deck.title || deckId;
   $("present-link").href = `./present.html?deck=${encodeURIComponent(deckId)}`;
-  $("script-link").href = `./script.html?deck=${encodeURIComponent(deckId)}`;
-  $("notes-fullscreen-link").href =
-    `./script-edit.html?deck=${encodeURIComponent(deckId)}`;
+  if ($("script-link")) {
+    $("script-link").href = `./script.html?deck=${encodeURIComponent(deckId)}`;
+  }
+  if ($("notes-fullscreen-link")) {
+    $("notes-fullscreen-link").href =
+      `./script-edit.html?deck=${encodeURIComponent(deckId)}`;
+  }
   $("export-notes-link").href =
     `./notes.html?deck=${encodeURIComponent(deckId)}`;
   document.title = `Edit · ${deck.title || deckId}`;
@@ -207,7 +211,8 @@ function renderSlideList() {
         notes.delete(sectionId);
         if (currentSectionId === sectionId) {
           // Pick adjacent slide: prefer same index (next), fall back to previous.
-          currentSectionId = slides[idx]?.section_id ?? slides[idx - 1]?.section_id ?? null;
+          currentSectionId =
+            slides[idx]?.section_id ?? slides[idx - 1]?.section_id ?? null;
         }
         renderSlideList();
         renderProps();
@@ -283,7 +288,9 @@ async function reorderTo(fromId, toId) {
   const [moved] = slides.splice(fromIdx, 1);
   slides.splice(toIdx, 0, moved);
   // Mirror the order field (RPC assigns order = index, 0-based).
-  slides.forEach((s, i) => { s.order = i; });
+  slides.forEach((s, i) => {
+    s.order = i;
+  });
   renderSlideList(); // optimistic update — no iframe reload
   try {
     const ids = slides.map((s) => s.section_id);
@@ -317,7 +324,13 @@ async function addSlide() {
     });
     await notesRepo.upsert(deckId, sid, "");
     // Push into local caches — no refetch.
-    slides.push({ deck_id: deckId, section_id: sid, order, title: "Untitled", content });
+    slides.push({
+      deck_id: deckId,
+      section_id: sid,
+      order,
+      title: "Untitled",
+      content,
+    });
     notes.set(sid, "");
     currentSectionId = sid;
     renderSlideList();
@@ -366,7 +379,10 @@ async function duplicateSlide(sourceSid) {
     notes.set(newSid, newNotes);
 
     // 3. Persist that order on the server (single-transaction RPC).
-    await slideRepo.reorder(deckId, slides.map((s) => s.section_id));
+    await slideRepo.reorder(
+      deckId,
+      slides.map((s) => s.section_id),
+    );
     slides.forEach((s, i) => (s.order = i));
 
     currentSectionId = newSid;
@@ -428,22 +444,28 @@ window.addEventListener("beforeunload", () => {
 });
 
 // ── title field (debounced) ───────────────────────────────────────
-let titleSaveTimer = 0;
-$("prop-title").addEventListener("input", (e) => {
-  clearTimeout(titleSaveTimer);
-  const newTitle = e.target.value;
-  titleSaveTimer = setTimeout(async () => {
-    try {
-      await slideRepo.updateMeta(deckId, currentSectionId, { title: newTitle });
-      const s = slides.find((x) => x.section_id === currentSectionId);
-      if (s) s.title = newTitle;
-      renderSlideList();
-      toast("Title saved", "ok");
-    } catch (err) {
-      toast("Title save failed: " + err.message, "err");
-    }
-  }, 600);
-});
+// Slide meta inputs are optional in the DOM. If absent, skip binding.
+const propTitleEl = $("prop-title");
+if (propTitleEl) {
+  let titleSaveTimer = 0;
+  propTitleEl.addEventListener("input", (e) => {
+    clearTimeout(titleSaveTimer);
+    const newTitle = e.target.value;
+    titleSaveTimer = setTimeout(async () => {
+      try {
+        await slideRepo.updateMeta(deckId, currentSectionId, {
+          title: newTitle,
+        });
+        const s = slides.find((x) => x.section_id === currentSectionId);
+        if (s) s.title = newTitle;
+        renderSlideList();
+        toast("Title saved", "ok");
+      } catch (err) {
+        toast("Title save failed: " + err.message, "err");
+      }
+    }, 600);
+  });
+}
 
 // ── image library ──────────────────────────────────────────────────
 async function refreshImagesGrid() {
@@ -706,8 +728,12 @@ let htmlSaveTimer = 0;
 // hid content when overlay misaligned) and left the textarea apparently
 // unusable. Plain textarea with the monospace CSS in edit.html is enough.
 // These no-ops keep the existing call sites harmless.
-function ensureHtmlHighlightOverlay() { return null; }
-function updateHtmlHighlight() { /* no-op */ }
+function ensureHtmlHighlightOverlay() {
+  return null;
+}
+function updateHtmlHighlight() {
+  /* no-op */
+}
 
 function loadCurrentSlideHtml() {
   const ta = $("html-editor");
@@ -803,7 +829,12 @@ document.addEventListener("DOMContentLoaded", () => {
     toggle.checked = autoSave;
     toggle.addEventListener("change", () => {
       autoSave = !!toggle.checked;
-      try { localStorage.setItem("slidesEditor.autoSave", autoSave ? "true" : "false"); } catch {}
+      try {
+        localStorage.setItem(
+          "slidesEditor.autoSave",
+          autoSave ? "true" : "false",
+        );
+      } catch {}
       setStatus(autoSave ? "auto-save: ON" : "auto-save: OFF");
       // Propagate to the iframe inline editor so it stops/starts its own debounce.
       $("canvas")?.contentWindow?.postMessage(
@@ -864,16 +895,23 @@ const historyUI = new HistoryUI({
         try {
           const n = await notesRepo.getOne(deckId, section_id);
           notes.set(section_id, n?.content ?? "");
-        } catch { /* best-effort */ }
+        } catch {
+          /* best-effort */
+        }
       } else {
         // Slide content restored: patch local cache.
         try {
           const fresh = await slideRepo.getOne(deckId, section_id);
           const s = slideOf(section_id);
-          if (s) { s.content = fresh.content; s.title = fresh.title; }
+          if (s) {
+            s.content = fresh.content;
+            s.title = fresh.title;
+          }
           renderSlideList();
           renderProps();
-        } catch { /* best-effort */ }
+        } catch {
+          /* best-effort */
+        }
       }
       loadNotesForCurrent();
       showSlide(currentSectionId);
@@ -885,7 +923,10 @@ const historyUI = new HistoryUI({
           notesRepo.getOne(deckId, section_id),
         ]);
         const s = slideOf(section_id);
-        if (s) { s.content = fresh.content; s.title = fresh.title; }
+        if (s) {
+          s.content = fresh.content;
+          s.title = fresh.title;
+        }
         notes.set(section_id, freshNote?.content ?? "");
         renderSlideList(); // title may have changed
       } catch (err) {
@@ -1001,27 +1042,37 @@ window.addEventListener("message", async (e) => {
   }
 });
 
-// ── mode select (16:9 vs raw-html) ─────────────────────────────────
-// Switches the canvas between iframe (16:9) and a raw <section> textarea.
+// ── mode select (16:9 / 9:16 / raw-html) ───────────────────────────
+// Switches the workspace between canvas presets and raw <section> textarea.
 // Flushes pending HTML before switching out of html mode so nothing is lost.
 function initModeSelect() {
   const sel = $("mode-select");
+  const body = $("body");
   const wrap = $("canvas-wrap");
-  if (!sel || !wrap) return;
+  if (!sel || !wrap || !body) return;
 
   async function apply() {
     const m = sel.value;
     // Pending HTML edits should land before we leave html mode.
     if (htmlMode && m !== "html") await flushHtmlSave();
-    wrap.classList.remove("aspect-169", "html-mode");
+    body.classList.remove("portrait-mode");
+    wrap.classList.remove("aspect-169", "portrait-169", "html-mode");
     if (m === "html") {
       wrap.classList.add("html-mode");
       htmlMode = true;
       loadCurrentSlideHtml(); // reads from cache — synchronous
       // Focus after the next paint so display:block has actually taken effect.
       requestAnimationFrame(() => $("html-editor")?.focus());
+    } else if (m === "portrait") {
+      body.classList.add("portrait-mode");
+      wrap.classList.add("portrait-169");
+      htmlMode = false;
+      if (currentSectionId) showSlide(currentSectionId);
     } else if (m === "aspect-169") {
       wrap.classList.add("aspect-169");
+      htmlMode = false;
+      if (currentSectionId) showSlide(currentSectionId);
+    } else if (m === "default") {
       htmlMode = false;
       if (currentSectionId) showSlide(currentSectionId);
     } else {
@@ -1032,7 +1083,7 @@ function initModeSelect() {
   }
 
   sel.addEventListener("change", apply);
-  apply(); // honor the <option selected> default ("aspect-169")
+  apply(); // honor the <option selected> default ("default")
 }
 
 // ── init ───────────────────────────────────────────────────────────
