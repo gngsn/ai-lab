@@ -4,12 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Edit</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=JetBrains+Mono&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="stylesheet" href="./vendor/fonts/fonts.css" />
     <link rel="stylesheet" href="./css/history-ui.css" />
     <link rel="stylesheet" href="./css/shortcuts-help.css" />
     <style>
@@ -538,6 +533,32 @@
       #canvas-wrap.html-mode #canvas {
         display: none;
       }
+      #canvas-wrap:not(.html-mode) .CodeMirror {
+        display: none;
+      }
+      #canvas-wrap.html-mode .CodeMirror {
+        display: block;
+        position: absolute;
+        inset: 0;
+        height: 100%;
+        width: 100%;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      #canvas-wrap.html-mode .CodeMirror-scroll {
+        height: 100%;
+      }
+      #canvas-wrap.html-mode .CodeMirror-gutters {
+        background: #090909;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      #canvas-wrap.html-mode .CodeMirror pre {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+      }
+      #canvas-wrap.html-mode .CodeMirror-lines {
+        padding: 18px 0;
+      }
       #html-highlight {
         display: none;
         position: absolute;
@@ -545,7 +566,7 @@
         margin: 0;
         padding: 18px 22px;
         box-sizing: border-box;
-        overflow: auto;
+        overflow: hidden;
         background: #0a0a0a;
         color: var(--text);
         border: 0;
@@ -553,9 +574,16 @@
         font-family: "JetBrains Mono", ui-monospace, monospace;
         font-size: 13px;
         line-height: 1.7;
+        font-variant-ligatures: none;
+        font-feature-settings:
+          "liga" 0,
+          "calt" 0;
         tab-size: 2;
         white-space: pre-wrap;
+        overflow-wrap: anywhere;
         word-break: break-word;
+        transform-origin: 0 0;
+        will-change: transform;
         pointer-events: none;
         z-index: 1;
       }
@@ -575,14 +603,22 @@
         font-family: "JetBrains Mono", ui-monospace, monospace;
         font-size: 13px;
         line-height: 1.7;
+        font-variant-ligatures: none;
+        font-feature-settings:
+          "liga" 0,
+          "calt" 0;
         resize: none;
         tab-size: 2;
-        overflow: auto;
+        overflow: scroll;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
         z-index: 2;
       }
       #canvas-wrap.html-mode #html-highlight,
+      #canvas-wrap.html-mode #html-linenos,
       #canvas-wrap.html-mode #html-editor {
-        display: block;
+        display: none;
       }
       #html-editor:focus {
         outline: 0;
@@ -1050,11 +1086,15 @@
     <!-- Highlight.js for HTML syntax highlighting -->
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"
+      href="./vendor/highlight.js/styles/github-dark.min.css"
     />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <link rel="stylesheet" href="./vendor/codemirror/lib/codemirror.min.css" />
+    <link rel="stylesheet" href="./vendor/codemirror/theme/monokai.min.css" />
+    <script src="./vendor/highlight.js/highlight.min.js"></script>
+    <script src="./vendor/highlight.js/languages/xml.min.js"></script>
+    <script src="./vendor/codemirror/lib/codemirror.min.js"></script>
+    <script src="./vendor/codemirror/mode/xml/xml.min.js"></script>
+    <script src="./vendor/pptxgenjs/pptxgen.bundle.js"></script>
     <script src="./js/config.local.js"></script>
     <script type="module">
       import("./js/edit-bootstrap.js").catch((err) => {

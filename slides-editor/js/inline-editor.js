@@ -45,9 +45,7 @@ export class InlineEditor {
         return !el.querySelector("h1, h2, h3, h4, h5, p, li, blockquote");
       });
       this.editables = candidates;
-      this.editables.forEach((el) =>
-        el.setAttribute("data-editable", "true"),
-      );
+      this.editables.forEach((el) => el.setAttribute("data-editable", "true"));
     }
 
     this.ensureEditIds();
@@ -176,7 +174,10 @@ export class InlineEditor {
 
     this.editables.forEach((el) => {
       const id = el.getAttribute("data-edit-id");
-      if (id && document.querySelectorAll(`[data-edit-id="${id}"]`).length === 1) {
+      if (
+        id &&
+        document.querySelectorAll(`[data-edit-id="${id}"]`).length === 1
+      ) {
         return; // unique already
       }
       if (id) el.removeAttribute("data-edit-id");
@@ -208,10 +209,7 @@ export class InlineEditor {
   scheduleSave() {
     // Always tell the parent the section is dirty so it can show an unsaved
     // indicator even when auto-save is off.
-    parent.postMessage(
-      { type: "edit:dirty", section_id: this.sectionId },
-      "*",
-    );
+    parent.postMessage({ type: "edit:dirty", section_id: this.sectionId }, "*");
     clearTimeout(this.savePending);
     if (!this.autoSave) return;
     this.savePending = setTimeout(() => this.commitSave(), SAVE_DEBOUNCE_MS);

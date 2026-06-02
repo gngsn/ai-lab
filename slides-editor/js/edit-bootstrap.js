@@ -49,6 +49,9 @@ let notes = new Map(); // sid → content string (populated at load, kept curren
 let currentSectionId = null;
 let editMode = true;
 let htmlMode = false; // raw <section>…</section> edit in textarea
+let htmlCodeMirror = null;
+let suppressHtmlEditorSync = false;
+let htmlHighlightSyncBound = false;
 const NOTES_FONT_SIZE_KEY = "slidesEditor.notesFontSize";
 const NOTES_FONT_SIZE_MIN = 11;
 const NOTES_FONT_SIZE_MAX = 20;
@@ -955,7 +958,6 @@ $("frame-save").addEventListener("click", async () => {
 // ── HTML edit mode (raw <section>…</section> in textarea) with highlight.js ──
 let htmlPending = null; // { sid, content }
 let htmlSaveTimer = 0;
-let htmlHighlightSyncBound = false;
 
 function ensureHtmlHighlightOverlay() {
   return {
@@ -963,7 +965,67 @@ function ensureHtmlHighlightOverlay() {
     hl: $("html-highlight"),
   };
 }
+
+function getHtmlEditorValue() {
+  if (htmlCodeMirror) return htmlCodeMirror.getValue();
+  return $("html-editor")?.value ?? "";
+}
+
+function setHtmlEditorValue(value) {
+  if (htmlCodeMirror) {
+    suppressHtmlEditorSync = true;
+    htmlCodeMirror.setValue(value);
+    htmlCodeMirror.refresh();
+    suppressHtmlEditorSync = false;
+    return;
+  }
+  const ta = $("html-editor");
+  if (ta) ta.value = value;
+}
+
+function queueHtmlChange(content) {
+  if (!currentSectionId) return;
+  htmlPending = { sid: currentSectionId, content };
+  clearTimeout(htmlSaveTimer);
+  if (autoSave) {
+    setStatus("HTML: saving…");
+    htmlSaveTimer = setTimeout(flushHtmlSave, 800);
+  } else {
+    setStatus("HTML: unsaved", "warn");
+  }
+  updateHtmlHighlight();
+}
+
+function ensureHtmlCodeMirror() {
+  if (htmlCodeMirror || !window.CodeMirror) return htmlCodeMirror;
+  const ta = $("html-editor");
+  if (!ta) return null;
+  htmlCodeMirror = window.CodeMirror.fromTextArea(ta, {
+    mode: "xml",
+    theme: "monokai",
+    lineNumbers: true,
+    lineWrapping: true,
+    tabSize: 2,
+    indentUnit: 2,
+    indentWithTabs: false,
+    viewportMargin: Infinity,
+    extraKeys: {
+      "Cmd-Shift-F": () => formatCurrentHtml(),
+      "Ctrl-Shift-F": () => formatCurrentHtml(),
+    },
+  });
+  htmlCodeMirror.setSize("100%", "100%");
+  htmlCodeMirror.on("change", () => {
+    if (suppressHtmlEditorSync) return;
+    queueHtmlChange(htmlCodeMirror.getValue());
+  });
+  htmlCodeMirror.on("scroll", () => {
+    // CodeMirror owns its own scroll position.
+  });
+  return htmlCodeMirror;
+}
 function updateHtmlHighlight() {
+  if (htmlCodeMirror) return;
   const { ta, hl } = ensureHtmlHighlightOverlay();
   if (!ta || !hl) return;
   const value = ta.value || "";
@@ -981,34 +1043,123 @@ function updateHtmlHighlight() {
   } else {
     hl.textContent = value;
   }
-  hl.scrollTop = ta.scrollTop;
-  hl.scrollLeft = ta.scrollLeft;
+  hl.style.transform = `translate(${-ta.scrollLeft}px, ${-ta.scrollTop}px)`;
 }
 
 function loadCurrentSlideHtml() {
-  const ta = $("html-editor");
   if (!currentSectionId) {
-    ta.value = "";
+    setHtmlEditorValue("");
     updateHtmlHighlight();
     return;
   }
   // Read from local slides cache — no network round-trip.
   const slide = slideOf(currentSectionId);
-  ta.value = slide?.content ?? "";
+  setHtmlEditorValue(slide?.content ?? "");
   htmlPending = null;
   updateHtmlHighlight();
 }
 
 function bindHtmlHighlightSync() {
-  if (htmlHighlightSyncBound) return;
+  if (htmlHighlightSyncBound || htmlCodeMirror) return;
   const ta = $("html-editor");
   const hl = $("html-highlight");
   if (!ta || !hl) return;
   htmlHighlightSyncBound = true;
   ta.addEventListener("scroll", () => {
-    hl.scrollTop = ta.scrollTop;
-    hl.scrollLeft = ta.scrollLeft;
+    hl.style.transform = `translate(${-ta.scrollLeft}px, ${-ta.scrollTop}px)`;
   });
+}
+
+function formatHtmlSource(source) {
+  const template = document.createElement("template");
+  template.innerHTML = source.trim();
+  const indentUnit = "  ";
+  const selfClosingTags = new Set([
+    "area",
+    "base",
+    "br",
+    "col",
+    "embed",
+    "hr",
+    "img",
+    "input",
+    "link",
+    "meta",
+    "param",
+    "source",
+    "track",
+    "wbr",
+  ]);
+
+  function escapeAttr(value) {
+    return String(value).replace(/"/g, "&quot;");
+  }
+
+  function formatNode(node, depth) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent.replace(/\s+/g, " ").trim();
+      return text ? `${indentUnit.repeat(depth)}${text}\n` : "";
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) return "";
+
+    const tag = node.tagName.toLowerCase();
+    const attrs = [...node.attributes]
+      .map((attr) => `${attr.name}="${escapeAttr(attr.value)}"`)
+      .join(" ");
+    const openTag = attrs ? `<${tag} ${attrs}>` : `<${tag}>`;
+    const children = [...node.childNodes]
+      .map((child) => formatNode(child, depth + 1))
+      .join("");
+    const textContent = node.textContent.replace(/\s+/g, " ").trim();
+    const hasElementChildren = [...node.childNodes].some(
+      (child) => child.nodeType === Node.ELEMENT_NODE,
+    );
+
+    if (!children && !textContent && selfClosingTags.has(tag)) {
+      return `${indentUnit.repeat(depth)}<${tag}${attrs ? ` ${attrs}` : ""} />\n`;
+    }
+
+    if (!hasElementChildren && node.childNodes.length === 1) {
+      return `${indentUnit.repeat(depth)}${openTag}${textContent}</${tag}>\n`;
+    }
+
+    return `${indentUnit.repeat(depth)}${openTag}\n${children}${indentUnit.repeat(depth)}</${tag}>\n`;
+  }
+
+  return [...template.content.childNodes]
+    .map((node) => formatNode(node, 0))
+    .join("")
+    .trimEnd();
+}
+
+function formatCurrentHtml() {
+  const ta = htmlCodeMirror || $("html-editor");
+  if (!ta) return;
+  const current = htmlCodeMirror ? htmlCodeMirror.getValue() : ta.value;
+  const formatted = formatHtmlSource(current);
+  if (formatted === current) {
+    toast("Already formatted", "ok");
+    return;
+  }
+  if (htmlCodeMirror) {
+    suppressHtmlEditorSync = true;
+    htmlCodeMirror.setValue(formatted);
+    htmlCodeMirror.refresh();
+    suppressHtmlEditorSync = false;
+  } else {
+    ta.value = formatted;
+  }
+  htmlPending = { sid: currentSectionId, content: formatted };
+  updateHtmlHighlight();
+  if (autoSave) {
+    clearTimeout(htmlSaveTimer);
+    htmlSaveTimer = setTimeout(flushHtmlSave, 0);
+    setStatus("HTML: formatting…");
+  } else {
+    setStatus("HTML formatted · unsaved", "warn");
+  }
+  toast("HTML formatted", "ok");
 }
 
 async function flushHtmlSave() {
@@ -1044,6 +1195,7 @@ async function flushHtmlSave() {
 }
 
 $("html-editor").addEventListener("input", (e) => {
+  if (htmlCodeMirror) return;
   if (!currentSectionId) return;
   htmlPending = { sid: currentSectionId, content: e.target.value };
   clearTimeout(htmlSaveTimer);
@@ -1126,6 +1278,18 @@ window.addEventListener("beforeunload", () => {
 
 // ── keyboard shortcuts ─────────────────────────────────────────────
 document.addEventListener("keydown", (e) => {
+  const htmlEditorFocused =
+    htmlMode && document.activeElement?.id === "html-editor";
+  if (
+    htmlEditorFocused &&
+    (e.ctrlKey || e.metaKey) &&
+    e.shiftKey &&
+    (e.key === "f" || e.key === "F")
+  ) {
+    e.preventDefault();
+    formatCurrentHtml();
+    return;
+  }
   if (
     e.target?.tagName === "INPUT" ||
     e.target?.tagName === "TEXTAREA" ||
@@ -1328,9 +1492,14 @@ function initModeSelect() {
     if (m === "html") {
       wrap.classList.add("html-mode");
       htmlMode = true;
+      ensureHtmlCodeMirror();
       loadCurrentSlideHtml(); // reads from cache — synchronous
+      formatCurrentHtml();
       // Focus after the next paint so display:block has actually taken effect.
-      requestAnimationFrame(() => $("html-editor")?.focus());
+      requestAnimationFrame(() => {
+        if (htmlCodeMirror) htmlCodeMirror.focus();
+        else $("html-editor")?.focus();
+      });
     } else if (m === "portrait") {
       body.classList.add("portrait-mode");
       wrap.classList.add("portrait-169");
