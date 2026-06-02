@@ -244,8 +244,7 @@ function extractSlideContent(sectionHtml, frameHtml) {
     const elStyle = el.getAttribute("style") ?? "";
 
     // Color: inline style → CSS class (heuristic) → default
-    let colorHex =
-      toCssHex(styleVal(elStyle, "color")) ?? null;
+    let colorHex = toCssHex(styleVal(elStyle, "color")) ?? null;
     if (!colorHex) {
       // Check for common utility class patterns like text-white, color-accent
       const cls = el.className ?? "";
@@ -258,7 +257,7 @@ function extractSlideContent(sectionHtml, frameHtml) {
     let fontSize =
       parseFontSizePt(styleVal(elStyle, "font-size")) ??
       (isHeading
-        ? { h1: 40, h2: 32, h3: 26, h4: 22, h5: 18, h6: 16 }[tag] ?? 20
+        ? ({ h1: 40, h2: 32, h3: 26, h4: 22, h5: 18, h6: 16 }[tag] ?? 20)
         : 16);
 
     const bold =
@@ -266,7 +265,14 @@ function extractSlideContent(sectionHtml, frameHtml) {
       /bold|700|800|900/.test(styleVal(elStyle, "font-weight") ?? "");
     const italic = /italic/.test(styleVal(elStyle, "font-style") ?? "");
 
-    elements.push({ tag, text: blockText, color: colorHex, fontSize, bold, italic });
+    elements.push({
+      tag,
+      text: blockText,
+      color: colorHex,
+      fontSize,
+      bold,
+      italic,
+    });
     seen.add(el);
   });
 

@@ -607,8 +607,201 @@ async function uploadFiles(files) {
   await refreshImagesGrid();
 }
 
+// ── SVG Shape Picker ──────────────────────────────────────────────
+const SVG_SHAPES = [
+  {
+    id: "rect",
+    label: "Rectangle",
+    render: (f, s, sw) =>
+      `<rect x="8" y="18" width="84" height="64" fill="${f}" stroke="${s}" stroke-width="${sw}"/>`,
+  },
+  {
+    id: "rect-r",
+    label: "Rounded",
+    render: (f, s, sw) =>
+      `<rect x="8" y="18" width="84" height="64" rx="14" fill="${f}" stroke="${s}" stroke-width="${sw}"/>`,
+  },
+  {
+    id: "circle",
+    label: "Circle",
+    render: (f, s, sw) =>
+      `<circle cx="50" cy="50" r="40" fill="${f}" stroke="${s}" stroke-width="${sw}"/>`,
+  },
+  {
+    id: "ellipse",
+    label: "Ellipse",
+    render: (f, s, sw) =>
+      `<ellipse cx="50" cy="50" rx="45" ry="28" fill="${f}" stroke="${s}" stroke-width="${sw}"/>`,
+  },
+  {
+    id: "triangle",
+    label: "Triangle",
+    render: (f, s, sw) =>
+      `<polygon points="50,6 94,90 6,90" fill="${f}" stroke="${s}" stroke-width="${sw}" stroke-linejoin="round"/>`,
+  },
+  {
+    id: "diamond",
+    label: "Diamond",
+    render: (f, s, sw) =>
+      `<polygon points="50,4 96,50 50,96 4,50" fill="${f}" stroke="${s}" stroke-width="${sw}" stroke-linejoin="round"/>`,
+  },
+  {
+    id: "star",
+    label: "Star",
+    render: (f, s, sw) => {
+      const pts = [];
+      for (let i = 0; i < 10; i++) {
+        const r = i % 2 === 0 ? 44 : 18;
+        const a = (Math.PI / 5) * i - Math.PI / 2;
+        pts.push(
+          `${(50 + r * Math.cos(a)).toFixed(2)},${(50 + r * Math.sin(a)).toFixed(2)}`,
+        );
+      }
+      return `<polygon points="${pts.join(" ")}" fill="${f}" stroke="${s}" stroke-width="${sw}" stroke-linejoin="round"/>`;
+    },
+  },
+  {
+    id: "arrow-r",
+    label: "Arrow \u2192",
+    render: (f, s, sw) =>
+      `<polygon points="5,33 62,33 62,12 95,50 62,88 62,67 5,67" fill="${f}" stroke="${s}" stroke-width="${sw}" stroke-linejoin="round"/>`,
+  },
+  {
+    id: "arrow-l",
+    label: "Arrow \u2190",
+    render: (f, s, sw) =>
+      `<polygon points="95,33 38,33 38,12 5,50 38,88 38,67 95,67" fill="${f}" stroke="${s}" stroke-width="${sw}" stroke-linejoin="round"/>`,
+  },
+  {
+    id: "arrow-u",
+    label: "Arrow \u2191",
+    render: (f, s, sw) =>
+      `<polygon points="33,95 33,38 12,38 50,5 88,38 67,38 67,95" fill="${f}" stroke="${s}" stroke-width="${sw}" stroke-linejoin="round"/>`,
+  },
+  {
+    id: "line-h",
+    label: "Line \u2014",
+    render: (f, s, sw) =>
+      `<line x1="5" y1="50" x2="95" y2="50" stroke="${sw > 0 ? s : f}" stroke-width="${Math.max(sw, 4)}" stroke-linecap="round"/>`,
+  },
+  {
+    id: "check",
+    label: "Checkmark",
+    render: (f, s, sw) =>
+      `<polyline points="8,52 36,78 92,20" fill="none" stroke="${f}" stroke-width="${Math.max(sw, 8)}" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  {
+    id: "cross",
+    label: "Cross \u2715",
+    render: (f, s, sw) =>
+      `<line x1="14" y1="14" x2="86" y2="86" stroke="${f}" stroke-width="${Math.max(sw, 8)}" stroke-linecap="round"/><line x1="86" y1="14" x2="14" y2="86" stroke="${f}" stroke-width="${Math.max(sw, 8)}" stroke-linecap="round"/>`,
+  },
+  {
+    id: "plus",
+    label: "Plus +",
+    render: (f, s, sw) =>
+      `<line x1="50" y1="10" x2="50" y2="90" stroke="${f}" stroke-width="${Math.max(sw, 8)}" stroke-linecap="round"/><line x1="10" y1="50" x2="90" y2="50" stroke="${f}" stroke-width="${Math.max(sw, 8)}" stroke-linecap="round"/>`,
+  },
+  {
+    id: "speech",
+    label: "Speech",
+    render: (f, s, sw) =>
+      `<path d="M8,8 H92 A6,6 0 0,1 98,14 V60 A6,6 0 0,1 92,66 H42 L28,90 28,66 H8 A6,6 0 0,1 2,60 V14 A6,6 0 0,1 8,8 Z" fill="${f}" stroke="${s}" stroke-width="${sw}" stroke-linejoin="round"/>`,
+  },
+  {
+    id: "heart",
+    label: "Heart",
+    render: (f, s, sw) =>
+      `<path d="M50,82 C50,82 8,54 8,28 A22,22 0 0,1 50,18 A22,22 0 0,1 92,28 C92,54 50,82 50,82 Z" fill="${f}" stroke="${s}" stroke-width="${sw}"/>`,
+  },
+];
+
+function buildShapeSvgHtml(renderFn) {
+  const fill = $("svg-fill").value;
+  const stroke = $("svg-stroke").value;
+  const sw = Number($("svg-stroke-w").value) || 0;
+  const size = Math.max(20, Number($("svg-size").value) || 120);
+  const inner = renderFn(fill, stroke, sw);
+  return `<span contenteditable="false" style="display:inline-block;line-height:0;vertical-align:middle;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="${size}" height="${size}">${inner}</svg></span>`;
+}
+
+function renderSvgShapeGrid() {
+  const grid = $("svg-shape-grid");
+  if (!grid) return;
+  const fill = $("svg-fill").value;
+  const stroke = $("svg-stroke").value;
+  const sw = Number($("svg-stroke-w").value) || 0;
+  grid.innerHTML = SVG_SHAPES.map(
+    (shape) =>
+      `<button class="svg-shape-btn" data-shape="${shape.id}" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="58" height="58">
+          ${shape.render(fill, stroke, sw)}
+        </svg>
+        <span>${shape.label}</span>
+      </button>`,
+  ).join("");
+  grid.querySelectorAll(".svg-shape-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const shape = SVG_SHAPES.find((s) => s.id === btn.dataset.shape);
+      if (!shape) return;
+      const html = buildShapeSvgHtml(shape.render);
+      $("canvas")?.contentWindow?.postMessage(
+        { type: "edit:insert-svg", html },
+        "*",
+      );
+      $("svg-modal-bg").classList.remove("show");
+      toast("SVG inserted", "ok");
+    });
+  });
+}
+
+$("svg-btn").addEventListener("click", () => {
+  $("svg-modal-bg").classList.add("show");
+  renderSvgShapeGrid();
+});
+$("svg-close").addEventListener("click", () =>
+  $("svg-modal-bg").classList.remove("show"),
+);
+$("svg-modal-bg").addEventListener("click", (e) => {
+  if (e.target === $("svg-modal-bg"))
+    $("svg-modal-bg").classList.remove("show");
+});
+
+// Re-render preview when color/stroke controls change
+["svg-fill", "svg-stroke", "svg-stroke-w"].forEach((id) => {
+  $(id)?.addEventListener("input", renderSvgShapeGrid);
+});
+
+// Tab switching
+document.querySelectorAll(".svg-tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document
+      .querySelectorAll(".svg-tab")
+      .forEach((t) => t.classList.toggle("active", t === tab));
+    $("svg-tab-shapes").style.display =
+      tab.dataset.tab === "shapes" ? "" : "none";
+    $("svg-tab-custom").style.display =
+      tab.dataset.tab === "custom" ? "" : "none";
+  });
+});
+
+// Custom SVG insert
+$("svg-custom-insert").addEventListener("click", () => {
+  const raw = $("svg-custom-code").value.trim();
+  if (!raw) return toast("SVG 코드를 입력해주세요", "err");
+  if (!raw.startsWith("<svg"))
+    return toast("<svg ...> 로 시작해야 합니다", "err");
+  const wrapped = `<span contenteditable="false" style="display:inline-block;line-height:0;vertical-align:middle;">${raw}</span>`;
+  $("canvas")?.contentWindow?.postMessage(
+    { type: "edit:insert-svg", html: wrapped },
+    "*",
+  );
+  $("svg-modal-bg").classList.remove("show");
+  $("svg-custom-code").value = "";
+  toast("SVG inserted", "ok");
+});
+
 $("images-btn").addEventListener("click", async () => {
-  $("images-deck-id").textContent = deckId;
   $("images-modal-bg").classList.add("show");
   await refreshImagesGrid();
 });
@@ -762,17 +955,34 @@ $("frame-save").addEventListener("click", async () => {
 // ── HTML edit mode (raw <section>…</section> in textarea) with highlight.js ──
 let htmlPending = null; // { sid, content }
 let htmlSaveTimer = 0;
+let htmlHighlightSyncBound = false;
 
-// Syntax-highlight overlay: removed. The transparent-text + absolute-overlay
-// trick was fragile (positioning broke against canvas-wrap, transparent text
-// hid content when overlay misaligned) and left the textarea apparently
-// unusable. Plain textarea with the monospace CSS in edit.html is enough.
-// These no-ops keep the existing call sites harmless.
 function ensureHtmlHighlightOverlay() {
-  return null;
+  return {
+    ta: $("html-editor"),
+    hl: $("html-highlight"),
+  };
 }
 function updateHtmlHighlight() {
-  /* no-op */
+  const { ta, hl } = ensureHtmlHighlightOverlay();
+  if (!ta || !hl) return;
+  const value = ta.value || "";
+  if (!value.trim()) {
+    hl.textContent = value;
+  } else if (window.hljs?.highlight) {
+    try {
+      hl.innerHTML = window.hljs.highlight(value, {
+        language: "xml",
+        ignoreIllegals: true,
+      }).value;
+    } catch {
+      hl.textContent = value;
+    }
+  } else {
+    hl.textContent = value;
+  }
+  hl.scrollTop = ta.scrollTop;
+  hl.scrollLeft = ta.scrollLeft;
 }
 
 function loadCurrentSlideHtml() {
@@ -787,6 +997,18 @@ function loadCurrentSlideHtml() {
   ta.value = slide?.content ?? "";
   htmlPending = null;
   updateHtmlHighlight();
+}
+
+function bindHtmlHighlightSync() {
+  if (htmlHighlightSyncBound) return;
+  const ta = $("html-editor");
+  const hl = $("html-highlight");
+  if (!ta || !hl) return;
+  htmlHighlightSyncBound = true;
+  ta.addEventListener("scroll", () => {
+    hl.scrollTop = ta.scrollTop;
+    hl.scrollLeft = ta.scrollLeft;
+  });
 }
 
 async function flushHtmlSave() {
@@ -850,6 +1072,7 @@ async function flushAllPending() {
 // Wire the Save-now button + the Auto-save toggle. Both targets live in the
 // toolbar of edit.html.
 document.addEventListener("DOMContentLoaded", () => {
+  bindHtmlHighlightSync();
   const saveBtn = $("save-html-btn"); // id kept; button text now reads "Save now"
   if (saveBtn) {
     saveBtn.addEventListener("click", async () => {
@@ -887,6 +1110,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Initial highlight overlay setup
 document.addEventListener("DOMContentLoaded", () => {
+  bindHtmlHighlightSync();
   if ($("html-editor")) updateHtmlHighlight();
 });
 

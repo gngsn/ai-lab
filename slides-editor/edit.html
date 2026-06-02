@@ -257,6 +257,100 @@
         background: rgba(20, 20, 20, 0.6);
       }
 
+      /* SVG picker */
+      .svg-tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 8px;
+      }
+      .svg-tab {
+        padding: 4px 14px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: none;
+        color: var(--text-mid);
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .svg-tab.active {
+        background: var(--accent);
+        color: #000;
+        border-color: var(--accent);
+      }
+      .svg-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+        font-size: 12px;
+        color: var(--text-mid);
+      }
+      .svg-controls label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .svg-controls input[type="color"] {
+        width: 32px;
+        height: 24px;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        cursor: pointer;
+        padding: 0;
+        background: none;
+      }
+      .svg-controls input[type="number"] {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 3px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+      .svg-shape-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+        gap: 6px;
+        overflow-y: auto;
+        max-height: 300px;
+        padding-right: 2px;
+      }
+      .svg-shape-btn {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px 4px 6px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+      }
+      .svg-shape-btn:hover {
+        border-color: var(--accent);
+        background: rgba(93, 184, 166, 0.08);
+      }
+      .svg-shape-btn span {
+        font-size: 10px;
+        color: var(--text-mid);
+      }
+      #svg-custom-code {
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 8px;
+        border-radius: 4px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        resize: vertical;
+        box-sizing: border-box;
+      }
+
       /* Body grid */
       #body {
         display: grid;
@@ -392,6 +486,8 @@
         height: 100%;
         max-width: 100%;
         max-height: 100%;
+        position: relative;
+        overflow: hidden;
       }
       #canvas {
         width: 100%;
@@ -434,20 +530,44 @@
       #canvas-wrap.html-mode {
         display: block;
         padding: 0;
+        position: relative;
       }
       #canvas-wrap.html-mode #canvas-stage {
-        width: 100%;
-        height: 100%;
+        display: none;
       }
       #canvas-wrap.html-mode #canvas {
         display: none;
       }
-      #html-editor {
+      #html-highlight {
         display: none;
-        width: 100%;
-        height: 100%;
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        padding: 18px 22px;
+        box-sizing: border-box;
+        overflow: auto;
         background: #0a0a0a;
         color: var(--text);
+        border: 0;
+        outline: 0;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 13px;
+        line-height: 1.7;
+        tab-size: 2;
+        white-space: pre-wrap;
+        word-break: break-word;
+        pointer-events: none;
+        z-index: 1;
+      }
+      #html-editor {
+        display: none;
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        color: transparent;
+        caret-color: var(--text);
         border: 0;
         outline: 0;
         padding: 18px 22px;
@@ -457,7 +577,10 @@
         line-height: 1.7;
         resize: none;
         tab-size: 2;
+        overflow: auto;
+        z-index: 2;
       }
+      #canvas-wrap.html-mode #html-highlight,
       #canvas-wrap.html-mode #html-editor {
         display: block;
       }
@@ -727,6 +850,7 @@
             <button id="history-toggle" type="button">⏱ History</button>
             <button id="frame-edit" type="button">Frame…</button>
             <button id="share-btn" type="button">🔗 Share</button>
+            <button id="svg-btn" type="button">✦ SVG</button>
             <button id="images-btn" type="button">🖼 Images</button>
           </div>
         </details>
@@ -738,6 +862,7 @@
           <div id="canvas-stage">
             <iframe id="canvas" src="about:blank"></iframe>
           </div>
+          <pre id="html-highlight" aria-hidden="true"></pre>
           <textarea
             id="html-editor"
             spellcheck="false"
@@ -824,6 +949,75 @@
           <button class="btn" id="images-close">Close</button>
         </header>
         <div id="images-grid" class="image-grid"></div>
+      </div>
+    </div>
+
+    <div class="modal-bg" id="svg-modal-bg">
+      <div
+        class="modal"
+        style="width: min(620px, 92vw); height: auto; gap: 10px"
+      >
+        <h2>Insert SVG</h2>
+        <div class="svg-tabs">
+          <button class="svg-tab active" data-tab="shapes" type="button">
+            Shapes
+          </button>
+          <button class="svg-tab" data-tab="custom" type="button">
+            Custom SVG
+          </button>
+        </div>
+        <div id="svg-tab-shapes">
+          <div class="svg-controls">
+            <label
+              >Fill <input type="color" id="svg-fill" value="#5db8a6"
+            /></label>
+            <label
+              >Stroke <input type="color" id="svg-stroke" value="#ffffff"
+            /></label>
+            <label
+              >Stroke px
+              <input
+                type="number"
+                id="svg-stroke-w"
+                value="0"
+                min="0"
+                max="20"
+                step="1"
+                style="width: 50px"
+            /></label>
+            <label
+              >Size px
+              <input
+                type="number"
+                id="svg-size"
+                value="120"
+                min="20"
+                max="500"
+                step="10"
+                style="width: 62px"
+            /></label>
+          </div>
+          <div class="svg-shape-grid" id="svg-shape-grid"></div>
+        </div>
+        <div id="svg-tab-custom" style="display: none">
+          <textarea
+            id="svg-custom-code"
+            rows="8"
+            placeholder='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">&#10;  <!-- your SVG here -->&#10;</svg>'
+          ></textarea>
+          <div
+            class="actions"
+            style="margin-top: 8px; justify-content: flex-end"
+          >
+            <button class="btn" id="svg-custom-insert" type="button">
+              Insert
+            </button>
+          </div>
+        </div>
+        <div class="actions">
+          <span style="flex: 1"></span>
+          <button class="btn" id="svg-close" type="button">Close</button>
+        </div>
       </div>
     </div>
 

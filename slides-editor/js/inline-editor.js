@@ -80,6 +80,8 @@ export class InlineEditor {
     window.addEventListener("message", (e) => {
       if (e.data?.type === "edit:insert-image" && this.section) {
         this.insertImage(e.data.url, e.data.alt || "");
+      } else if (e.data?.type === "edit:insert-svg" && this.section) {
+        this.insertSvg(e.data.html);
       } else if (e.data?.type === "edit:flush") {
         this.commitSave();
       } else if (e.data?.type === "edit:set-autosave") {
@@ -129,6 +131,37 @@ export class InlineEditor {
         this.section.querySelector("div") ||
         this.section;
       target.appendChild(img);
+    }
+    this.scheduleSave();
+  }
+
+  insertSvg(html) {
+    if (!html) return;
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    const node = tmp.firstChild;
+    if (!node) return;
+
+    const sel = document.getSelection();
+    let placed = false;
+    if (sel?.rangeCount) {
+      const range = sel.getRangeAt(0);
+      if (this.section.contains(range.commonAncestorContainer)) {
+        range.deleteContents();
+        range.insertNode(node);
+        range.setStartAfter(node);
+        range.setEndAfter(node);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        placed = true;
+      }
+    }
+    if (!placed) {
+      const target =
+        this.editables.find((el) => /^(DIV|P|UL|OL)$/.test(el.tagName)) ||
+        this.section.querySelector("div") ||
+        this.section;
+      target.appendChild(node);
     }
     this.scheduleSave();
   }
