@@ -280,6 +280,12 @@
         grid-area: canvas;
         padding: 16px;
         min-height: 0;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        align-self: stretch;
+        justify-self: stretch;
       }
       #body.portrait-mode #props {
         grid-area: props;
@@ -381,6 +387,12 @@
         overflow: hidden;
         padding: 24px;
       }
+      #canvas-stage {
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+      }
       #canvas {
         width: 100%;
         height: 100%;
@@ -394,31 +406,38 @@
       #canvas-wrap.aspect-169 {
         background: #111;
       }
-      #canvas-wrap.aspect-169 #canvas {
+      #canvas-wrap.aspect-169 #canvas-stage,
+      #canvas-wrap.portrait-169 #canvas-stage {
         width: 100%;
-        max-width: 100vw;
         aspect-ratio: 16 / 9;
         height: auto;
         max-height: 100%;
+        max-width: 100%;
+      }
+      #canvas-wrap.aspect-169 #canvas,
+      #canvas-wrap.portrait-169 #canvas {
+        width: 100%;
+        height: 100%;
         background: #111;
         box-shadow: 0 4px 32px rgba(0, 0, 0, 0.7);
       }
       #canvas-wrap.portrait-169 {
         background: #111;
       }
-      #canvas-wrap.portrait-169 #canvas {
-        width: 100%;
+      #body.portrait-mode #canvas-stage {
+        width: auto;
+        height: 100%;
         max-width: 100%;
-        aspect-ratio: 16 / 9;
-        height: auto;
         max-height: 100%;
-        background: #111;
-        box-shadow: 0 4px 32px rgba(0, 0, 0, 0.7);
       }
       /* HTML edit mode swaps the iframe for a raw textarea. */
       #canvas-wrap.html-mode {
         display: block;
         padding: 0;
+      }
+      #canvas-wrap.html-mode #canvas-stage {
+        width: 100%;
+        height: 100%;
       }
       #canvas-wrap.html-mode #canvas {
         display: none;
@@ -464,6 +483,26 @@
         margin-bottom: 10px;
         font-weight: 600;
       }
+      .notes-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .notes-controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .notes-size-btn {
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border-radius: 4px;
+        font-size: 14px;
+        line-height: 1;
+      }
       #props .field {
         margin-bottom: 14px;
       }
@@ -505,10 +544,11 @@
         background: var(--bg);
         border-radius: 3px;
       }
-      #notes-textarea {
+      #props #notes-textarea {
         height: 100%;
         min-height: 0;
         resize: none;
+        font-size: var(--notes-font-size, 14px);
       }
 
       /* Modal */
@@ -676,6 +716,7 @@
               >
                 <button data-export="html">HTML (self-contained)</button>
                 <button data-export="pdf">PDF (browser print)</button>
+                <button data-export="pptx">PPTX (Google Slides)</button>
                 <button data-export="md">Notes (.md)</button>
                 <button data-export="md-copy">Copy notes to clipboard</button>
                 <a id="export-notes-link" href="#" target="_blank"
@@ -694,7 +735,9 @@
       <main id="body">
         <aside id="slide-list"></aside>
         <div id="canvas-wrap">
-          <iframe id="canvas" src="about:blank"></iframe>
+          <div id="canvas-stage">
+            <iframe id="canvas" src="about:blank"></iframe>
+          </div>
           <textarea
             id="html-editor"
             spellcheck="false"
@@ -702,7 +745,27 @@
           ></textarea>
         </div>
         <aside id="props">
-          <h3>Notes</h3>
+          <div class="notes-header">
+            <h3>Notes</h3>
+            <div class="notes-controls">
+              <button
+                class="btn notes-size-btn"
+                id="notes-size-down"
+                type="button"
+                aria-label="Decrease notes font size"
+              >
+                -
+              </button>
+              <button
+                class="btn notes-size-btn"
+                id="notes-size-up"
+                type="button"
+                aria-label="Increase notes font size"
+              >
+                +
+              </button>
+            </div>
+          </div>
           <div class="field notes-only">
             <textarea
               id="notes-textarea"
@@ -712,7 +775,6 @@
               disabled
               style="
                 font-family: &quot;IBM Plex Sans KR&quot;, sans-serif;
-                font-size: 14px;
                 line-height: 1.6;
               "
             ></textarea>
@@ -798,6 +860,7 @@
     />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
     <script src="./js/config.local.js"></script>
     <script type="module">
       import("./js/edit-bootstrap.js").catch((err) => {

@@ -6,7 +6,7 @@
 // Owns: passphrase gate, slide list (incl. DnD reorder), iframe canvas
 // switching, props panel, add/delete, frame_html modal, IPC with iframe.
 import { ensureAuthed } from "./auth.js";
-import { exportHtml, exportNotesMd, exportPdf } from "./export.js";
+import { exportHtml, exportNotesMd, exportPdf, exportPptx } from "./export.js";
 import { HistoryUI, saveVersionPrompt } from "./history-ui.js";
 import * as deckRepo from "./repo/deck-repo.js";
 import * as notesRepo from "./repo/notes-repo.js";
@@ -49,6 +49,10 @@ let notes = new Map(); // sid → content string (populated at load, kept curren
 let currentSectionId = null;
 let editMode = true;
 let htmlMode = false; // raw <section>…</section> edit in textarea
+const NOTES_FONT_SIZE_KEY = "slidesEditor.notesFontSize";
+const NOTES_FONT_SIZE_MIN = 11;
+const NOTES_FONT_SIZE_MAX = 20;
+const NOTES_FONT_SIZE_STEP = 1;
 // Auto-save toggle. Persisted in localStorage so it survives reloads.
 // When OFF, debounced timers are NOT scheduled in any input handler — edits
 // stay buffered in *Pending and are only flushed by the manual Save button
@@ -82,6 +86,34 @@ function setStatus(text, kind = "") {
   el.textContent = text;
   el.dataset.kind = kind;
 }
+
+function getNotesFontSize() {
+  const parsed = Number.parseInt(
+    localStorage.getItem(NOTES_FONT_SIZE_KEY) || "",
+    10,
+  );
+  if (Number.isFinite(parsed)) {
+    return Math.min(NOTES_FONT_SIZE_MAX, Math.max(NOTES_FONT_SIZE_MIN, parsed));
+  }
+  return 14;
+}
+
+function setNotesFontSize(size) {
+  const nextSize = Math.min(
+    NOTES_FONT_SIZE_MAX,
+    Math.max(NOTES_FONT_SIZE_MIN, size),
+  );
+  document.documentElement.style.setProperty(
+    "--notes-font-size",
+    `${nextSize}px`,
+  );
+  try {
+    localStorage.setItem(NOTES_FONT_SIZE_KEY, String(nextSize));
+  } catch {}
+  return nextSize;
+}
+
+setNotesFontSize(getNotesFontSize());
 
 // ── load + render ──────────────────────────────────────────────────
 async function refresh({ keepIframe = false } = {}) {
@@ -438,6 +470,14 @@ $("notes-textarea").addEventListener("input", (e) => {
     setStatus("notes: unsaved", "warn");
   }
 });
+
+function adjustNotesFontSize(delta) {
+  const current = getNotesFontSize();
+  setNotesFontSize(current + delta * NOTES_FONT_SIZE_STEP);
+}
+
+$("notes-size-down")?.addEventListener("click", () => adjustNotesFontSize(-1));
+$("notes-size-up")?.addEventListener("click", () => adjustNotesFontSize(1));
 
 window.addEventListener("beforeunload", () => {
   if (notesPending) flushNotesSave();
@@ -960,6 +1000,10 @@ document.querySelectorAll("[data-export]").forEach((btn) => {
       } else if (kind === "md-copy") {
         await exportNotesMd(deckId, { copy: true });
         toast("Copied notes to clipboard", "ok");
+      } else if (kind === "pptx") {
+        toast("PPTX 생성 중…", "ok");
+        const r = await exportPptx(deckId);
+        toast(`Saved ${r.filename}`, "ok");
       }
     } catch (err) {
       toast("Export failed: " + err.message, "err");
