@@ -349,14 +349,17 @@
       /* Body grid */
       #body {
         display: grid;
-        grid-template-columns: 240px 1fr 280px;
+        grid-template-columns: 240px 1fr var(--props-width, 280px);
         height: calc(100vh - 48px);
       }
 
       /* Portrait workspace: left list + right (slide over script) */
       #body.portrait-mode {
         grid-template-columns: 240px 1fr;
-        grid-template-rows: minmax(0, 62%) minmax(240px, 38%);
+        grid-template-rows: minmax(0, 62%) var(
+            --props-height,
+            minmax(240px, 38%)
+          );
         grid-template-areas:
           "slide-list canvas"
           "slide-list props";
@@ -381,6 +384,7 @@
         border-left: 0;
         border-top: 1px solid var(--border);
         min-height: 0;
+        position: relative;
       }
       #body.portrait-mode #notes-textarea {
         min-height: 0;
@@ -633,6 +637,37 @@
         font-size: 12px;
         display: flex;
         flex-direction: column;
+        position: relative;
+        min-width: 220px;
+        max-width: 70vw;
+        min-height: 180px;
+      }
+      #props-resizer {
+        position: absolute;
+        left: -4px;
+        top: 0;
+        width: 8px;
+        height: 100%;
+        cursor: col-resize;
+        touch-action: none;
+        z-index: 2;
+      }
+      #body.portrait-mode #props-resizer {
+        left: 0;
+        top: -4px;
+        width: 100%;
+        height: 8px;
+        cursor: row-resize;
+      }
+      #props-resizer::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: transparent;
+      }
+      #props-resizer:hover::before,
+      #props-resizer.dragging::before {
+        background: rgba(93, 184, 166, 0.12);
       }
       #props h3 {
         font-size: 10px;
@@ -906,6 +941,7 @@
           ></textarea>
         </div>
         <aside id="props">
+          <div id="props-resizer" aria-hidden="true"></div>
           <div class="notes-header">
             <h3>Notes</h3>
             <div class="notes-controls">

@@ -56,6 +56,12 @@ const NOTES_FONT_SIZE_KEY = "slidesEditor.notesFontSize";
 const NOTES_FONT_SIZE_MIN = 11;
 const NOTES_FONT_SIZE_MAX = 20;
 const NOTES_FONT_SIZE_STEP = 1;
+const PROPS_PANEL_WIDTH_KEY = "slidesEditor.propsPanelWidth";
+const PROPS_PANEL_HEIGHT_KEY = "slidesEditor.propsPanelHeight";
+const PROPS_PANEL_WIDTH_MIN = 220;
+const PROPS_PANEL_WIDTH_MAX = 720;
+const PROPS_PANEL_HEIGHT_MIN = 180;
+const PROPS_PANEL_HEIGHT_MAX = 520;
 // Auto-save toggle. Persisted in localStorage so it survives reloads.
 // When OFF, debounced timers are NOT scheduled in any input handler — edits
 // stay buffered in *Pending and are only flushed by the manual Save button
@@ -117,6 +123,35 @@ function setNotesFontSize(size) {
 }
 
 setNotesFontSize(getNotesFontSize());
+
+function getStoredPx(key, fallback) {
+  const raw = localStorage.getItem(key);
+  const parsed = Number.parseInt(raw || "", 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function setStoredPx(key, value) {
+  try {
+    localStorage.setItem(key, String(value));
+  } catch {}
+}
+
+function applyPropsPanelWidth(px, max = PROPS_PANEL_WIDTH_MAX) {
+  const next = Math.min(max, Math.max(PROPS_PANEL_WIDTH_MIN, px));
+  document.documentElement.style.setProperty("--props-width", `${next}px`);
+  setStoredPx(PROPS_PANEL_WIDTH_KEY, next);
+  return next;
+}
+
+function applyPropsPanelHeight(px, max = PROPS_PANEL_HEIGHT_MAX) {
+  const next = Math.min(max, Math.max(PROPS_PANEL_HEIGHT_MIN, px));
+  document.documentElement.style.setProperty("--props-height", `${next}px`);
+  setStoredPx(PROPS_PANEL_HEIGHT_KEY, next);
+  return next;
+}
+
+applyPropsPanelWidth(getStoredPx(PROPS_PANEL_WIDTH_KEY, 280));
+applyPropsPanelHeight(getStoredPx(PROPS_PANEL_HEIGHT_KEY, 280));
 
 // ── load + render ──────────────────────────────────────────────────
 async function refresh({ keepIframe = false } = {}) {
@@ -1523,6 +1558,65 @@ function initModeSelect() {
   apply(); // honor the <option selected> default ("default")
 }
 
+function initPropsResizer() {
+  const handle = $("props-resizer");
+  const props = $("props");
+  const body = $("body");
+  if (!handle || !props || !body) return;
+
+  let dragging = false;
+
+  function finishDrag() {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove("dragging");
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+  }
+
+  function updateFromPointer(clientX, clientY) {
+    const rect = props.getBoundingClientRect();
+    if (body.classList.contains("portrait-mode")) {
+      const max = Math.max(
+        PROPS_PANEL_HEIGHT_MIN,
+        window.innerHeight - 48 - 180,
+      );
+      const next = rect.bottom - clientY;
+      applyPropsPanelHeight(next, max);
+    } else {
+      const max = Math.max(
+        PROPS_PANEL_WIDTH_MIN,
+        window.innerWidth - 240 - 240,
+      );
+      const next = window.innerWidth - clientX;
+      applyPropsPanelWidth(next, max);
+    }
+  }
+
+  handle.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    dragging = true;
+    handle.classList.add("dragging");
+    document.body.style.cursor = body.classList.contains("portrait-mode")
+      ? "row-resize"
+      : "col-resize";
+    document.body.style.userSelect = "none";
+    handle.setPointerCapture?.(e.pointerId);
+  });
+
+  handle.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    updateFromPointer(e.clientX, e.clientY);
+  });
+
+  handle.addEventListener("pointerup", finishDrag);
+  handle.addEventListener("pointercancel", finishDrag);
+  handle.addEventListener("lostpointercapture", finishDrag);
+  window.addEventListener("pointerup", finishDrag);
+  window.addEventListener("blur", finishDrag);
+}
+
 // ── init ───────────────────────────────────────────────────────────
 await refresh();
 initModeSelect();
+initPropsResizer();
