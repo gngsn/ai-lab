@@ -146,6 +146,10 @@ function applyPropsPanelWidth(px, max = PROPS_PANEL_WIDTH_MAX) {
 function applyPropsPanelHeight(px, max = PROPS_PANEL_HEIGHT_MAX) {
   const next = Math.min(max, Math.max(PROPS_PANEL_HEIGHT_MIN, px));
   document.documentElement.style.setProperty("--props-height", `${next}px`);
+  const body = $("body");
+  if (body?.classList.contains("portrait-mode")) {
+    body.style.gridTemplateRows = `minmax(0, 1fr) ${next}px`;
+  }
   setStoredPx(PROPS_PANEL_HEIGHT_KEY, next);
   return next;
 }
@@ -754,6 +758,65 @@ const SVG_SHAPES = [
   },
 ];
 
+const SVG_SOURCE_SAMPLE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect x="8" y="8" width="84" height="84" rx="18" fill="#5db8a6"/>
+  <path d="M28 54 L43 69 L72 34" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+function ensureSvgSourceSample() {
+  const ta = $("svg-custom-code");
+  if (!ta) return;
+  if (!ta.value.trim()) ta.value = SVG_SOURCE_SAMPLE;
+}
+
+function parseSvgSource(raw) {
+  const text = raw.trim();
+  if (!text) return { ok: false, message: "SVG 코드를 입력해주세요." };
+  const doc = new DOMParser().parseFromString(text, "image/svg+xml");
+  if (doc.querySelector("parsererror")) {
+    return { ok: false, message: "SVG 문법이 올바르지 않습니다." };
+  }
+  const svg = doc.documentElement;
+  if (!svg || svg.tagName.toLowerCase() !== "svg") {
+    return { ok: false, message: "루트 엘리먼트는 <svg> 여야 합니다." };
+  }
+  return { ok: true, svg };
+}
+
+function updateSvgSourcePreview() {
+  const ta = $("svg-custom-code");
+  const preview = $("svg-custom-preview");
+  const status = $("svg-custom-status");
+  if (!ta || !preview || !status) return;
+  const result = parseSvgSource(ta.value);
+  if (!result.ok) {
+    preview.innerHTML = "";
+    status.textContent = result.message;
+    status.dataset.kind = "err";
+    return;
+  }
+  preview.innerHTML = result.svg.outerHTML;
+  status.textContent = `OK · ${result.svg.getAttribute("viewBox") || "no viewBox"}`;
+  status.dataset.kind = "ok";
+}
+
+function insertCustomSvg() {
+  const raw = $("svg-custom-code")?.value || "";
+  const result = parseSvgSource(raw);
+  if (!result.ok) {
+    toast(result.message, "err");
+    updateSvgSourcePreview();
+    return;
+  }
+  const wrapped = `<span contenteditable="false" style="display:inline-block;line-height:0;vertical-align:middle;">${result.svg.outerHTML}</span>`;
+  $("canvas")?.contentWindow?.postMessage(
+    { type: "edit:insert-svg", html: wrapped },
+    "*",
+  );
+  $("svg-modal-bg").classList.remove("show");
+  toast("SVG inserted", "ok");
+}
+
 function buildShapeSvgHtml(renderFn) {
   const fill = $("svg-fill").value;
   const stroke = $("svg-stroke").value;
@@ -795,7 +858,9 @@ function renderSvgShapeGrid() {
 
 $("svg-btn").addEventListener("click", () => {
   $("svg-modal-bg").classList.add("show");
+  ensureSvgSourceSample();
   renderSvgShapeGrid();
+  updateSvgSourcePreview();
 });
 $("svg-close").addEventListener("click", () =>
   $("svg-modal-bg").classList.remove("show"),
@@ -820,24 +885,18 @@ document.querySelectorAll(".svg-tab").forEach((tab) => {
       tab.dataset.tab === "shapes" ? "" : "none";
     $("svg-tab-custom").style.display =
       tab.dataset.tab === "custom" ? "" : "none";
+    if (tab.dataset.tab === "custom") {
+      ensureSvgSourceSample();
+      updateSvgSourcePreview();
+      $("svg-custom-code")?.focus();
+    }
   });
 });
 
+$("svg-custom-code")?.addEventListener("input", updateSvgSourcePreview);
+
 // Custom SVG insert
-$("svg-custom-insert").addEventListener("click", () => {
-  const raw = $("svg-custom-code").value.trim();
-  if (!raw) return toast("SVG 코드를 입력해주세요", "err");
-  if (!raw.startsWith("<svg"))
-    return toast("<svg ...> 로 시작해야 합니다", "err");
-  const wrapped = `<span contenteditable="false" style="display:inline-block;line-height:0;vertical-align:middle;">${raw}</span>`;
-  $("canvas")?.contentWindow?.postMessage(
-    { type: "edit:insert-svg", html: wrapped },
-    "*",
-  );
-  $("svg-modal-bg").classList.remove("show");
-  $("svg-custom-code").value = "";
-  toast("SVG inserted", "ok");
-});
+$("svg-custom-insert").addEventListener("click", insertCustomSvg);
 
 $("images-btn").addEventListener("click", async () => {
   $("images-modal-bg").classList.add("show");
@@ -1538,17 +1597,24 @@ function initModeSelect() {
     } else if (m === "portrait") {
       body.classList.add("portrait-mode");
       wrap.classList.add("portrait-169");
+      body.style.gridTemplateRows = `minmax(0, 1fr) ${getStoredPx(
+        PROPS_PANEL_HEIGHT_KEY,
+        280,
+      )}px`;
       htmlMode = false;
       if (currentSectionId) showSlide(currentSectionId);
     } else if (m === "aspect-169") {
       wrap.classList.add("aspect-169");
+      body.style.gridTemplateRows = "";
       htmlMode = false;
       if (currentSectionId) showSlide(currentSectionId);
     } else if (m === "default") {
+      body.style.gridTemplateRows = "";
       htmlMode = false;
       if (currentSectionId) showSlide(currentSectionId);
     } else {
       // "" (placeholder) or unknown → no class, iframe fills the canvas.
+      body.style.gridTemplateRows = "";
       htmlMode = false;
       if (currentSectionId) showSlide(currentSectionId);
     }
@@ -1565,6 +1631,8 @@ function initPropsResizer() {
   if (!handle || !props || !body) return;
 
   let dragging = false;
+  let onMove = null;
+  let onUp = null;
 
   function finishDrag() {
     if (!dragging) return;
@@ -1572,16 +1640,20 @@ function initPropsResizer() {
     handle.classList.remove("dragging");
     document.body.style.cursor = "";
     document.body.style.userSelect = "";
+    if (onMove) document.removeEventListener("pointermove", onMove);
+    if (onUp) document.removeEventListener("pointerup", onUp);
+    onMove = null;
+    onUp = null;
   }
 
   function updateFromPointer(clientX, clientY) {
-    const rect = props.getBoundingClientRect();
     if (body.classList.contains("portrait-mode")) {
+      const bodyRect = body.getBoundingClientRect();
       const max = Math.max(
         PROPS_PANEL_HEIGHT_MIN,
         window.innerHeight - 48 - 180,
       );
-      const next = rect.bottom - clientY;
+      const next = bodyRect.bottom - clientY;
       applyPropsPanelHeight(next, max);
     } else {
       const max = Math.max(
@@ -1602,17 +1674,18 @@ function initPropsResizer() {
       : "col-resize";
     document.body.style.userSelect = "none";
     handle.setPointerCapture?.(e.pointerId);
-  });
-
-  handle.addEventListener("pointermove", (e) => {
-    if (!dragging) return;
-    updateFromPointer(e.clientX, e.clientY);
+    onMove = (moveEvent) => {
+      if (!dragging) return;
+      updateFromPointer(moveEvent.clientX, moveEvent.clientY);
+    };
+    onUp = () => finishDrag();
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp, { once: true });
   });
 
   handle.addEventListener("pointerup", finishDrag);
   handle.addEventListener("pointercancel", finishDrag);
   handle.addEventListener("lostpointercapture", finishDrag);
-  window.addEventListener("pointerup", finishDrag);
   window.addEventListener("blur", finishDrag);
 }
 

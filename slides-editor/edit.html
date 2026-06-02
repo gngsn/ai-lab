@@ -311,6 +311,29 @@
         max-height: 300px;
         padding-right: 2px;
       }
+      #svg-tab-custom {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .svg-source-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(220px, 0.9fr);
+        gap: 10px;
+        min-height: 340px;
+      }
+      .svg-source-editor {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .svg-source-editor label,
+      .svg-source-preview label {
+        font-size: 10px;
+        color: var(--text-mid);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
       .svg-shape-btn {
         background: var(--bg);
         border: 1px solid var(--border);
@@ -335,6 +358,7 @@
       }
       #svg-custom-code {
         width: 100%;
+        flex: 1;
         background: var(--bg);
         border: 1px solid var(--border);
         color: var(--text);
@@ -342,8 +366,38 @@
         border-radius: 4px;
         font-family: "JetBrains Mono", monospace;
         font-size: 12px;
-        resize: vertical;
+        resize: none;
         box-sizing: border-box;
+        min-height: 0;
+        line-height: 1.5;
+      }
+      .svg-source-preview {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+      }
+      .svg-source-canvas {
+        flex: 1;
+        min-height: 280px;
+        background: linear-gradient(180deg, #101010, #0a0a0a);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 16px;
+        box-sizing: border-box;
+      }
+      .svg-source-canvas svg {
+        max-width: 100%;
+        max-height: 100%;
+      }
+      .svg-source-status {
+        font-size: 11px;
+        color: var(--text-mid);
+        min-height: 1.4em;
       }
 
       /* Body grid */
@@ -356,10 +410,11 @@
       /* Portrait workspace: left list + right (slide over script) */
       #body.portrait-mode {
         grid-template-columns: 240px 1fr;
-        grid-template-rows: minmax(0, 62%) var(
-            --props-height,
-            minmax(240px, 38%)
+        grid-template-rows: minmax(0, 1fr) minmax(
+            180px,
+            var(--props-height, 280px)
           );
+        align-content: stretch;
         grid-template-areas:
           "slide-list canvas"
           "slide-list props";
@@ -384,7 +439,15 @@
         border-left: 0;
         border-top: 1px solid var(--border);
         min-height: 0;
+        align-self: stretch;
+        height: 100%;
         position: relative;
+        width: 100%;
+        max-width: none;
+      }
+      #body.portrait-mode #props,
+      #body.portrait-mode #notes-textarea {
+        overflow: auto;
       }
       #body.portrait-mode #notes-textarea {
         min-height: 0;
@@ -639,8 +702,10 @@
         flex-direction: column;
         position: relative;
         min-width: 220px;
-        max-width: 70vw;
+        max-width: none;
         min-height: 180px;
+        width: 100%;
+        box-sizing: border-box;
       }
       #props-resizer {
         position: absolute;
@@ -1027,7 +1092,7 @@
     <div class="modal-bg" id="svg-modal-bg">
       <div
         class="modal"
-        style="width: min(620px, 92vw); height: auto; gap: 10px"
+        style="width: min(920px, 94vw); height: min(78vh, 760px); gap: 10px"
       >
         <h2>Insert SVG</h2>
         <div class="svg-tabs">
@@ -1072,15 +1137,22 @@
           <div class="svg-shape-grid" id="svg-shape-grid"></div>
         </div>
         <div id="svg-tab-custom" style="display: none">
-          <textarea
-            id="svg-custom-code"
-            rows="8"
-            placeholder='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">&#10;  <!-- your SVG here -->&#10;</svg>'
-          ></textarea>
-          <div
-            class="actions"
-            style="margin-top: 8px; justify-content: flex-end"
-          >
+          <div class="svg-source-layout">
+            <div class="svg-source-editor">
+              <label for="svg-custom-code">SVG source</label>
+              <textarea
+                id="svg-custom-code"
+                spellcheck="false"
+                placeholder='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">&#10;  <!-- your SVG here -->&#10;</svg>'
+              ></textarea>
+            </div>
+            <div class="svg-source-preview">
+              <label>Preview</label>
+              <div class="svg-source-canvas" id="svg-custom-preview"></div>
+              <div class="svg-source-status" id="svg-custom-status"></div>
+            </div>
+          </div>
+          <div class="actions" style="justify-content: flex-end">
             <button class="btn" id="svg-custom-insert" type="button">
               Insert
             </button>
