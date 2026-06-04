@@ -430,13 +430,16 @@ async function duplicateSlide(sourceSid) {
   const newTitle = `${src.title || "Untitled"} (copy)`;
   const newContent = src.content;
   const newNotes = notes.get(sourceSid) ?? "";
+  const nextOrder = slides.length
+    ? Math.max(...slides.map((s) => s.order ?? 0)) + 1
+    : 0;
   try {
-    // 1. Insert at the end first so the UNIQUE (deck_id, order) constraint
-    //    isn't violated by collisions in the middle of the list.
+    // 1. Insert at a fresh tail order so the UNIQUE (deck_id, order)
+    //    constraint isn't violated by gaps from prior deletes/reorders.
     await slideRepo.insertSlide({
       deck_id: deckId,
       section_id: newSid,
-      order: slides.length,
+      order: nextOrder,
       title: newTitle,
       content: newContent,
     });
