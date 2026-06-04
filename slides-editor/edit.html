@@ -403,13 +403,16 @@
       /* Body grid */
       #body {
         display: grid;
-        grid-template-columns: 240px 1fr var(--props-width, 280px);
+        grid-template-columns: var(--slide-list-width, 240px) 1fr var(
+            --props-width,
+            280px
+          );
         height: calc(100vh - 48px);
       }
 
       /* Portrait workspace: left list + right (slide over script) */
       #body.portrait-mode {
-        grid-template-columns: 240px 1fr;
+        grid-template-columns: var(--slide-list-width, 240px) 1fr;
         grid-template-rows: minmax(0, 1fr) minmax(
             180px,
             var(--props-height, 280px)
@@ -457,31 +460,152 @@
       #slide-list {
         background: var(--surface);
         border-right: 1px solid var(--border);
-        overflow-y: scroll;
         padding: 8px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
         min-height: 0; /* grid-item default is auto → can defeat overflow */
+        overflow: hidden;
         scrollbar-width: thin;
         scrollbar-color: #444 var(--surface);
       }
-      #slide-list::-webkit-scrollbar {
+      #slide-list-scroll {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow-y: auto;
+        min-height: 0; /* grid-item default is auto → can defeat overflow */
+        flex: 1;
+      }
+      #slide-list::-webkit-scrollbar,
+      #slide-list-scroll::-webkit-scrollbar {
         width: 8px;
       }
-      #slide-list::-webkit-scrollbar-track {
+      #slide-list::-webkit-scrollbar-track,
+      #slide-list-scroll::-webkit-scrollbar-track {
         background: transparent;
       }
-      #slide-list::-webkit-scrollbar-thumb {
+      #slide-list::-webkit-scrollbar-thumb,
+      #slide-list-scroll::-webkit-scrollbar-thumb {
         background: #3a3a3a;
         border-radius: 4px;
       }
-      #slide-list::-webkit-scrollbar-thumb:hover {
+      #slide-list::-webkit-scrollbar-thumb:hover,
+      #slide-list-scroll::-webkit-scrollbar-thumb:hover {
         background: #555;
+      }
+      #slide-list-resizer {
+        position: absolute;
+        top: 0;
+        right: -4px;
+        width: 8px;
+        height: 100%;
+        cursor: col-resize;
+        touch-action: none;
+        z-index: 3;
+      }
+      #slide-list-resizer::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: transparent;
+      }
+      #slide-list-resizer:hover::before,
+      #slide-list-resizer.dragging::before {
+        background: rgba(93, 184, 166, 0.12);
+      }
+      .slide-list-meta {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .slide-list-meta-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .slide-list-meta-top h3 {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-mid);
+        font-weight: 600;
+      }
+      .slide-list-count {
+        font-size: 11px;
+        color: var(--text-mid);
+        font-family: "JetBrains Mono", monospace;
+      }
+      .slide-list-title-label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 10px;
+        color: var(--text-mid);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .slide-list-title-input {
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 12px;
+      }
+      .slide-list-title-input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .slide-list-info {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .slide-list-info-row {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 6px 8px;
+        min-width: 0;
+      }
+      .slide-list-info-row .k {
+        display: block;
+        font-size: 9px;
+        color: var(--text-mid);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 2px;
+      }
+      .slide-list-info-row .v {
+        display: block;
+        font-size: 11px;
+        color: var(--text);
+        font-family: "JetBrains Mono", monospace;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .slide-list-items {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
       }
       .slide-item {
         display: flex;
         align-items: center;
         gap: 6px;
         padding: 8px 10px;
-        margin-bottom: 4px;
         border-radius: 5px;
         cursor: pointer;
         font-size: 13px;
@@ -509,6 +633,12 @@
         flex: 1;
         overflow: hidden;
         text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .slide-item .slide-item-info {
+        font-size: 10px;
+        color: var(--text-mid);
+        font-family: "JetBrains Mono", monospace;
         white-space: nowrap;
       }
       .slide-item.dragging {
@@ -993,7 +1123,29 @@
         <span id="status">—</span>
       </header>
       <main id="body">
-        <aside id="slide-list"></aside>
+        <aside id="slide-list">
+          <div id="slide-list-resizer" aria-hidden="true"></div>
+          <div id="slide-list-scroll">
+            <div class="slide-list-meta">
+              <div class="slide-list-meta-top">
+                <h3>Slides</h3>
+                <span class="slide-list-count" id="slide-list-count">0</span>
+              </div>
+              <label class="slide-list-title-label">
+                Title
+                <input
+                  id="slide-list-title"
+                  class="slide-list-title-input"
+                  type="text"
+                  placeholder="Select a slide"
+                  autocomplete="off"
+                />
+              </label>
+              <div class="slide-list-info" id="slide-list-info"></div>
+            </div>
+            <div id="slide-list-items" class="slide-list-items"></div>
+          </div>
+        </aside>
         <div id="canvas-wrap">
           <div id="canvas-stage">
             <iframe id="canvas" src="about:blank"></iframe>

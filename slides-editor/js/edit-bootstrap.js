@@ -52,10 +52,15 @@ let htmlMode = false; // raw <section>…</section> edit in textarea
 let htmlCodeMirror = null;
 let suppressHtmlEditorSync = false;
 let htmlHighlightSyncBound = false;
+let titlePending = null; // { sid, title }
+let titleSaveTimer = 0;
 const NOTES_FONT_SIZE_KEY = "slidesEditor.notesFontSize";
 const NOTES_FONT_SIZE_MIN = 11;
 const NOTES_FONT_SIZE_MAX = 20;
 const NOTES_FONT_SIZE_STEP = 1;
+const SLIDE_LIST_WIDTH_KEY = "slidesEditor.slideListWidth";
+const SLIDE_LIST_WIDTH_MIN = 180;
+const SLIDE_LIST_WIDTH_MAX = 520;
 const PROPS_PANEL_WIDTH_KEY = "slidesEditor.propsPanelWidth";
 const PROPS_PANEL_HEIGHT_KEY = "slidesEditor.propsPanelHeight";
 const PROPS_PANEL_WIDTH_MIN = 220;
@@ -136,6 +141,75 @@ function setStoredPx(key, value) {
   } catch {}
 }
 
+function getCssPx(varName, fallback) {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(
+    varName,
+  );
+  const parsed = Number.parseInt(raw || "", 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function applySlideListWidth(px, max = SLIDE_LIST_WIDTH_MAX) {
+  const next = Math.min(max, Math.max(SLIDE_LIST_WIDTH_MIN, px));
+  document.documentElement.style.setProperty("--slide-list-width", `${next}px`);
+  setStoredPx(SLIDE_LIST_WIDTH_KEY, next);
+  return next;
+}
+
+function syncSlideTitleInputs(title) {
+  for (const id of ["prop-title", "slide-list-title"]) {
+    const el = $(id);
+    if (el && el.value !== title) el.value = title;
+  }
+}
+
+function renderSlideListInfo(slide) {
+  const info = $("slide-list-info");
+  const count = $("slide-list-count");
+  if (count) {
+    count.textContent = `${slides.length} slide${slides.length === 1 ? "" : "s"}`;
+  }
+  if (!info) return;
+  if (!slide) {
+    info.innerHTML =
+      '<div class="slide-list-info-row"><span class="k">Section</span><span class="v">—</span></div>' +
+      '<div class="slide-list-info-row"><span class="k">Order</span><span class="v">—</span></div>';
+    return;
+  }
+  info.innerHTML = `
+    <div class="slide-list-info-row"><span class="k">Section</span><span class="v">${escapeHtml(slide.section_id)}</span></div>
+    <div class="slide-list-info-row"><span class="k">Order</span><span class="v">${slide.order}</span></div>
+  `;
+}
+
+function queueTitleSave(title) {
+  if (!currentSectionId) return;
+  titlePending = { sid: currentSectionId, title };
+  clearTimeout(titleSaveTimer);
+  setStatus("title: saving…");
+  titleSaveTimer = setTimeout(flushTitleSave, 600);
+}
+
+async function flushTitleSave() {
+  if (!titlePending) return;
+  clearTimeout(titleSaveTimer);
+  titleSaveTimer = 0;
+  const { sid, title } = titlePending;
+  titlePending = null;
+  try {
+    await slideRepo.updateMeta(deckId, sid, { title });
+    const slide = slideOf(sid);
+    if (slide) slide.title = title;
+    syncSlideTitleInputs(title);
+    renderSlideList();
+    renderProps();
+    setStatus("title saved", "ok");
+  } catch (err) {
+    toast("Title save failed: " + err.message, "err");
+    setStatus("title save failed", "err");
+  }
+}
+
 function applyPropsPanelWidth(px, max = PROPS_PANEL_WIDTH_MAX) {
   const next = Math.min(max, Math.max(PROPS_PANEL_WIDTH_MIN, px));
   document.documentElement.style.setProperty("--props-width", `${next}px`);
@@ -154,6 +228,7 @@ function applyPropsPanelHeight(px, max = PROPS_PANEL_HEIGHT_MAX) {
   return next;
 }
 
+applySlideListWidth(getStoredPx(SLIDE_LIST_WIDTH_KEY, 240));
 applyPropsPanelWidth(getStoredPx(PROPS_PANEL_WIDTH_KEY, 280));
 applyPropsPanelHeight(getStoredPx(PROPS_PANEL_HEIGHT_KEY, 280));
 
@@ -203,13 +278,16 @@ async function refresh({ keepIframe = false } = {}) {
 
 function renderSlideList() {
   const list = $("slide-list");
-  list.innerHTML =
+  const items = $("slide-list-items") || list;
+  const currentSlide = slideOf(currentSectionId);
+  syncSlideTitleInputs(currentSlide?.title || "");
+  renderSlideListInfo(currentSlide);
+  items.innerHTML =
     slides
       .map(
-        (s, i) => `
+        (s) => `
     <div class="slide-item ${s.section_id === currentSectionId ? "active" : ""}"
          draggable="true" data-section-id="${escapeHtml(s.section_id)}">
-      <span class="order">${i + 1}</span>
       <span class="title">${escapeHtml(s.title || s.section_id)}</span>
       <span class="slide-actions">
         <details class="dropdown slide-dropdown" style="display:inline-block;">
@@ -224,7 +302,7 @@ function renderSlideList() {
       )
       .join("") + '<button id="add-slide">+ New slide</button>';
 
-  list.querySelectorAll(".slide-item").forEach((el) => {
+  items.querySelectorAll(".slide-item").forEach((el) => {
     // Only switch slide if not clicking on an action button (edit/delete)
     el.addEventListener("click", (evt) => {
       if (
@@ -257,7 +335,7 @@ function renderSlideList() {
     });
   });
   // Action dropdown
-  list.querySelectorAll(".slide-action-duplicate").forEach((btn) => {
+  items.querySelectorAll(".slide-action-duplicate").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
       const sectionId = btn.dataset.sectionId;
@@ -266,7 +344,7 @@ function renderSlideList() {
       await duplicateSlide(sectionId);
     });
   });
-  list.querySelectorAll(".slide-action-delete").forEach((btn) => {
+  items.querySelectorAll(".slide-action-delete").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
       const sectionId = btn.dataset.sectionId;
@@ -305,7 +383,7 @@ function renderSlideList() {
       btn.closest("details")?.removeAttribute("open");
     });
   });
-  $("add-slide").addEventListener("click", addSlide);
+  $("add-slide")?.addEventListener("click", addSlide);
 }
 
 function renderProps() {
@@ -338,6 +416,7 @@ function showSlide(sectionId) {
 // the right surface (iframe vs textarea).
 async function switchSlide(sid) {
   if (sid === currentSectionId) return;
+  await flushTitleSave();
   await flushNotesSave();
   await flushHtmlSave();
   currentSectionId = sid;
@@ -525,31 +604,26 @@ $("notes-size-down")?.addEventListener("click", () => adjustNotesFontSize(-1));
 $("notes-size-up")?.addEventListener("click", () => adjustNotesFontSize(1));
 
 window.addEventListener("beforeunload", () => {
+  if (titlePending) flushTitleSave();
   if (notesPending) flushNotesSave();
 });
 
 // ── title field (debounced) ───────────────────────────────────────
-// Slide meta inputs are optional in the DOM. If absent, skip binding.
-const propTitleEl = $("prop-title");
-if (propTitleEl) {
-  let titleSaveTimer = 0;
-  propTitleEl.addEventListener("input", (e) => {
-    clearTimeout(titleSaveTimer);
-    const newTitle = e.target.value;
-    titleSaveTimer = setTimeout(async () => {
-      try {
-        await slideRepo.updateMeta(deckId, currentSectionId, {
-          title: newTitle,
-        });
-        const s = slides.find((x) => x.section_id === currentSectionId);
-        if (s) s.title = newTitle;
-        renderSlideList();
-        toast("Title saved", "ok");
-      } catch (err) {
-        toast("Title save failed: " + err.message, "err");
-      }
-    }, 600);
+// Slide title inputs are optional in the DOM. If absent, skip binding.
+for (const id of ["prop-title", "slide-list-title"]) {
+  const el = $(id);
+  if (!el) continue;
+  el.addEventListener("input", (e) => {
+    queueTitleSave(e.target.value);
   });
+  el.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      flushTitleSave();
+      el.blur();
+    }
+  });
+  el.addEventListener("blur", () => flushTitleSave());
 }
 
 // ── image library ──────────────────────────────────────────────────
@@ -1692,7 +1766,70 @@ function initPropsResizer() {
   window.addEventListener("blur", finishDrag);
 }
 
+function initSlideListResizer() {
+  const handle = $("slide-list-resizer");
+  const list = $("slide-list");
+  const body = $("body");
+  if (!handle || !list || !body) return;
+
+  let dragging = false;
+  let onMove = null;
+  let onUp = null;
+
+  function finishDrag() {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove("dragging");
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    if (onMove) document.removeEventListener("pointermove", onMove);
+    if (onUp) document.removeEventListener("pointerup", onUp);
+    onMove = null;
+    onUp = null;
+  }
+
+  function updateFromPointer(clientX) {
+    const bodyRect = body.getBoundingClientRect();
+    const propsWidth = getCssPx(
+      "--props-width",
+      getStoredPx(PROPS_PANEL_WIDTH_KEY, 280),
+    );
+    const landscapeMax = Math.max(
+      SLIDE_LIST_WIDTH_MIN,
+      window.innerWidth - propsWidth - 240,
+    );
+    const portraitMax = Math.max(SLIDE_LIST_WIDTH_MIN, window.innerWidth - 240);
+    const max = body.classList.contains("portrait-mode")
+      ? portraitMax
+      : landscapeMax;
+    const next = clientX - bodyRect.left;
+    applySlideListWidth(next, max);
+  }
+
+  handle.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    dragging = true;
+    handle.classList.add("dragging");
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    handle.setPointerCapture?.(e.pointerId);
+    onMove = (moveEvent) => {
+      if (!dragging) return;
+      updateFromPointer(moveEvent.clientX);
+    };
+    onUp = () => finishDrag();
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp, { once: true });
+  });
+
+  handle.addEventListener("pointerup", finishDrag);
+  handle.addEventListener("pointercancel", finishDrag);
+  handle.addEventListener("lostpointercapture", finishDrag);
+  window.addEventListener("blur", finishDrag);
+}
+
 // ── init ───────────────────────────────────────────────────────────
 await refresh();
 initModeSelect();
+initSlideListResizer();
 initPropsResizer();
