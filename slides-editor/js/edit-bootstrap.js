@@ -285,9 +285,10 @@ function renderSlideList() {
   items.innerHTML =
     slides
       .map(
-        (s) => `
+        (s, i) => `
     <div class="slide-item ${s.section_id === currentSectionId ? "active" : ""}"
          draggable="true" data-section-id="${escapeHtml(s.section_id)}">
+      <span class="order">${i + 1}</span>
       <span class="title">${escapeHtml(s.title || s.section_id)}</span>
       <span class="slide-actions">
         <details class="dropdown slide-dropdown" style="display:inline-block;">
@@ -1242,8 +1243,17 @@ function bindHtmlHighlightSync() {
 }
 
 function formatHtmlSource(source) {
+  const preservedBlocks = [];
+  const protectedSource = String(source).replace(
+    /<(pre|code)\b[^>]*>[\s\S]*?<\/\1>/gi,
+    (match) => {
+      const token = `__HTML_PRESERVE_BLOCK_${preservedBlocks.length}__`;
+      preservedBlocks.push(match);
+      return token;
+    },
+  );
   const template = document.createElement("template");
-  template.innerHTML = source.trim();
+  template.innerHTML = protectedSource.trim();
   const indentUnit = "  ";
   const selfClosingTags = new Set([
     "area",
@@ -1298,10 +1308,16 @@ function formatHtmlSource(source) {
     return `${indentUnit.repeat(depth)}${openTag}\n${children}${indentUnit.repeat(depth)}</${tag}>\n`;
   }
 
-  return [...template.content.childNodes]
+  const formatted = [...template.content.childNodes]
     .map((node) => formatNode(node, 0))
     .join("")
     .trimEnd();
+
+  return preservedBlocks.reduce(
+    (output, block, index) =>
+      output.replace(`__HTML_PRESERVE_BLOCK_${index}__`, block),
+    formatted,
+  );
 }
 
 function formatCurrentHtml() {
