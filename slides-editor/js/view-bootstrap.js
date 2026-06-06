@@ -11,7 +11,6 @@ import DOMPurify from "https://esm.sh/dompurify@3";
 import { getDeck } from "./repo/deck-repo.js";
 import { listByDeck } from "./repo/slide-repo.js";
 import { tagSection } from "./slide-render.js";
-import { isSlideHiddenContent } from "./slide-visibility.js";
 
 const params = new URLSearchParams(location.search);
 const deckId = params.get("deck");
@@ -78,13 +77,11 @@ const cleanFrame = (html) =>
     .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
     .replace(/javascript:/gi, "");
 
-const visibleSlides = slides.filter((s) => !isSlideHiddenContent(s.content));
-
-if (visibleSlides.length === 0) {
-  fatal(`Deck '${deckId}' has no visible slides.`);
+if (slides.length === 0) {
+  fatal(`Deck '${deckId}' has no slides.`);
 }
 
-const slidesHtml = visibleSlides
+const slidesHtml = slides
   .map((s) => cleanSlide(tagSection(s.content, s.section_id)))
   .join("\n");
 

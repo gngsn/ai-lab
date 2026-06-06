@@ -4,7 +4,6 @@
 import * as deckRepo from "./repo/deck-repo.js";
 import * as notesRepo from "./repo/notes-repo.js";
 import * as slideRepo from "./repo/slide-repo.js";
-import { isSlideHiddenContent } from "./slide-visibility.js";
 
 const slugify = (s) =>
   (s || "deck")
@@ -42,8 +41,7 @@ export async function buildHtml(deckId) {
     deckRepo.getDeck(deckId),
     slideRepo.listByDeck(deckId),
   ]);
-  const visibleSlides = slides.filter((s) => !isSlideHiddenContent(s.content));
-  let slidesHtml = visibleSlides.map((s) => s.content).join("\n");
+  let slidesHtml = slides.map((s) => s.content).join("\n");
   slidesHtml = stripEditAttrs(slidesHtml);
 
   let html = deck.frame_html;
@@ -55,7 +53,7 @@ export async function buildHtml(deckId) {
   if (!/^\s*<!doctype/i.test(html)) {
     html = "<!DOCTYPE html>\n" + html;
   }
-  return { deck, slides: visibleSlides, content: html };
+  return { deck, slides, content: html };
 }
 
 export async function exportHtml(deckId) {
@@ -82,10 +80,9 @@ export async function buildNotesMd(deckId) {
     slideRepo.listByDeck(deckId),
     notesRepo.listByDeck(deckId),
   ]);
-  const visibleSlides = slides.filter((s) => !isSlideHiddenContent(s.content));
   const notesByKey = new Map(notes.map((n) => [n.section_id, n.content]));
   const frontmatter = "---\nmarp: true\ntheme: default\n---\n\n";
-  const body = visibleSlides
+  const body = slides
     .map((s, i) => {
       const title = s.title || `장표 ${i + 1}`;
       const noteBody = (notesByKey.get(s.section_id) || "").trim();
@@ -96,7 +93,7 @@ export async function buildNotesMd(deckId) {
     .join("\n---\n\n");
   return {
     deck,
-    slides: visibleSlides,
+    slides,
     notes,
     content: frontmatter + body + "\n",
   };
