@@ -7,10 +7,11 @@
 // Tier 2 (future): proper RLS that scopes anon access by share_token at the
 // database layer so a leaked anon key alone can't pull all decks.
 
+import DOMPurify from "https://esm.sh/dompurify@3";
 import { getDeck } from "./repo/deck-repo.js";
 import { listByDeck } from "./repo/slide-repo.js";
 import { tagSection } from "./slide-render.js";
-import DOMPurify from "https://esm.sh/dompurify@3";
+import { isSlideHiddenContent } from "./slide-visibility.js";
 
 const params = new URLSearchParams(location.search);
 const deckId = params.get("deck");
@@ -19,7 +20,10 @@ const token = params.get("token");
 function fatal(msg) {
   document.body.innerHTML =
     `<pre style="font:14px monospace;color:#ef4444;padding:2rem;max-width:520px;margin:8vh auto;">` +
-    msg.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]) +
+    msg.replace(
+      /[&<>]/g,
+      (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c],
+    ) +
     `</pre>`;
   throw new Error(msg);
 }
@@ -53,7 +57,15 @@ try {
 // shared decks can't introduce new CSS during view.
 const cleanSlide = (html) =>
   DOMPurify.sanitize(html, {
-    FORBID_TAGS: ["script", "object", "embed", "iframe", "frame", "style", "link"],
+    FORBID_TAGS: [
+      "script",
+      "object",
+      "embed",
+      "iframe",
+      "frame",
+      "style",
+      "link",
+    ],
   });
 
 // frame_html (the deck shell) is harder to sanitize as a whole document —
@@ -66,7 +78,13 @@ const cleanFrame = (html) =>
     .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
     .replace(/javascript:/gi, "");
 
-const slidesHtml = slides
+const visibleSlides = slides.filter((s) => !isSlideHiddenContent(s.content));
+
+if (visibleSlides.length === 0) {
+  fatal(`Deck '${deckId}' has no visible slides.`);
+}
+
+const slidesHtml = visibleSlides
   .map((s) => cleanSlide(tagSection(s.content, s.section_id)))
   .join("\n");
 

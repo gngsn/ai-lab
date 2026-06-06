@@ -13,6 +13,10 @@ import * as notesRepo from "./repo/notes-repo.js";
 import * as slideRepo from "./repo/slide-repo.js";
 import * as storageRepo from "./repo/storage-repo.js";
 import { bindShortcutsHelp } from "./shortcuts-help.js";
+import {
+  isSlideHiddenContent,
+  setSlideHiddenContent,
+} from "./slide-visibility.js";
 
 bindShortcutsHelp("Edit", [
   { keys: ["E"], desc: "Toggle edit mode (canvas)" },
@@ -173,12 +177,14 @@ function renderSlideListInfo(slide) {
   if (!slide) {
     info.innerHTML =
       '<div class="slide-list-info-row"><span class="k">Section</span><span class="v">—</span></div>' +
-      '<div class="slide-list-info-row"><span class="k">Order</span><span class="v">—</span></div>';
+      '<div class="slide-list-info-row"><span class="k">Order</span><span class="v">—</span></div>' +
+      '<div class="slide-list-info-row"><span class="k">Visibility</span><span class="v">—</span></div>';
     return;
   }
   info.innerHTML = `
     <div class="slide-list-info-row"><span class="k">Section</span><span class="v">${escapeHtml(slide.section_id)}</span></div>
     <div class="slide-list-info-row"><span class="k">Order</span><span class="v">${slide.order}</span></div>
+    <div class="slide-list-info-row"><span class="k">Visibility</span><span class="v">${isSlideHiddenContent(slide.content) ? "Hidden" : "Visible"}</span></div>
   `;
 }
 
@@ -393,11 +399,14 @@ function renderProps() {
     if ($("prop-title")) $("prop-title").value = "";
     if ($("prop-section-id")) $("prop-section-id").textContent = "—";
     if ($("prop-order")) $("prop-order").textContent = "—";
+    if ($("prop-hidden")) $("prop-hidden").checked = false;
     return;
   }
   if ($("prop-title")) $("prop-title").value = s.title || "";
   if ($("prop-section-id")) $("prop-section-id").textContent = s.section_id;
   if ($("prop-order")) $("prop-order").textContent = s.order;
+  if ($("prop-hidden"))
+    $("prop-hidden").checked = isSlideHiddenContent(s.content);
   // Slide actions now in slide list
 }
 
@@ -553,6 +562,30 @@ async function duplicateSlide(sourceSid) {
   }
 }
 
+async function setCurrentSlideHidden(hidden) {
+  const slide = slideOf(currentSectionId);
+  if (!slide) return;
+  const prevContent = slide.content;
+  const nextContent = setSlideHiddenContent(prevContent, hidden);
+  if (nextContent === prevContent) return;
+  try {
+    slide.content = nextContent;
+    await slideRepo.updateContent(deckId, currentSectionId, nextContent);
+    renderSlideList();
+    renderProps();
+    if (htmlMode) loadCurrentSlideHtml();
+    else showSlide(currentSectionId);
+    toast(
+      hidden ? "Slide hidden in presentation" : "Slide shown in presentation",
+      "ok",
+    );
+  } catch (err) {
+    slide.content = prevContent;
+    renderProps();
+    toast("Visibility update failed: " + err.message, "err");
+  }
+}
+
 // ── notes (per-slide, debounced upsert) ───────────────────────────
 let notesPending = null; // { sid, content }
 let notesSaveTimer = 0;
@@ -626,6 +659,10 @@ for (const id of ["prop-title", "slide-list-title"]) {
   });
   el.addEventListener("blur", () => flushTitleSave());
 }
+
+$("prop-hidden")?.addEventListener("change", (e) => {
+  setCurrentSlideHidden(e.target.checked);
+});
 
 // ── image library ──────────────────────────────────────────────────
 async function refreshImagesGrid() {

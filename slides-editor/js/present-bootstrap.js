@@ -13,10 +13,11 @@
 // `window` is preserved across document.write, so globals set by
 // config.local.js (SUPABASE_URL/KEY) survive into the rewritten document.
 
+import { ensureAuthed } from "./auth.js";
 import { getDeck } from "./repo/deck-repo.js";
 import { listByDeck } from "./repo/slide-repo.js";
-import { ensureAuthed } from "./auth.js";
 import { tagSection } from "./slide-render.js";
+import { isSlideHiddenContent } from "./slide-visibility.js";
 
 if (!ensureAuthed()) {
   document.body.innerHTML =
@@ -33,7 +34,10 @@ const isPrint = params.get("print") === "1";
 function fatal(msg) {
   document.body.innerHTML =
     `<pre style="font:14px monospace;color:#ef4444;padding:2rem;">` +
-    msg.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]) +
+    msg.replace(
+      /[&<>]/g,
+      (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c],
+    ) +
     `</pre>`;
   throw new Error(msg);
 }
@@ -52,9 +56,15 @@ if (!deck.frame_html) fatal(`Deck '${deckId}' has no frame_html.`);
 // Tag every section: ensure data-section-id (for runtime/sync identity) AND
 // `class="slide"` (for nav selector + print CSS). Sections from imported decks
 // that already had either are unchanged.
-const slidesHtml = slides
+const visibleSlides = slides.filter((s) => !isSlideHiddenContent(s.content));
+
+const slidesHtml = visibleSlides
   .map((s) => tagSection(s.content, s.section_id))
   .join("\n");
+
+if (visibleSlides.length === 0) {
+  fatal(`Deck '${deckId}' has no visible slides.`);
+}
 
 let html = deck.frame_html;
 if (html.includes("<!-- slides -->")) {
