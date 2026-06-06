@@ -70,6 +70,29 @@ function extractDocTitle(html) {
   return m ? m[1].trim() : null;
 }
 
+export function parseNotesMd(md) {
+  let body = String(md || "").replace(/^﻿/, "");
+  body = body.replace(/^---\s*\n[\s\S]*?\n---\s*\n+/, "");
+  const chunks = body.split(/^---+[ \t]*$/m);
+  return chunks
+    .map((c) => c.trim())
+    .filter((c) => c.length > 0)
+    .map((chunk) => {
+      const lines = chunk.split("\n");
+      let title = null;
+      let start = 0;
+      const m = lines[0]?.match(/^##\s+(.+)$/);
+      if (m) {
+        title = m[1].trim();
+        start = 1;
+        if (lines[start] !== undefined && lines[start].trim() === "") {
+          start++;
+        }
+      }
+      return { title, body: lines.slice(start).join("\n").trim() };
+    });
+}
+
 export function parseImportedHtmlDeck(html, { deckId, title } = {}) {
   const sections = extractSections(html);
   const seen = new Set();

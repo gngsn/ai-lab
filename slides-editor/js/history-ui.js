@@ -2,14 +2,16 @@
 // Renders a merged timeline (slide + notes), filters to current section,
 // shows row content on demand, and performs restore via the live repos.
 import * as historyRepo from "./repo/history-repo.js";
-import * as slideRepo from "./repo/slide-repo.js";
 import * as notesRepo from "./repo/notes-repo.js";
+import * as slideRepo from "./repo/slide-repo.js";
 
 const escapeHtml = (s) =>
   String(s).replace(
     /[&<>"']/g,
     (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ],
   );
 
 const fmtTime = (iso) => {
@@ -19,9 +21,7 @@ const fmtTime = (iso) => {
     d.getFullYear() === today.getFullYear() &&
     d.getMonth() === today.getMonth() &&
     d.getDate() === today.getDate();
-  return sameDay
-    ? d.toLocaleTimeString()
-    : d.toLocaleString();
+  return sameDay ? d.toLocaleTimeString() : d.toLocaleString();
 };
 
 export class HistoryUI {
@@ -97,8 +97,7 @@ export class HistoryUI {
         this.openId = this.openId === key ? null : key;
         this.render();
       };
-      row.querySelector(".h-restore").onclick = () =>
-        this.restore(id, source);
+      row.querySelector(".h-restore").onclick = () => this.restore(id, source);
     });
   }
 
@@ -138,9 +137,7 @@ export class HistoryUI {
   }
 
   async restore(id, source) {
-    const entry = this.entries.find(
-      (e) => e.id === id && e._source === source,
-    );
+    const entry = this.entries.find((e) => e.id === id && e._source === source);
     if (!entry) return;
     const ok = confirm(
       `Restore ${source} for '${entry.section_id}'\n` +

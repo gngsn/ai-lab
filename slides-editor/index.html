@@ -253,6 +253,14 @@
             placeholder="auto from &lt;title&gt;"
           />
         </div>
+        <div class="field">
+          <label for="import-notes-file">Notes Markdown (optional)</label>
+          <input
+            id="import-notes-file"
+            type="file"
+            accept=".md,.markdown,text/markdown"
+          />
+        </div>
         <p id="import-error" class="bad" style="display: none"></p>
         <div class="actions">
           <button
@@ -273,8 +281,13 @@
     <script type="module">
       import { ensureAuthed } from "./js/auth.js";
       import { supabase } from "./js/supabase.js";
-      import { parseImportedHtmlDeck, slugify } from "./js/import-html.js";
+      import {
+        parseImportedHtmlDeck,
+        parseNotesMd,
+        slugify,
+      } from "./js/import-html.js";
       import * as deckRepo from "./js/repo/deck-repo.js";
+      import * as notesRepo from "./js/repo/notes-repo.js";
       import * as slideRepo from "./js/repo/slide-repo.js";
 
       if (!ensureAuthed()) {
@@ -292,9 +305,11 @@
       const importFileInput = document.getElementById("import-file");
       const importDeckIdInput = document.getElementById("import-deck-id");
       const importTitleInput = document.getElementById("import-title");
+      const importNotesInput = document.getElementById("import-notes-file");
       const importError = document.getElementById("import-error");
 
       let selectedFile = null;
+      let selectedNotesFile = null;
 
       function setImportError(message = "") {
         if (!message) {
@@ -310,10 +325,12 @@
         setImportError("");
         importDeckIdInput.value = "";
         importTitleInput.value = "";
+        importNotesInput.value = "";
         importModalBg.classList.add("show");
         importModalBg.setAttribute("aria-hidden", "false");
         importFileInput.value = "";
         selectedFile = null;
+        selectedNotesFile = null;
       }
 
       function closeImportModal() {
@@ -336,6 +353,10 @@
         }
       }
 
+      async function handleImportNotesFile(file) {
+        selectedNotesFile = file;
+      }
+
       async function runImport() {
         if (!selectedFile) {
           throw new Error("Choose an HTML file first.");
@@ -354,6 +375,14 @@
         if (parsed.slides.length === 0) {
           throw new Error("No <section> slides found in the selected HTML.");
         }
+        const notes = selectedNotesFile
+          ? parseNotesMd(await selectedNotesFile.text())
+          : null;
+        if (notes && notes.length !== parsed.slides.length) {
+          console.warn(
+            `[import] notes count mismatch — will import first ${Math.min(notes.length, parsed.slides.length)}`,
+          );
+        }
 
         importRunBtn.disabled = true;
         importRunBtn.textContent = "Importing…";
@@ -370,6 +399,16 @@
               deck_id: parsed.deckId,
             })),
           );
+          if (notes && notes.length > 0) {
+            const n = Math.min(notes.length, parsed.slides.length);
+            for (let i = 0; i < n; i++) {
+              await notesRepo.upsert(
+                parsed.deckId,
+                parsed.slides[i].section_id,
+                notes[i].body,
+              );
+            }
+          }
           closeImportModal();
           location.href = `./edit.html?deck=${encodeURIComponent(parsed.deckId)}`;
         } finally {
@@ -389,6 +428,16 @@
         try {
           setImportError("");
           await handleImportFile(file);
+        } catch (err) {
+          setImportError(err.message);
+        }
+      });
+      importNotesInput.addEventListener("change", async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+          setImportError("");
+          await handleImportNotesFile(file);
         } catch (err) {
           setImportError(err.message);
         }

@@ -305,7 +305,7 @@ function renderSlideList() {
         <details class="dropdown slide-dropdown" style="display:inline-block;">
           <summary class="btn" style="padding:0 8px;min-width:32px;text-align:center;">…</summary>
           <div class="dropdown-menu" style="min-width:80px;right:0;left:auto;">
-            <button class="slide-action-toggle-hidden" data-section-id="${escapeHtml(s.section_id)}">${isSlideHiddenContent(s.content) ? "Show in presentation" : "Hide from presentation"}</button>
+            <button class="slide-action-toggle-hidden" data-section-id="${escapeHtml(s.section_id)}">${isSlideHiddenContent(s.content) ? "Show" : "Hide"}</button>
             <button class="slide-action-duplicate" data-section-id="${escapeHtml(s.section_id)}">Duplicate</button>
             <button class="slide-action-delete" data-section-id="${escapeHtml(s.section_id)}">Delete</button>
           </div>
