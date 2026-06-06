@@ -30,6 +30,7 @@ const params = new URLSearchParams(location.search);
 const pathMatch = location.pathname.match(/\/present\/([^/?]+)/);
 const deckId = params.get("deck") || pathMatch?.[1];
 const isPrint = params.get("print") === "1";
+const startSectionId = params.get("section") || params.get("slide");
 
 function fatal(msg) {
   document.body.innerHTML =
@@ -56,15 +57,42 @@ if (!deck.frame_html) fatal(`Deck '${deckId}' has no frame_html.`);
 // Tag every section: ensure data-section-id (for runtime/sync identity) AND
 // `class="slide"` (for nav selector + print CSS). Sections from imported decks
 // that already had either are unchanged.
-const visibleSlides = slides.filter((s) => !isSlideHiddenContent(s.content));
+const visibleSlides = slides
+  .map((slide, index) => ({ slide, index }))
+  .filter(({ slide }) => !isSlideHiddenContent(slide.content));
 
 const slidesHtml = visibleSlides
-  .map((s) => tagSection(s.content, s.section_id))
+  .map(({ slide }) => tagSection(slide.content, slide.section_id))
   .join("\n");
 
 if (visibleSlides.length === 0) {
   fatal(`Deck '${deckId}' has no visible slides.`);
 }
+
+function resolveStartIndex() {
+  if (!startSectionId) return 0;
+  const exact = visibleSlides.findIndex(
+    ({ slide }) => slide.section_id === startSectionId,
+  );
+  if (exact !== -1) return exact;
+
+  const targetFullIndex = slides.findIndex(
+    (slide) => slide.section_id === startSectionId,
+  );
+  if (targetFullIndex === -1) return 0;
+
+  const forward = visibleSlides.findIndex(
+    ({ index }) => index >= targetFullIndex,
+  );
+  if (forward !== -1) return forward;
+
+  for (let i = visibleSlides.length - 1; i >= 0; i--) {
+    if (visibleSlides[i].index < targetFullIndex) return i;
+  }
+  return 0;
+}
+
+const startIndex = resolveStartIndex();
 
 let html = deck.frame_html;
 if (html.includes("<!-- slides -->")) {
@@ -216,13 +244,14 @@ const interactiveBoot = `
     }
   }
 
-  new SlidePresentation({
+  const runtime = new SlidePresentation({
     onSlideChange: ({ index, section_id, total }) => {
       if (counter) counter.textContent = (index + 1) + " / " + total;
       if (progress) progress.style.width = ((index + 1) / Math.max(1, total)) * 100 + "%";
       if (sync) sync.broadcast({ section_id, index });
     },
   });
+  if (${startIndex} > 0) runtime.goTo(${startIndex});
 <\/script>
 `;
 

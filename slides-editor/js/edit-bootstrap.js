@@ -99,6 +99,12 @@ function escapeHtml(s) {
       ],
   );
 }
+function hiddenSlideIcon() {
+  return `
+    <svg aria-hidden="true" class="svg-icon" style="width: 1em; height: 1em; vertical-align: middle; fill: currentColor; color: var(--text-mid); overflow: hidden; flex: 0 0 auto;" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+      <path d="M900.266667 379.733333c-12.8-8.533333-34.133333-8.533333-42.666667 8.533334-136.533333 187.733333-396.8 226.133333-584.533333 93.866666-42.666667-29.866667-76.8-64-102.4-106.666666-8.533333-12.8-29.866667-17.066667-42.666667-8.533334-12.8 8.533333-17.066667 29.866667-8.533333 42.666667 29.866667 46.933333 72.533333 85.333333 115.2 119.466667 17.066667 12.8 38.4 25.6 55.466666 34.133333l-81.066666 81.066667c-12.8 12.8-12.8 34.133333 0 46.933333 4.266667 4.266667 12.8 8.533333 21.333333 8.533333s17.066667-4.266667 21.333333-8.533333L345.6 597.333333l4.266667-4.266666c42.666667 17.066667 85.333333 25.6 128 29.866666v119.466667c0 17.066667 12.8 34.133333 34.133333 34.133333s34.133333-12.8 34.133333-34.133333v-123.733333c38.4-4.266667 72.533333-8.533333 110.933334-17.066667 0 0 0 4.266667 4.266666 4.266667l93.866667 93.866666c4.266667 4.266667 12.8 8.533333 21.333333 8.533334s17.066667-4.266667 21.333334-8.533334c12.8-12.8 12.8-34.133333 0-46.933333l-76.8-76.8c72.533333-34.133333 136.533333-85.333333 187.733333-153.6 8.533333-12.8 4.266667-29.866667-8.533333-42.666667z" fill="currentColor" />
+    </svg>`;
+}
 function setStatus(text, kind = "") {
   const el = $("status");
   el.textContent = text;
@@ -177,15 +183,23 @@ function renderSlideListInfo(slide) {
   if (!slide) {
     info.innerHTML =
       '<div class="slide-list-info-row"><span class="k">Section</span><span class="v">—</span></div>' +
-      '<div class="slide-list-info-row"><span class="k">Order</span><span class="v">—</span></div>' +
-      '<div class="slide-list-info-row"><span class="k">Visibility</span><span class="v">—</span></div>';
+      '<div class="slide-list-info-row"><span class="k">Order</span><span class="v">—</span></div>';
     return;
   }
   info.innerHTML = `
     <div class="slide-list-info-row"><span class="k">Section</span><span class="v">${escapeHtml(slide.section_id)}</span></div>
     <div class="slide-list-info-row"><span class="k">Order</span><span class="v">${slide.order}</span></div>
-    <div class="slide-list-info-row"><span class="k">Visibility</span><span class="v">${isSlideHiddenContent(slide.content) ? "Hidden" : "Visible"}</span></div>
   `;
+}
+
+function updateNavLinks() {
+  const presentLink = $("present-link");
+  const presentUrl = new URL("./present.html", location.href);
+  presentUrl.searchParams.set("deck", deckId);
+  if (currentSectionId) {
+    presentUrl.searchParams.set("section", currentSectionId);
+  }
+  presentLink.href = presentUrl.toString();
 }
 
 function queueTitleSave(title) {
@@ -258,7 +272,7 @@ async function refresh({ keepIframe = false } = {}) {
     return;
   }
   $("deck-title").textContent = deck.title || deckId;
-  $("present-link").href = `./present.html?deck=${encodeURIComponent(deckId)}`;
+  updateNavLinks();
   if ($("script-link")) {
     $("script-link").href = `./script.html?deck=${encodeURIComponent(deckId)}`;
   }
@@ -293,13 +307,14 @@ function renderSlideList() {
       .map(
         (s, i) => `
     <div class="slide-item ${s.section_id === currentSectionId ? "active" : ""}"
-         draggable="true" data-section-id="${escapeHtml(s.section_id)}">
+          draggable="true" data-section-id="${escapeHtml(s.section_id)}" data-hidden="${isSlideHiddenContent(s.content) ? "true" : "false"}">
       <span class="order">${i + 1}</span>
-      <span class="title">${escapeHtml(s.title || s.section_id)}</span>
+      <span class="title">${isSlideHiddenContent(s.content) ? `<span class="hidden-slide-icon" title="Hidden in presentation">${hiddenSlideIcon()}</span> ` : ""}${escapeHtml(s.title || s.section_id)}</span>
       <span class="slide-actions">
         <details class="dropdown slide-dropdown" style="display:inline-block;">
           <summary class="btn" style="padding:0 8px;min-width:32px;text-align:center;">…</summary>
           <div class="dropdown-menu" style="min-width:80px;right:0;left:auto;">
+            <button class="slide-action-toggle-hidden" data-section-id="${escapeHtml(s.section_id)}">${isSlideHiddenContent(s.content) ? "Show in presentation" : "Hide from presentation"}</button>
             <button class="slide-action-duplicate" data-section-id="${escapeHtml(s.section_id)}">Duplicate</button>
             <button class="slide-action-delete" data-section-id="${escapeHtml(s.section_id)}">Delete</button>
           </div>
@@ -313,6 +328,7 @@ function renderSlideList() {
     // Only switch slide if not clicking on an action button (edit/delete)
     el.addEventListener("click", (evt) => {
       if (
+        evt.target.closest(".slide-action-toggle-hidden") ||
         evt.target.closest(".slide-action-duplicate") ||
         evt.target.closest(".slide-action-delete") ||
         evt.target.closest(".slide-actions") ||
@@ -342,6 +358,16 @@ function renderSlideList() {
     });
   });
   // Action dropdown
+  items.querySelectorAll(".slide-action-toggle-hidden").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const sectionId = btn.dataset.sectionId;
+      const s = slides.find((x) => x.section_id === sectionId);
+      if (!s) return;
+      btn.closest("details")?.removeAttribute("open");
+      await setSlideHiddenState(sectionId, !isSlideHiddenContent(s.content));
+    });
+  });
   items.querySelectorAll(".slide-action-duplicate").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
@@ -438,6 +464,7 @@ async function switchSlide(sid) {
   } else {
     showSlide(currentSectionId);
   }
+  updateNavLinks();
 }
 
 // ── mutations ──────────────────────────────────────────────────────
@@ -562,15 +589,15 @@ async function duplicateSlide(sourceSid) {
   }
 }
 
-async function setCurrentSlideHidden(hidden) {
-  const slide = slideOf(currentSectionId);
+async function setSlideHiddenState(sectionId, hidden) {
+  const slide = slideOf(sectionId);
   if (!slide) return;
   const prevContent = slide.content;
   const nextContent = setSlideHiddenContent(prevContent, hidden);
   if (nextContent === prevContent) return;
   try {
     slide.content = nextContent;
-    await slideRepo.updateContent(deckId, currentSectionId, nextContent);
+    await slideRepo.updateContent(deckId, sectionId, nextContent);
     renderSlideList();
     renderProps();
     if (htmlMode) loadCurrentSlideHtml();
@@ -659,10 +686,6 @@ for (const id of ["prop-title", "slide-list-title"]) {
   });
   el.addEventListener("blur", () => flushTitleSave());
 }
-
-$("prop-hidden")?.addEventListener("change", (e) => {
-  setCurrentSlideHidden(e.target.checked);
-});
 
 // ── image library ──────────────────────────────────────────────────
 async function refreshImagesGrid() {

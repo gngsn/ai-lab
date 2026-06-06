@@ -613,6 +613,20 @@
         border: 1px solid transparent;
         user-select: none;
       }
+      .slide-item[data-hidden="true"] {
+        color: #2e2e2e;
+      }
+      .slide-item[data-hidden="true"]:hover {
+        color: #2e2e2e;
+      }
+      .slide-item[data-hidden="true"] .order,
+      .slide-item[data-hidden="true"] .slide-item-info,
+      .slide-item[data-hidden="true"] .title {
+        color: #2e2e2e;
+      }
+      .slide-item[data-hidden="true"] .hidden-slide-icon {
+        color: #2e2e2e;
+      }
       .slide-item:hover {
         background: var(--surface-2);
         color: var(--text);
@@ -1178,28 +1192,6 @@
               >
                 +
               </button>
-            </div>
-          </div>
-          <div class="field">
-            <label
-              style="
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                margin-bottom: 0;
-              "
-            >
-              <input
-                id="prop-hidden"
-                type="checkbox"
-                style="width: auto; margin: 0"
-              />
-              Hide in presentation
-            </label>
-            <div
-              style="font-size: 11px; color: var(--text-mid); margin-top: 4px"
-            >
-              Editable here, omitted from Present and exported HTML.
             </div>
           </div>
           <div class="field notes-only">
