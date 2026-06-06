@@ -180,16 +180,7 @@ function renderSlideListInfo(slide) {
     count.textContent = `${slides.length} slide${slides.length === 1 ? "" : "s"}`;
   }
   if (!info) return;
-  if (!slide) {
-    info.innerHTML =
-      '<div class="slide-list-info-row"><span class="k">Section</span><span class="v">—</span></div>' +
-      '<div class="slide-list-info-row"><span class="k">Order</span><span class="v">—</span></div>';
-    return;
-  }
-  info.innerHTML = `
-    <div class="slide-list-info-row"><span class="k">Section</span><span class="v">${escapeHtml(slide.section_id)}</span></div>
-    <div class="slide-list-info-row"><span class="k">Order</span><span class="v">${slide.order}</span></div>
-  `;
+  info.innerHTML = "";
 }
 
 function updateNavLinks() {

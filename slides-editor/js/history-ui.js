@@ -66,7 +66,10 @@ export class HistoryUI {
     this.panelEl.innerHTML = `
       <header class="hist-head">
         <strong>History</strong>
-        <button class="btn" data-act="refresh">↻</button>
+        <span style="display:flex;align-items:center;gap:4px;">
+          <button class="btn" data-act="refresh">↻</button>
+          <button class="btn" data-act="close" aria-label="Close history drawer">×</button>
+        </span>
       </header>
       <label class="hist-filter">
         <input type="checkbox" data-act="filter" ${filterChecked} ${sid ? "" : "disabled"} />
@@ -77,6 +80,11 @@ export class HistoryUI {
 
     this.panelEl.querySelector('[data-act="refresh"]').onclick = () =>
       this.refresh();
+    this.panelEl.querySelector('[data-act="close"]').onclick = () => {
+      const drawer = this.panelEl.closest(".hist-drawer");
+      drawer?.classList.remove("open");
+      document.getElementById("history-toggle")?.classList.remove("active");
+    };
     this.panelEl.querySelector('[data-act="filter"]').onchange = (e) => {
       this.filterCurrent = e.target.checked;
       this.refresh();
