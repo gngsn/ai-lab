@@ -135,6 +135,9 @@ Images are stored in the Supabase Storage `slides-images` bucket (public-read).
 
 Import an HTML slide deck and (optionally) Marp-style notes Markdown:
 
+- **Browser import:** Open the deck list at `index.html`, click **Import HTML**, and select an HTML presentation file with top-level `<section>` slides.
+- **CLI import:** Use the script below when you already have local files and want a repeatable import.
+
 ```bash
 node scripts/import.mjs --deck=my-talk \
   --slides=path/to/slides.html \

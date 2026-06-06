@@ -29,6 +29,13 @@
         margin: 4rem auto;
         padding: 0 1.5rem;
       }
+      .header-row {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
       h1 {
         font-size: 1.5rem;
         margin: 0 0 0.4rem;
@@ -71,6 +78,67 @@
         font-size: 0.75rem;
         color: var(--muted);
         margin-left: 0.4rem;
+      }
+      .import-panel {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        justify-content: flex-end;
+        margin-top: 0.25rem;
+      }
+      .modal-bg {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.72);
+        z-index: 50;
+        padding: 1rem;
+      }
+      .modal-bg.show {
+        display: flex;
+      }
+      .modal {
+        width: min(520px, 100%);
+        background: var(--surface);
+        border: 1px solid #242424;
+        border-radius: 14px;
+        padding: 1rem;
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
+      }
+      .modal h2 {
+        font-size: 1rem;
+        margin: 0 0 0.75rem;
+      }
+      .modal p {
+        margin: 0 0 1rem;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .field {
+        display: grid;
+        gap: 0.35rem;
+        margin-bottom: 0.85rem;
+      }
+      .field label {
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .field input {
+        width: 100%;
+        border: 1px solid #272727;
+        background: #101010;
+        color: var(--text);
+        border-radius: 8px;
+        padding: 0.7rem 0.8rem;
+        font: inherit;
+      }
+      .modal .actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        margin-top: 1rem;
       }
 
       /* Material Design Button Styles */
@@ -135,7 +203,17 @@
   </head>
   <body>
     <div class="wrap">
-      <p id="status">checking Supabase connection…</p>
+      <div class="header-row">
+        <div>
+          <h1>slides-editor</h1>
+          <p id="status">checking Supabase connection…</p>
+        </div>
+        <div class="import-panel">
+          <button class="md-btn md-primary" id="import-html-btn" type="button">
+            Import HTML
+          </button>
+        </div>
+      </div>
 
       <h2>Decks</h2>
       <ul id="deck-list">
@@ -143,10 +221,61 @@
       </ul>
     </div>
 
+    <div class="modal-bg" id="import-modal-bg" aria-hidden="true">
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="import-modal-title"
+      >
+        <h2 id="import-modal-title">Import HTML deck</h2>
+        <p>
+          Select an HTML presentation file. It should contain top-level
+          <code>&lt;section&gt;</code> slides.
+        </p>
+        <div class="field">
+          <label for="import-file">HTML file</label>
+          <input id="import-file" type="file" accept=".html,.htm,text/html" />
+        </div>
+        <div class="field">
+          <label for="import-deck-id">Deck ID</label>
+          <input
+            id="import-deck-id"
+            type="text"
+            placeholder="auto from file name"
+          />
+        </div>
+        <div class="field">
+          <label for="import-title">Title</label>
+          <input
+            id="import-title"
+            type="text"
+            placeholder="auto from &lt;title&gt;"
+          />
+        </div>
+        <p id="import-error" class="bad" style="display: none"></p>
+        <div class="actions">
+          <button
+            class="md-btn md-secondary"
+            id="import-cancel-btn"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button class="md-btn md-primary" id="import-run-btn" type="button">
+            Import
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script src="./js/config.local.js"></script>
     <script type="module">
       import { ensureAuthed } from "./js/auth.js";
       import { supabase } from "./js/supabase.js";
+      import { parseImportedHtmlDeck, slugify } from "./js/import-html.js";
+      import * as deckRepo from "./js/repo/deck-repo.js";
+      import * as slideRepo from "./js/repo/slide-repo.js";
 
       if (!ensureAuthed()) {
         document.body.innerHTML =
@@ -156,6 +285,123 @@
       }
       const status = document.getElementById("status");
       const list = document.getElementById("deck-list");
+      const importModalBg = document.getElementById("import-modal-bg");
+      const importBtn = document.getElementById("import-html-btn");
+      const importCancelBtn = document.getElementById("import-cancel-btn");
+      const importRunBtn = document.getElementById("import-run-btn");
+      const importFileInput = document.getElementById("import-file");
+      const importDeckIdInput = document.getElementById("import-deck-id");
+      const importTitleInput = document.getElementById("import-title");
+      const importError = document.getElementById("import-error");
+
+      let selectedFile = null;
+
+      function setImportError(message = "") {
+        if (!message) {
+          importError.textContent = "";
+          importError.style.display = "none";
+          return;
+        }
+        importError.textContent = message;
+        importError.style.display = "block";
+      }
+
+      function openImportModal() {
+        setImportError("");
+        importDeckIdInput.value = "";
+        importTitleInput.value = "";
+        importModalBg.classList.add("show");
+        importModalBg.setAttribute("aria-hidden", "false");
+        importFileInput.value = "";
+        selectedFile = null;
+      }
+
+      function closeImportModal() {
+        importModalBg.classList.remove("show");
+        importModalBg.setAttribute("aria-hidden", "true");
+        setImportError("");
+      }
+
+      async function handleImportFile(file) {
+        selectedFile = file;
+        const html = await file.text();
+        const parsed = parseImportedHtmlDeck(html, {
+          deckId: slugify(file.name.replace(/\.[^.]+$/, "")),
+        });
+        if (!importDeckIdInput.value) {
+          importDeckIdInput.value = parsed.deckId;
+        }
+        if (!importTitleInput.value) {
+          importTitleInput.value = parsed.title;
+        }
+      }
+
+      async function runImport() {
+        if (!selectedFile) {
+          throw new Error("Choose an HTML file first.");
+        }
+        const html = await selectedFile.text();
+        const deckId =
+          importDeckIdInput.value.trim() ||
+          slugify(selectedFile.name.replace(/\.[^.]+$/, ""));
+        if (!deckId) {
+          throw new Error("Deck ID is required.");
+        }
+        const parsed = parseImportedHtmlDeck(html, {
+          deckId,
+          title: importTitleInput.value.trim() || undefined,
+        });
+        if (parsed.slides.length === 0) {
+          throw new Error("No <section> slides found in the selected HTML.");
+        }
+
+        importRunBtn.disabled = true;
+        importRunBtn.textContent = "Importing…";
+        try {
+          await deckRepo.upsertDeck({
+            deck_id: parsed.deckId,
+            title: parsed.title,
+            frame_html: parsed.frameHtml,
+          });
+          await slideRepo.deleteByDeck(parsed.deckId);
+          await slideRepo.insertSlides(
+            parsed.slides.map((slide) => ({
+              ...slide,
+              deck_id: parsed.deckId,
+            })),
+          );
+          closeImportModal();
+          location.href = `./edit.html?deck=${encodeURIComponent(parsed.deckId)}`;
+        } finally {
+          importRunBtn.disabled = false;
+          importRunBtn.textContent = "Import";
+        }
+      }
+
+      importBtn.addEventListener("click", openImportModal);
+      importCancelBtn.addEventListener("click", closeImportModal);
+      importModalBg.addEventListener("click", (e) => {
+        if (e.target === importModalBg) closeImportModal();
+      });
+      importFileInput.addEventListener("change", async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+          setImportError("");
+          await handleImportFile(file);
+        } catch (err) {
+          setImportError(err.message);
+        }
+      });
+      importRunBtn.addEventListener("click", async () => {
+        try {
+          setImportError("");
+          await runImport();
+        } catch (err) {
+          setImportError(err.message);
+        }
+      });
+
       try {
         const { data, error } = await supabase
           .from("decks")

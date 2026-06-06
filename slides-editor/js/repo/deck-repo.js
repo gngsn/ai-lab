@@ -36,6 +36,13 @@ export async function updateFrameHtml(deckId, frameHtml) {
   if (error) throw error;
 }
 
+export async function upsertDeck(row) {
+  const { error } = await supabase
+    .from("decks")
+    .upsert(row, { onConflict: "deck_id" });
+  if (error) throw error;
+}
+
 /**
  * Set or clear the deck's share_token. Pass null to revoke sharing.
  * Token uniqueness is enforced by the table-level UNIQUE constraint.

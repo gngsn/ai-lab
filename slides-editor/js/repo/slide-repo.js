@@ -48,7 +48,13 @@ export async function updateMeta(deckId, sectionId, { title } = {}) {
   if (error) throw error;
 }
 
-export async function insertSlide({ deck_id, section_id, order, title, content }) {
+export async function insertSlide({
+  deck_id,
+  section_id,
+  order,
+  title,
+  content,
+}) {
   const { error } = await supabase
     .from("slides")
     .insert({ deck_id, section_id, order, title, content });
@@ -61,6 +67,20 @@ export async function deleteSlide(deckId, sectionId) {
     .delete()
     .eq("deck_id", deckId)
     .eq("section_id", sectionId);
+  if (error) throw error;
+}
+
+export async function deleteByDeck(deckId) {
+  const { error } = await supabase
+    .from("slides")
+    .delete()
+    .eq("deck_id", deckId);
+  if (error) throw error;
+}
+
+export async function insertSlides(rows) {
+  if (!rows.length) return;
+  const { error } = await supabase.from("slides").insert(rows);
   if (error) throw error;
 }
 
