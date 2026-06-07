@@ -29,11 +29,11 @@
 - Real-time sync during presentation
 - Version history and rollback
 - Import HTML/Markdown decks
-- Export to HTML, PDF, Marp
+- Export to HTML, PDF, Marp, PPTX
 - Supabase backend (Postgres + Storage)
 - Easy local and Vercel deployment
 
-See [SPEC.md](./SPEC.md) for full specs · [PLAN.md](./PLAN.md) for milestones
+See [SPEC.md](./SPEC.md) for the current behavior and design notes.
 
 ---
 
@@ -49,7 +49,7 @@ See [SPEC.md](./SPEC.md) for full specs · [PLAN.md](./PLAN.md) for milestones
   - `migrations/004_rpc.sql` — reorder_slides RPC (M3+)
   - `migrations/005_storage.sql` — `slides-images` bucket + dev RLS (image hosting)
   - `migrations/seed.sql` — sample deck for testing
-4. (M6+) Replace `dev_anon_all` policy with owner/share_token-based policy for production.
+4. For production, replace `dev_anon_all` policy with owner/share_token-based policy.
 
 ### 2. Local Config
 ```bash
@@ -156,7 +156,7 @@ node scripts/import.mjs --deck=my-talk \
 
 ## Security Posture
 
-**Tier 1 (current, M7):**
+**Tier 1 (current):**
 - Client-side passphrase (`OWNER_PASSPHRASE`) for owner pages
 - Public share via `view.html?deck=X&token=Y` (DOMPurify sanitized)
 - Suitable for local/trusted use only
@@ -204,9 +204,10 @@ slides-editor/
 │  │  ├─ notes-repo.js
 │  │  └─ history-repo.js
 │  └─ config.local.js.example
+├─ vendor/                 # Vendored editor/runtime assets
+├─ data/                   # Local runtime state and fixtures
 ├─ vercel.json
 ├─ SPEC.md
-├─ PLAN.md
 ├─ IDEA.md
 └─ README.md
 ```

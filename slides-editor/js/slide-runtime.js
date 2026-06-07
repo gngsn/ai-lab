@@ -28,7 +28,93 @@ export class SlidePresentation {
     this.setupWheelNav();
 
     this.slides[0]?.classList.add("visible");
+    this._activeStepperSlide = null;
+    this.syncStepperState(this.slides[0]);
     this.emitSlideChange();
+  }
+
+  getStepperConfig(slide) {
+    if (!slide) return null;
+
+    const activeClass = slide.dataset.stepperActiveClass || "mint";
+    const explicitSelector = slide.dataset.stepper?.trim();
+    if (explicitSelector) return { selector: explicitSelector, activeClass };
+
+    if (slide.querySelector("[data-stepper-item], .stepper-item")) {
+      return {
+        selector: "[data-stepper-item], .stepper-item",
+        activeClass,
+      };
+    }
+
+    if (
+      slide.querySelector(
+        ".stepper [data-stepper-item], .stepper .stepper-item",
+      )
+    ) {
+      return {
+        selector: ".stepper [data-stepper-item], .stepper .stepper-item",
+        activeClass,
+      };
+    }
+
+    const cardCount = slide.querySelectorAll(".card").length;
+    if (cardCount >= 2 && slide.querySelector(`.card.${activeClass}`)) {
+      return { selector: ".card", activeClass };
+    }
+
+    return null;
+  }
+
+  getStepperItems(slide) {
+    const config = this.getStepperConfig(slide);
+    if (!config) return [];
+    return Array.from(slide.querySelectorAll(config.selector));
+  }
+
+  getActiveStepperIndex(slide) {
+    const config = this.getStepperConfig(slide);
+    if (!config) return -1;
+
+    const items = Array.from(slide.querySelectorAll(config.selector));
+    if (!items.length) return -1;
+    return items.findIndex((item) =>
+      item.classList.contains(config.activeClass),
+    );
+  }
+
+  syncStepperState(slide) {
+    const config = this.getStepperConfig(slide);
+    if (!config) {
+      this._activeStepperSlide = null;
+      return;
+    }
+
+    if (this._activeStepperSlide === slide) return;
+
+    const items = Array.from(slide.querySelectorAll(config.selector));
+    if (!items.length) return;
+
+    items.forEach((item) => item.classList.remove(config.activeClass));
+    items[0]?.classList.add(config.activeClass);
+    this._activeStepperSlide = slide;
+  }
+
+  stepStepper(slide, direction) {
+    const config = this.getStepperConfig(slide);
+    if (!config) return false;
+
+    const items = Array.from(slide.querySelectorAll(config.selector));
+    if (!items.length) return false;
+
+    const activeIdx = this.getActiveStepperIndex(slide);
+    const nextIdx = activeIdx === -1 ? 0 : activeIdx + direction;
+    if (nextIdx < 0 || nextIdx >= items.length) return false;
+
+    items[activeIdx]?.classList.remove(config.activeClass);
+    items[nextIdx]?.classList.add(config.activeClass);
+    this._activeStepperSlide = slide;
+    return true;
   }
 
   setupIntersectionObserver() {
@@ -130,7 +216,7 @@ export class SlidePresentation {
       (e) => {
         if (this.touchStartY === null) return;
         const dy = e.changedTouches[0].clientY - this.touchStartY;
-        if (Math.abs(dy) > 50) (dy < 0 ? this.next() : this.prev());
+        if (Math.abs(dy) > 50) dy < 0 ? this.next() : this.prev();
         this.touchStartY = null;
       },
       { passive: true },
@@ -210,6 +296,7 @@ export class SlidePresentation {
       }
       return;
     }
+    if (this.stepStepper(slide, 1)) return;
     if (this.currentSlide < this.slides.length - 1) {
       this.goTo(this.currentSlide + 1);
     }
@@ -231,11 +318,13 @@ export class SlidePresentation {
       }
       return;
     }
+    if (this.stepStepper(slide, -1)) return;
     if (this.currentSlide > 0) this.goTo(this.currentSlide - 1);
   }
 
   emitSlideChange() {
     const slide = this.slides[this.currentSlide];
+    this.syncStepperState(slide);
     const detail = {
       index: this.currentSlide,
       section_id: slide?.dataset?.sectionId || null,

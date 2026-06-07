@@ -1,0 +1,15 @@
+body.edit-active [data-editable] {
+  outline: 1px dashed rgba(93, 184, 166, 0.45);
+  outline-offset: 3px;
+  cursor: text;
+  transition: outline-color 0.15s;
+}
+
+body.edit-active [data-editable]:hover {
+  outline-color: #5db8a6;
+}
+
+body.edit-active [data-editable]:focus {
+  outline: 2px solid #5db8a6;
+  outline-offset: 3px;
+}

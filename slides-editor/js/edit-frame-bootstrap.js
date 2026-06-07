@@ -89,47 +89,21 @@ if (editMode) {
   html = html.replace(/<script\b[^>]*\/>/gi, "");
 }
 
-const EDITOR_URL = new URL("./js/inline-editor.js", location.href).href;
+const EDIT_FRAME_CSS = new URL("./css/edit-frame.css", location.href).href;
+const EDIT_FRAME_OVERLAY_URL = new URL(
+  "./js/edit-frame-overlay.js",
+  location.href,
+).href;
 
 // Edit-mode overlay: dashed outline on editable nodes + cursor hint.
 // In read-mode we still rewrite the document so the deck CSS applies, but
 // don't load the inline-editor module.
 const editChrome = editMode
   ? `
-<style>
-  body.edit-active [data-editable] {
-    outline: 1px dashed rgba(93,184,166,.45);
-    outline-offset: 3px;
-    cursor: text;
-    transition: outline-color .15s;
-  }
-  body.edit-active [data-editable]:hover { outline-color: #5db8a6; }
-  body.edit-active [data-editable]:focus {
-    outline: 2px solid #5db8a6; outline-offset: 3px;
-  }
-</style>
+<link rel="stylesheet" href="${EDIT_FRAME_CSS}" />
 <script type="module">
-  import { InlineEditor } from "${EDITOR_URL}";
-  document.body.classList.add("edit-active");
-  // The deck's own bootstrap scripts were stripped (they intercept keys);
-  // but many deck designs use a "first slide gets .visible, animations
-  // fire on .visible / .show" pattern. Without those classes, reveal-style
-  // animations stay at opacity:0 and the text is invisible. Force-promote
-  // them so editors see the final, fully-revealed state.
-  document.querySelectorAll(".slide").forEach((s) => s.classList.add("visible"));
-  document.querySelectorAll(".fragment").forEach((f) => f.classList.add("show"));
-  // Key-input shield: belt-and-suspenders in case any deck listener slipped
-  // through. Stop key events that originate in an editable surface before
-  // they bubble to deck-level handlers.
-  ["keydown", "keypress", "keyup"].forEach((evt) => {
-    document.addEventListener(evt, (e) => {
-      const t = e.target;
-      if (t && (t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA")) {
-        e.stopImmediatePropagation();
-      }
-    }, { capture: true });
-  });
-  new InlineEditor({
+  import { mountEditFrame } from "${EDIT_FRAME_OVERLAY_URL}";
+  mountEditFrame({
     deckId: ${JSON.stringify(deckId)},
     sectionId: ${JSON.stringify(sectionId)},
   });

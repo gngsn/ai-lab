@@ -1002,6 +1002,91 @@
         justify-content: flex-end;
         gap: 8px;
       }
+
+      #frame-modal-bg .modal {
+        width: min(1320px, 95vw);
+        height: min(860px, 90vh);
+      }
+      #frame-modal-body {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 180px minmax(0, 1fr);
+        gap: 14px;
+      }
+      #frame-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding-right: 12px;
+        border-right: 1px solid var(--border);
+      }
+      .frame-part-btn {
+        width: 100%;
+        justify-content: flex-start;
+        padding: 10px 12px;
+        border-radius: 7px;
+        text-align: left;
+        color: var(--text);
+        cursor: pointer;
+        position: relative;
+        z-index: 1;
+      }
+      .frame-part-btn small {
+        display: block;
+        font-size: 10px;
+        color: var(--text-mid);
+        line-height: 1.35;
+        margin-top: 2px;
+      }
+      .frame-part-btn.active {
+        background: rgba(93, 184, 166, 0.1);
+        color: var(--accent);
+      }
+      #frame-editor-panel {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+        gap: 8px;
+      }
+      #frame-editor-meta {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      #frame-editor-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-bright);
+        letter-spacing: 0.02em;
+      }
+      #frame-editor-help {
+        font-size: 11px;
+        color: var(--text-mid);
+      }
+      #frame-textarea {
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        resize: none;
+        background: #0b0b0b;
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 12px;
+        border-radius: 6px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        line-height: 1.6;
+        white-space: pre;
+        overflow: auto;
+      }
+      #frame-textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
       .mode-section {
         display: flex;
         align-items: center;
@@ -1215,10 +1300,45 @@
       <div class="modal">
         <h2>Edit frame_html</h2>
         <p>
-          반드시 <code>&lt;!-- slides --&gt;</code> placeholder가 포함돼야
-          합니다 (없으면 자동 삽입).
+          HTML / CSS / JS를 분리해 편집합니다.
+          <code>&lt;!-- slides --&gt;</code>
+          placeholder는 HTML 저장 시 자동 보정됩니다.
         </p>
-        <textarea id="frame-textarea" spellcheck="false"></textarea>
+        <div id="frame-modal-body">
+          <aside id="frame-sidebar" aria-label="Frame sections">
+            <button
+              class="btn frame-part-btn active"
+              type="button"
+              data-frame-part="html"
+            >
+              HTML
+              <small>문서 구조, head, body, layout</small>
+            </button>
+            <button
+              class="btn frame-part-btn"
+              type="button"
+              data-frame-part="css"
+            >
+              CSS
+              <small>&lt;style&gt; 블록 전체</small>
+            </button>
+            <button
+              class="btn frame-part-btn"
+              type="button"
+              data-frame-part="js"
+            >
+              JS
+              <small>inline &lt;script&gt; 블록 전체</small>
+            </button>
+          </aside>
+          <section id="frame-editor-panel">
+            <div id="frame-editor-meta">
+              <div id="frame-editor-label">HTML</div>
+              <div id="frame-editor-help">문서 구조만 편집합니다.</div>
+            </div>
+            <textarea id="frame-textarea" spellcheck="false"></textarea>
+          </section>
+        </div>
         <div class="actions">
           <button class="btn" id="frame-cancel">Cancel</button>
           <button class="btn active" id="frame-save">Save</button>

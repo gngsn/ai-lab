@@ -62,6 +62,7 @@ const NOTES_FONT_SIZE_KEY = "slidesEditor.notesFontSize";
 const NOTES_FONT_SIZE_MIN = 11;
 const NOTES_FONT_SIZE_MAX = 20;
 const NOTES_FONT_SIZE_STEP = 1;
+const LAST_SECTION_KEY_PREFIX = "slidesEditor.lastSectionId:";
 const SLIDE_LIST_WIDTH_KEY = "slidesEditor.slideListWidth";
 const SLIDE_LIST_WIDTH_MIN = 180;
 const SLIDE_LIST_WIDTH_MAX = 520;
@@ -80,6 +81,24 @@ let autoSave = localStorage.getItem("slidesEditor.autoSave") !== "false";
 // Tiny helper: find a slide object by section_id.
 function slideOf(sid) {
   return slides.find((s) => s.section_id === sid) || null;
+}
+
+function lastSectionKey() {
+  return `${LAST_SECTION_KEY_PREFIX}${deckId}`;
+}
+
+function saveLastSectionId(sectionId) {
+  if (!sectionId) return;
+  try {
+    localStorage.setItem(lastSectionKey(), sectionId);
+  } catch {}
+}
+
+function restoreLastSectionId() {
+  const saved = localStorage.getItem(lastSectionKey());
+  return saved && slides.some((slide) => slide.section_id === saved)
+    ? saved
+    : null;
 }
 
 // ── ui helpers ─────────────────────────────────────────────────────
@@ -279,8 +298,9 @@ async function refresh({ keepIframe = false } = {}) {
     !currentSectionId ||
     !slides.find((s) => s.section_id === currentSectionId)
   ) {
-    currentSectionId = slides[0]?.section_id || null;
+    currentSectionId = restoreLastSectionId() || slides[0]?.section_id || null;
   }
+  saveLastSectionId(currentSectionId);
   renderSlideList();
   renderProps();
   loadNotesForCurrent(); // now reads from cache — synchronous, no await needed
@@ -389,6 +409,7 @@ function renderSlideList() {
           // Pick adjacent slide: prefer same index (next), fall back to previous.
           currentSectionId =
             slides[idx]?.section_id ?? slides[idx - 1]?.section_id ?? null;
+          saveLastSectionId(currentSectionId);
         }
         renderSlideList();
         renderProps();
@@ -447,6 +468,7 @@ async function switchSlide(sid) {
   await flushNotesSave();
   await flushHtmlSave();
   currentSectionId = sid;
+  saveLastSectionId(currentSectionId);
   renderSlideList();
   renderProps();
   loadNotesForCurrent(); // reads from cache — synchronous
@@ -514,6 +536,7 @@ async function addSlide() {
     });
     notes.set(sid, "");
     currentSectionId = sid;
+    saveLastSectionId(currentSectionId);
     renderSlideList();
     renderProps();
     loadNotesForCurrent();
@@ -570,6 +593,7 @@ async function duplicateSlide(sourceSid) {
     slides.forEach((s, i) => (s.order = i));
 
     currentSectionId = newSid;
+    saveLastSectionId(currentSectionId);
     renderSlideList();
     renderProps();
     loadNotesForCurrent();
@@ -1141,9 +1165,148 @@ $("share-modal-bg").addEventListener("click", (e) => {
 });
 
 // ── frame_html modal ───────────────────────────────────────────────
-$("frame-edit").addEventListener("click", () => {
-  $("frame-textarea").value = deck.frame_html;
+const FRAME_PART_INFO = {
+  html: {
+    label: "HTML",
+    help: "문서 구조, head, body, layout을 편집합니다.",
+  },
+  css: {
+    label: "CSS",
+    help: "frame_html 안의 <style> 블록 전체를 편집합니다.",
+  },
+  js: {
+    label: "JS",
+    help: "frame_html 안의 inline <script> 블록 전체를 편집합니다.",
+  },
+};
+
+let frameDraft = null;
+let frameActivePart = "html";
+
+function createEmptyFrameDraft() {
+  return { html: "", css: "", js: "", jsType: "" };
+}
+
+function parseFrameDraft(frameHtml) {
+  const parser = new DOMParser();
+  const parsed = parser.parseFromString(
+    frameHtml || "<!doctype html><html><head></head><body></body></html>",
+    "text/html",
+  );
+  const styleNodes = Array.from(parsed.querySelectorAll("style"));
+  const scriptNodes = Array.from(parsed.querySelectorAll("script:not([src])"));
+  const css = styleNodes
+    .map((node) => node.textContent ?? "")
+    .filter(Boolean)
+    .join("\n\n");
+  const js = scriptNodes
+    .map((node) => node.textContent ?? "")
+    .filter(Boolean)
+    .join("\n\n");
+  const jsType = scriptNodes.some((node) => node.type === "module")
+    ? "module"
+    : "";
+
+  styleNodes.forEach((node) => node.remove());
+  scriptNodes.forEach((node) => node.remove());
+
+  return {
+    html: `<!doctype html>\n${parsed.documentElement.outerHTML}`,
+    css,
+    js,
+    jsType,
+  };
+}
+
+function serializeFrameDraft(draft) {
+  const parser = new DOMParser();
+  const parsed = parser.parseFromString(
+    draft?.html || "<!doctype html><html><head></head><body></body></html>",
+    "text/html",
+  );
+
+  parsed.querySelectorAll("style").forEach((node) => node.remove());
+  parsed.querySelectorAll("script:not([src])").forEach((node) => node.remove());
+
+  const css = (draft?.css ?? "").trimEnd();
+  if (css) {
+    const style = parsed.createElement("style");
+    style.textContent = css;
+    parsed.head?.appendChild(style);
+  }
+
+  const js = (draft?.js ?? "").trimEnd();
+  if (js) {
+    const script = parsed.createElement("script");
+    if (draft?.jsType === "module") {
+      script.type = "module";
+    }
+    script.textContent = js;
+    parsed.body?.appendChild(script);
+  }
+
+  let html = `<!doctype html>\n${parsed.documentElement.outerHTML}`;
+  const hadPlaceholder = html.includes("<!-- slides -->");
+  if (!hadPlaceholder) {
+    if (html.match(/<\/main>/i)) {
+      html = html.replace(/<\/main>/i, "<!-- slides -->\n</main>");
+    } else if (html.match(/<\/body>/i)) {
+      html = html.replace(/<\/body>/i, "<!-- slides -->\n</body>");
+    } else {
+      html += "\n<!-- slides -->\n";
+    }
+  }
+  return { html, insertedPlaceholder: !hadPlaceholder };
+}
+
+function getFrameEditorValue() {
+  return $("frame-textarea")?.value ?? "";
+}
+
+function setFrameEditorValue(value) {
+  const editor = $("frame-textarea");
+  if (editor && editor.value !== value) editor.value = value;
+}
+
+function syncFramePartButtons() {
+  document.querySelectorAll("[data-frame-part]").forEach((btn) => {
+    const part = btn.dataset.framePart;
+    btn.classList.toggle("active", part === frameActivePart);
+  });
+  const info = FRAME_PART_INFO[frameActivePart] || FRAME_PART_INFO.html;
+  const label = $("frame-editor-label");
+  const help = $("frame-editor-help");
+  if (label) label.textContent = info.label;
+  if (help) help.textContent = info.help;
+}
+
+function setFrameEditorPart(part) {
+  if (!FRAME_PART_INFO[part]) return;
+  if (!frameDraft) frameDraft = createEmptyFrameDraft();
+  frameDraft[frameActivePart] = getFrameEditorValue();
+  frameActivePart = part;
+  setFrameEditorValue(frameDraft[part] || "");
+  syncFramePartButtons();
+}
+
+function openFrameModal() {
+  frameDraft = parseFrameDraft(deck.frame_html);
+  frameActivePart = "html";
+  setFrameEditorValue(frameDraft.html);
+  syncFramePartButtons();
   $("frame-modal-bg").classList.add("show");
+}
+
+$("frame-edit").addEventListener("click", () => {
+  openFrameModal();
+});
+$("frame-sidebar")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-frame-part]");
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  setFrameEditorPart(btn.dataset.framePart);
+  $("frame-textarea").focus();
 });
 $("frame-cancel").addEventListener("click", () =>
   $("frame-modal-bg").classList.remove("show"),
@@ -1152,17 +1315,16 @@ $("frame-modal-bg").addEventListener("click", (e) => {
   if (e.target === $("frame-modal-bg"))
     $("frame-modal-bg").classList.remove("show");
 });
+$("frame-textarea").addEventListener("input", () => {
+  if (!frameDraft) frameDraft = createEmptyFrameDraft();
+  frameDraft[frameActivePart] = getFrameEditorValue();
+});
 $("frame-save").addEventListener("click", async () => {
-  let val = $("frame-textarea").value;
-  if (!val.includes("<!-- slides -->")) {
-    // Auto-insert placeholder before </main>, fallback </body>, fallback EOF.
-    if (val.match(/<\/main>/i)) {
-      val = val.replace(/<\/main>/i, "<!-- slides -->\n</main>");
-    } else if (val.match(/<\/body>/i)) {
-      val = val.replace(/<\/body>/i, "<!-- slides -->\n</body>");
-    } else {
-      val += "\n<!-- slides -->\n";
-    }
+  if (!frameDraft) frameDraft = parseFrameDraft(deck.frame_html);
+  frameDraft[frameActivePart] = getFrameEditorValue();
+
+  const { html: val, insertedPlaceholder } = serializeFrameDraft(frameDraft);
+  if (insertedPlaceholder) {
     toast("Inserted <!-- slides --> placeholder", "ok");
   }
   try {

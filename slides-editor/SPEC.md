@@ -15,7 +15,7 @@
 - 발표 시 `?sync=<roomId>`로 Supabase Realtime 채널을 통해 슬라이드 인덱스가 스크립트 뷰로 broadcast.
 - 단일 사용자(owner) + **share token**으로 read-only 공유.
 
-비목표(Non-goals): 다중 사용자 동시 편집(CRDT), 이미지/asset 호스팅, PPTX export, 드래그-앤-드롭 GUI 빌더 (text/HTML 편집만).
+비목표(Non-goals): 다중 사용자 동시 편집(CRDT), 이미지/asset 호스팅, 드래그-앤-드롭 GUI 빌더 (text/HTML 편집만).
 (PDF/HTML/Marp export는 §8에서 in-scope로 다룸.)
 
 ---
@@ -175,8 +175,8 @@ IDEA.md 스키마를 그대로 적용하고 운영용 컬럼만 보강.
 
 ## 8. Export 기능
 
-### 8.1 슬라이드 → HTML / PDF
-- 진입점: `/edit/:deck_id` 툴바의 **[Export ▼]** → `HTML` / `PDF`.
+### 8.1 슬라이드 → HTML / PDF / PPTX
+- 진입점: `/edit/:deck_id` 툴바의 **[Export ▼]** → `HTML` / `PDF` / `PPTX`.
 - **HTML export**
   - `decks.frame_html`의 `<!-- slides -->` placeholder를 `slides`의 모든 `content`를 `order` 오름차순으로 join한 결과로 치환.
   - 편집 전용 속성 제거: `contenteditable`, `data-editable`, `data-edit-id`, `body.edit-active`. (v4 `InlineEditor.getSerializedHtml()` 패턴 차용.)
@@ -190,6 +190,10 @@ IDEA.md 스키마를 그대로 적용하고 운영용 컬럼만 보강.
   - `scripts/export-pdf.mjs` (Node + Playwright). 실행: `npx playwright-cli pdf <url> out.pdf` 래핑.
   - 로컬에서 `node scripts/export-pdf.mjs <deck_id> [--out path.pdf]` 형태.
   - 동일한 `?print=1` 페이지를 headless로 캡처 → 폰트 임베드, 페이지 크기 일관.
+- **PPTX export**
+  - `pptxgenjs` 번들을 사용해 현재 슬라이드 HTML을 PowerPoint 파일로 변환.
+  - 파일명은 `{slugify(deck.title)}.pptx`.
+  - 복잡한 CSS 배경/효과는 제한적으로만 반영되고, 텍스트/기본 레이아웃 중심으로 내보낸다.
 - **공통**
   - export 시 fragment는 모두 `display: block` 강제(누락 방지).
   - `data-edit-id`처럼 빌드 메타는 모두 strip, share용 sanitize(`DOMPurify`)는 owner 본인이 export하므로 미적용 (속도 우선).
@@ -238,7 +242,7 @@ IDEA.md 스키마를 그대로 적용하고 운영용 컬럼만 보강.
 
 ## 10. 공유 / 권한
 
-- 편집 권한: `owner_email`이 `OWNER_EMAIL` env와 일치할 때만. 초기 구현은 **passphrase** 환경변수 1개 (`OWNER_PASSPHRASE`)로 간이 인증 → 토큰을 localStorage 저장. Supabase Auth는 M6 이후 옵션.
+- 편집 권한: `owner_email`이 `OWNER_EMAIL` env와 일치할 때만. 초기 구현은 **passphrase** 환경변수 1개 (`OWNER_PASSPHRASE`)로 간이 인증 → 토큰을 localStorage 저장. Supabase Auth는 이후 옵션.
 - 공유 링크: `/view/:deck_id?token=<share_token>` — `share_token`이 deck 행과 일치하면 read-only 슬라이드만 노출. 노트 비공개.
 - 토큰 재발급 가능 (`/edit` 툴바 → "Rotate share link").
 
@@ -260,17 +264,19 @@ IDEA.md 스키마를 그대로 적용하고 운영용 컬럼만 보강.
 |---|---|---|
 | `js/slide-runtime.js` | `v4/controller.js :: SlidePresentation` | 거의 그대로 |
 | `js/inline-editor.js` | `v4/controller.js :: InlineEditor` | localStorage → Supabase upsert로 교체, `ensureEditIds`는 유지 |
-| `js/notes-panel.js` | `v4/controller.js :: SpeakerNotes` | UI 유지, 저장처를 `notes` 테이블로 교체 |
+| `js/edit-bootstrap.js` | `v4/controller.js` | 메인 편집 컨트롤러, 히스토리/내보내기/노트 패널 연결 |
+| `js/script-edit-view.js` | `v5/script.html` + notes editor variant | 노트 편집 전용 뷰 |
 | `js/script-view.js` | `v5/script.html`의 인라인 스크립트 | 그대로 모듈화 |
 | `js/sync.js` | `v5/sync.js` | 채널명 prefix 변경, payload에 `section_id` 추가 |
-| `js/export.js` | v4 `InlineEditor.getSerializedHtml` + v5 `script.md` 포맷 | HTML/PDF/Marp export 통합 |
-| `css/slide-runtime.css` | `v4/slides.html`의 `<style>` 일부 + 데크별 frame_html | runtime 공통 부분만 분리, `@media print` 룰 포함 |
+| `js/export.js` | v4 `InlineEditor.getSerializedHtml` + v5 `script.md` 포맷 | HTML/PDF/Marp/PPTX export 통합 |
+| `css/history-ui.css` | history drawer styles | 히스토리 UI 스타일 |
+| `css/shortcuts-help.css` | shortcuts help modal styles | 단축키 도움말 스타일 |
 
 ---
 
 ## 13. 미해결 결정 (Open Questions)
 
-각 항목은 PLAN.md의 해당 마일스톤에서 확정.
+각 항목은 아직 구현 시점이 유동적이다.
 
 - (Q1) history 적재를 PG trigger로 할지 / 클라이언트에서 명시 insert할지 → 일단 **클라이언트**, 추후 trigger 옵션 검토.
 - (Q2) frame_html 편집은 plain textarea로 시작, CodeMirror는 M8 폴리시에서 검토.
