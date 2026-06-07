@@ -38,38 +38,18 @@ export class SlidePresentation {
 
     const activeClass = slide.dataset.stepperActiveClass || "mint";
     const explicitSelector = slide.dataset.stepper?.trim();
-    if (explicitSelector) return { selector: explicitSelector, activeClass };
-
-    if (slide.querySelector("[data-stepper-item], .stepper-item")) {
-      return {
-        selector: "[data-stepper-item], .stepper-item",
-        activeClass,
-      };
-    }
-
-    if (
-      slide.querySelector(
-        ".stepper [data-stepper-item], .stepper .stepper-item",
-      )
-    ) {
-      return {
-        selector: ".stepper [data-stepper-item], .stepper .stepper-item",
-        activeClass,
-      };
-    }
-
-    const cardCount = slide.querySelectorAll(".card").length;
-    if (cardCount >= 2 && slide.querySelector(`.card.${activeClass}`)) {
-      return { selector: ".card", activeClass };
-    }
-
-    return null;
+    if (!explicitSelector) return null;
+    return { selector: explicitSelector, activeClass };
   }
 
   getStepperItems(slide) {
     const config = this.getStepperConfig(slide);
     if (!config) return [];
     return Array.from(slide.querySelectorAll(config.selector));
+  }
+
+  getStepperTarget(item) {
+    return item?.closest?.(".card") || item;
   }
 
   getActiveStepperIndex(slide) {
@@ -79,7 +59,7 @@ export class SlidePresentation {
     const items = Array.from(slide.querySelectorAll(config.selector));
     if (!items.length) return -1;
     return items.findIndex((item) =>
-      item.classList.contains(config.activeClass),
+      this.getStepperTarget(item).classList.contains(config.activeClass),
     );
   }
 
@@ -95,8 +75,10 @@ export class SlidePresentation {
     const items = Array.from(slide.querySelectorAll(config.selector));
     if (!items.length) return;
 
-    items.forEach((item) => item.classList.remove(config.activeClass));
-    items[0]?.classList.add(config.activeClass);
+    items.forEach((item) =>
+      this.getStepperTarget(item).classList.remove(config.activeClass),
+    );
+    this.getStepperTarget(items[0])?.classList.add(config.activeClass);
     this._activeStepperSlide = slide;
   }
 
@@ -111,8 +93,10 @@ export class SlidePresentation {
     const nextIdx = activeIdx === -1 ? 0 : activeIdx + direction;
     if (nextIdx < 0 || nextIdx >= items.length) return false;
 
-    items[activeIdx]?.classList.remove(config.activeClass);
-    items[nextIdx]?.classList.add(config.activeClass);
+    this.getStepperTarget(items[activeIdx])?.classList.remove(
+      config.activeClass,
+    );
+    this.getStepperTarget(items[nextIdx])?.classList.add(config.activeClass);
     this._activeStepperSlide = slide;
     return true;
   }

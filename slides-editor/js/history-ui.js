@@ -2,6 +2,7 @@
 // Renders a merged timeline (slide + notes), filters to current section,
 // shows row content on demand, and performs restore via the live repos.
 import * as historyRepo from "./repo/history-repo.js";
+import * as deckRepo from "./repo/deck-repo.js";
 import * as notesRepo from "./repo/notes-repo.js";
 import * as slideRepo from "./repo/slide-repo.js";
 
@@ -111,15 +112,18 @@ export class HistoryUI {
     const src =
       e._source === "slide"
         ? '<span class="h-src slide">slide</span>'
-        : '<span class="h-src notes">notes</span>';
+        : e._source === "notes"
+          ? '<span class="h-src notes">notes</span>'
+          : '<span class="h-src frame">frame</span>';
     const msg = e.message
       ? `<span class="h-msg">${escapeHtml(e.message)}</span>`
       : "";
+    const sectionLabel = e._source === "frame" ? "frame" : e.section_id;
     return `
       <li class="hist-row" data-id="${e.id}" data-source="${e._source}">
         <div class="hist-line">
           ${kind}${src}
-          <code class="h-sec">${escapeHtml(e.section_id)}</code>
+          <code class="h-sec">${escapeHtml(sectionLabel)}</code>
           <span class="h-time">${escapeHtml(fmtTime(e.created_at))}</span>
           ${msg}
           <span class="h-actions">
@@ -151,8 +155,10 @@ export class HistoryUI {
           entry.section_id,
           entry.content,
         );
-      } else {
+      } else if (source === "notes") {
         await notesRepo.upsert(this.deckId, entry.section_id, entry.content);
+      } else {
+        await deckRepo.updateFrameHtml(this.deckId, entry.content);
       }
       this.onRestored?.({ section_id: entry.section_id, source });
       // Refresh history to show the new auto row created by the restore.
@@ -172,5 +178,12 @@ export async function saveVersionPrompt(deckId) {
   if (message === null) return null;
   const slides = await slideRepo.listByDeck(deckId);
   const notes = await notesRepo.listByDeck(deckId);
-  return historyRepo.appendManualBatch(deckId, message, slides, notes);
+  const deck = await deckRepo.getDeck(deckId);
+  return historyRepo.appendManualBatch(
+    deckId,
+    message,
+    slides,
+    notes,
+    deck.frame_html,
+  );
 }

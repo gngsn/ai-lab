@@ -1,5 +1,6 @@
 // Repo for the `decks` table.
 import { supabase } from "../supabase.js";
+import * as historyRepo from "./history-repo.js";
 
 export async function getDeck(deckId) {
   const { data, error } = await supabase
@@ -34,6 +35,9 @@ export async function updateFrameHtml(deckId, frameHtml) {
     .update({ frame_html: frameHtml })
     .eq("deck_id", deckId);
   if (error) throw error;
+  historyRepo
+    .appendAutoFrame({ deck_id: deckId, content: frameHtml })
+    .catch((err) => console.warn("[history] frame auto-append:", err));
 }
 
 export async function upsertDeck(row) {

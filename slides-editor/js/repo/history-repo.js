@@ -1,9 +1,9 @@
-// Repo for `slide_history` and `notes_history`.
+// Repo for `slide_history`, `notes_history`, and `frame_history`.
 // - `appendAuto*` insert one `kind='auto'` row, with content dedup against
 //   the most recent row for that (deck, section) to avoid noise from
 //   repeated saves of unchanged content.
-// - `appendManualBatch` inserts one `kind='manual'` row per slide and per
-//   note, all sharing the same `created_at` + `message` so the snapshot
+// - `appendManualBatch` inserts one `kind='manual'` row per slide, note,
+//   and frame, all sharing the same `created_at` + `message` so the snapshot
 //   group is recoverable.
 // - `listAllHistory` merges slide and notes streams by created_at desc and
 //   tags each row with `_source` ('slide' | 'notes').
@@ -12,6 +12,7 @@ import { supabase } from "../supabase.js";
 
 const SLIDE = "slide_history";
 const NOTES = "notes_history";
+const FRAME = "frame_history";
 
 async function lastContent(table, deckId, sectionId) {
   const { data, error } = await supabase
@@ -39,12 +40,28 @@ async function appendAuto(table, { deck_id, section_id, content }) {
 export const appendAutoSlide = (row) => appendAuto(SLIDE, row);
 export const appendAutoNote = (row) => appendAuto(NOTES, row);
 
+export async function appendAutoFrame({ deck_id, content }) {
+  const last = await lastContent(FRAME, deck_id, "frame");
+  if (last === content) return false;
+  const { error } = await supabase
+    .from(FRAME)
+    .insert({ deck_id, section_id: "frame", content, kind: "auto" });
+  if (error) throw error;
+  return true;
+}
+
 /**
  * Manual snapshot: insert one row per slide and per note, all tagged with
  * the same `message` and `created_at` for group identification.
  * Returns the shared timestamp.
  */
-export async function appendManualBatch(deckId, message, slides, notes) {
+export async function appendManualBatch(
+  deckId,
+  message,
+  slides,
+  notes,
+  frameHtml,
+) {
   const ts = new Date().toISOString();
   const slideRows = slides.map((s) => ({
     deck_id: deckId,
@@ -70,6 +87,19 @@ export async function appendManualBatch(deckId, message, slides, notes) {
     const { error } = await supabase.from(NOTES).insert(noteRows);
     if (error) throw error;
   }
+
+  if (frameHtml !== undefined) {
+    const { error: frameError } = await supabase.from(FRAME).insert({
+      deck_id: deckId,
+      section_id: "frame",
+      content: frameHtml,
+      kind: "manual",
+      message,
+      created_at: ts,
+    });
+    if (frameError) throw frameError;
+  }
+
   return ts;
 }
 
@@ -85,22 +115,29 @@ async function listOne(table, deckId, { sectionId, limit = 200 } = {}) {
 
 export const listSlideHistory = (deckId, opts) => listOne(SLIDE, deckId, opts);
 export const listNotesHistory = (deckId, opts) => listOne(NOTES, deckId, opts);
+export const listFrameHistory = (deckId) => listOne(FRAME, deckId, {});
 
 export async function listAllHistory(deckId, opts = {}) {
-  const [s, n] = await Promise.all([
+  const [s, n, f] = await Promise.all([
     listSlideHistory(deckId, opts),
     listNotesHistory(deckId, opts),
+    listFrameHistory(deckId),
   ]);
   const merged = [
     ...s.map((r) => ({ ...r, _source: "slide" })),
     ...n.map((r) => ({ ...r, _source: "notes" })),
+    ...listFrameHistoryRows(f),
   ];
   merged.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
   return merged;
 }
 
+function listFrameHistoryRows(frameRows) {
+  return frameRows.map((r) => ({ ...r, _source: "frame" }));
+}
+
 export async function getRow(source, id) {
-  const table = source === "slide" ? SLIDE : NOTES;
+  const table = source === "slide" ? SLIDE : source === "notes" ? NOTES : FRAME;
   const { data, error } = await supabase
     .from(table)
     .select("*")

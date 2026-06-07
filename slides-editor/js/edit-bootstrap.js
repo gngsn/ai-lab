@@ -1716,6 +1716,16 @@ const historyUI = new HistoryUI({
   currentSectionGetter: () => currentSectionId,
   onRestored: async ({ section_id, source }) => {
     toast("Restored", "ok");
+    if (source === "frame") {
+      try {
+        const freshDeck = await deckRepo.getDeck(deckId);
+        deck.frame_html = freshDeck.frame_html;
+        if (currentSectionId) showSlide(currentSectionId);
+      } catch {
+        /* best-effort */
+      }
+      return;
+    }
     if (section_id === currentSectionId) {
       // Current slide: reload notes textarea from cache (history-ui already
       // wrote to DB; cache may be stale for notes, so refetch just this one).
