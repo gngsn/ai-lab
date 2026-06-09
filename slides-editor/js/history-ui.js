@@ -1,11 +1,11 @@
 // Side-drawer history panel. Reused by edit.html and script-edit.html.
 // Renders a merged timeline (slide + notes), filters to current section,
 // shows row content on demand, and performs restore via the live repos.
+import { askText } from "./dom-prompt.js";
 import * as deckRepo from "./repo/deck-repo.js";
 import * as historyRepo from "./repo/history-repo.js";
 import * as notesRepo from "./repo/notes-repo.js";
 import * as slideRepo from "./repo/slide-repo.js";
-import { askText } from "./dom-prompt.js";
 
 const escapeHtml = (s) =>
   String(s).replace(

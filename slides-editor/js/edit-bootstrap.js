@@ -14,8 +14,8 @@ import * as slideRepo from "./repo/slide-repo.js";
 import * as storageRepo from "./repo/storage-repo.js";
 import { bindShortcutsHelp } from "./shortcuts-help.js";
 import {
-  isSlideHiddenContent,
-  setSlideHiddenContent,
+    isSlideHiddenContent,
+    setSlideHiddenContent,
 } from "./slide-visibility.js";
 
 bindShortcutsHelp("Edit", [

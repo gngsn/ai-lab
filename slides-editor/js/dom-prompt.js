@@ -34,7 +34,12 @@ function ensureContainer() {
   return layer;
 }
 
-export async function askText({ title, message, defaultValue = "", password = false }) {
+export async function askText({
+  title,
+  message,
+  defaultValue = "",
+  password = false,
+}) {
   const layer = ensureContainer();
   const input = layer.querySelector("#__se_prompt_input");
   const titleEl = layer.querySelector("#__se_prompt_title");
