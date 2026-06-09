@@ -30,7 +30,9 @@
         transition: background .12s, color .12s, border-color .12s;
       }
       .btn:hover { background: #1e1e1e; color: #c8c8c8; border-color: #333; }
+      .btn.home { color: #f0f0f0; }
       .btn.ok { color: #22c55e; border-color: #22c55e; }
+      .btn.warn { color: #f59e0b; border-color: #f59e0b; }
       main { max-width: 920px; margin: 0 auto; padding: 24px 20px 80px; }
       .hint {
         color: #777; font-size: 11px; margin: 12px 0 8px;
@@ -60,7 +62,10 @@
     <header>
       <span class="title" id="deck-title">…</span>
       <span class="spacer"></span>
+      <a class="btn home" href="./index.html" title="Home">⌂ Home</a>
       <a class="btn" id="script-link" href="#" target="_blank">⌨ Script</a>
+      <button class="btn" id="tts-btn">▶ TTS</button>
+      <button class="btn" id="tts-stop-btn">■ Stop</button>
       <button class="btn" id="copy-btn">Copy</button>
       <button class="btn" id="download-btn">Download .md</button>
     </header>
@@ -99,6 +104,71 @@
         document.title = `Notes · ${deck.title || deckId}`;
         // textContent → plain text (HTML escaped automatically).
         $("content").textContent = content;
+
+        const synth = window.speechSynthesis;
+        let utterance = null;
+
+        const cleanForSpeech = (text) =>
+          text
+            .replace(/^#{1,6}\s+/gm, "")
+            .replace(/^---\s*$/gm, "")
+            .replace(/^\[Next\]\s*/gm, "Next. ")
+            .replace(/\*\*(.+?)\*\*/g, "$1")
+            .replace(/\*(.+?)\*/g, "$1")
+            .replace(/`(.+?)`/g, "$1")
+            .replace(/\s+\n/g, "\n")
+            .replace(/\n{3,}/g, "\n\n")
+            .trim();
+
+        const updateTtsButtons = () => {
+          const playBtn = $("tts-btn");
+          const stopBtn = $("tts-stop-btn");
+          const speaking = synth?.speaking;
+          const paused = synth?.paused;
+          playBtn.textContent = paused ? "▶ Resume" : speaking ? "⏸ Pause" : "▶ TTS";
+          playBtn.classList.toggle("warn", speaking || paused);
+          stopBtn.disabled = !speaking && !paused;
+        };
+
+        const stopSpeech = () => {
+          if (!synth) return;
+          synth.cancel();
+          utterance = null;
+          updateTtsButtons();
+        };
+
+        const speakNotes = () => {
+          if (!synth) {
+            alert("This browser does not support speech synthesis.");
+            return;
+          }
+
+          if (synth.speaking && synth.paused) {
+            synth.resume();
+            updateTtsButtons();
+            return;
+          }
+
+          if (synth.speaking) {
+            synth.pause();
+            updateTtsButtons();
+            return;
+          }
+
+          stopSpeech();
+          utterance = new SpeechSynthesisUtterance(cleanForSpeech(content));
+          utterance.lang = "en-US";
+          utterance.rate = 1.0;
+          utterance.pitch = 1.0;
+          utterance.onend = updateTtsButtons;
+          utterance.onerror = updateTtsButtons;
+          synth.speak(utterance);
+          updateTtsButtons();
+        };
+
+        $("tts-btn").addEventListener("click", speakNotes);
+        $("tts-stop-btn").addEventListener("click", stopSpeech);
+        updateTtsButtons();
 
         $("copy-btn").addEventListener("click", async () => {
           try {

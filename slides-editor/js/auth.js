@@ -5,6 +5,8 @@
 // The passphrase comes from `window.OWNER_PASSPHRASE` (set by config.local.js).
 // Once accepted, a token is cached in localStorage so refreshes don't re-prompt.
 
+import { askText } from "./dom-prompt.js";
+
 const TOKEN_KEY = "slides-editor:auth:token";
 
 export function isAuthed() {
@@ -13,7 +15,7 @@ export function isAuthed() {
   return localStorage.getItem(TOKEN_KEY) === want;
 }
 
-export function ensureAuthed() {
+export async function ensureAuthed() {
   if (isAuthed()) return true;
   const want = window.OWNER_PASSPHRASE;
   if (!want || want === "set-me") {
@@ -23,7 +25,11 @@ export function ensureAuthed() {
     );
     return false;
   }
-  const input = prompt("Owner passphrase:");
+  const input = await askText({
+    title: "Owner Passphrase",
+    message: "Enter the passphrase to open this page.",
+    password: true,
+  });
   if (input && input === want) {
     localStorage.setItem(TOKEN_KEY, input);
     return true;

@@ -1,10 +1,11 @@
 // Side-drawer history panel. Reused by edit.html and script-edit.html.
 // Renders a merged timeline (slide + notes), filters to current section,
 // shows row content on demand, and performs restore via the live repos.
-import * as historyRepo from "./repo/history-repo.js";
 import * as deckRepo from "./repo/deck-repo.js";
+import * as historyRepo from "./repo/history-repo.js";
 import * as notesRepo from "./repo/notes-repo.js";
 import * as slideRepo from "./repo/slide-repo.js";
+import { askText } from "./dom-prompt.js";
 
 const escapeHtml = (s) =>
   String(s).replace(
@@ -174,7 +175,11 @@ export class HistoryUI {
  * batch. Returns the timestamp string on success, null on cancel.
  */
 export async function saveVersionPrompt(deckId) {
-  const message = prompt("Snapshot message (optional):", "") ?? null;
+  const message = await askText({
+    title: "Save Version",
+    message: "Snapshot message (optional)",
+    defaultValue: "",
+  });
   if (message === null) return null;
   const slides = await slideRepo.listByDeck(deckId);
   const notes = await notesRepo.listByDeck(deckId);

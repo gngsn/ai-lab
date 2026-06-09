@@ -97,10 +97,17 @@
         color: var(--text);
         border-color: #333;
       }
+      .btn.home {
+        color: var(--text-bright);
+      }
       .btn.active {
         background: #1e2e1e;
         color: var(--accent);
         border-color: var(--accent);
+      }
+      .btn.warn {
+        color: var(--warn);
+        border-color: var(--warn);
       }
       .btn.danger:hover {
         color: var(--danger);
@@ -422,6 +429,9 @@
           "slide-list canvas"
           "slide-list props";
       }
+      #body.html-mode {
+        grid-template-columns: var(--slide-list-width, 240px) 1fr;
+      }
       #body.portrait-mode #slide-list {
         grid-area: slide-list;
         border-right: 1px solid var(--border);
@@ -454,6 +464,9 @@
       }
       #body.portrait-mode #notes-textarea {
         min-height: 0;
+      }
+      #body.html-mode #props {
+        display: none;
       }
 
       /* Slide list */
@@ -1135,6 +1148,7 @@
     <div id="app">
       <header id="toolbar">
         <span class="title" id="deck-title">…</span>
+        <a class="btn home" href="./index.html" title="Home">⌂ Home</a>
         <button
           class="btn"
           id="save-html-btn"
@@ -1276,6 +1290,22 @@
                 aria-label="Increase notes font size"
               >
                 +
+              </button>
+              <button
+                class="btn notes-size-btn"
+                id="notes-tts-toggle"
+                type="button"
+                aria-label="Read notes aloud"
+              >
+                ▶ TTS
+              </button>
+              <button
+                class="btn notes-size-btn"
+                id="notes-tts-stop"
+                type="button"
+                aria-label="Stop reading notes"
+              >
+                ■ Stop
               </button>
             </div>
           </div>

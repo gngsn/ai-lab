@@ -19,7 +19,7 @@ import { listByDeck } from "./repo/slide-repo.js";
 import { tagSection } from "./slide-render.js";
 import { isSlideHiddenContent } from "./slide-visibility.js";
 
-if (!ensureAuthed()) {
+if (!(await ensureAuthed())) {
   document.body.innerHTML =
     '<p style="padding:2rem;color:#ef4444;font-family:monospace">' +
     "Access denied — present is owner-only. Use view.html?token=… for sharing.</p>";
@@ -53,6 +53,13 @@ try {
 }
 
 if (!deck.frame_html) fatal(`Deck '${deckId}' has no frame_html.`);
+
+const cleanFrame = (html) =>
+  html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<script\b[^>]*\/\s*>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/javascript:/gi, "");
 
 // Tag every section: ensure data-section-id (for runtime/sync identity) AND
 // `class="slide"` (for nav selector + print CSS). Sections from imported decks
@@ -95,6 +102,7 @@ function resolveStartIndex() {
 const startIndex = resolveStartIndex();
 
 let html = deck.frame_html;
+html = cleanFrame(html);
 if (html.includes("<!-- slides -->")) {
   html = html.replace("<!-- slides -->", slidesHtml);
 } else {
@@ -200,6 +208,7 @@ const overlay = isPrint
   <div id="__se_counter">— / —</div>
   <div id="__se_sync" style="opacity:.7;cursor:pointer;display:none;"></div>
 </div>
+<div id="__se_navdots" aria-label="Slide navigation" style="position:fixed;right:14px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:7px;align-items:center;justify-content:center;z-index:9999;pointer-events:none;opacity:0;transition:opacity .18s ease, transform .18s ease;max-height:min(80vh, 720px);overflow:auto;"></div>
 `;
 
 // Two different boot scripts: print or interactive.
@@ -215,11 +224,15 @@ const printBoot = `
 `;
 
 const interactiveBoot = `
-<link rel="stylesheet" href="${HELP_CSS}" />
 <script type="module">
   import { SlidePresentation } from "${RUNTIME_URL}";
   import { createSlideSync } from "${SYNC_URL}";
   import { bindShortcutsHelp } from "${HELP_URL}";
+
+  const helpCss = document.createElement("link");
+  helpCss.rel = "stylesheet";
+  helpCss.href = "${HELP_CSS}";
+  document.head.appendChild(helpCss);
 
   bindShortcutsHelp("Present", [
     { keys: ["↓", "→", "PgDn", "Space"], desc: "Next slide / advance fragment" },
@@ -233,6 +246,49 @@ const interactiveBoot = `
   const counter = document.getElementById("__se_counter");
   const syncBadge = document.getElementById("__se_sync");
   const progress = document.getElementById("__se_progress");
+  const navDots = document.getElementById("__se_navdots");
+  const initialIndex = ${startIndex};
+
+  const setNavDotsVisible = (visible) => {
+    if (!navDots) return;
+    navDots.style.opacity = visible ? "1" : "0";
+    navDots.style.pointerEvents = visible ? "auto" : "none";
+    navDots.style.transform = visible ? "translateY(-50%) translateX(0)" : "translateY(-50%) translateX(8px)";
+  };
+
+  document.addEventListener("mousemove", (e) => {
+    setNavDotsVisible(e.clientX > window.innerWidth * 0.62);
+  });
+  document.addEventListener("pointerdown", (e) => {
+    setNavDotsVisible(e.clientX > window.innerWidth * 0.62);
+  });
+  setNavDotsVisible(false);
+
+  const dotStyle = document.createElement("style");
+  dotStyle.textContent =
+    "#__se_navdots button {\\n" +
+    "  width: 11px;\\n" +
+    "  height: 11px;\\n" +
+    "  border-radius: 999px;\\n" +
+    "  border: 1px solid rgba(255,255,255,.28);\\n" +
+    "  background: rgba(255,255,255,.18);\\n" +
+    "  padding: 0;\\n" +
+    "  margin: 0;\\n" +
+    "  cursor: pointer;\\n" +
+    "  transition: transform .15s ease, background .15s ease, border-color .15s ease, opacity .15s ease;\\n" +
+    "  opacity: .8;\\n" +
+    "}\\n" +
+    "#__se_navdots button:hover {\\n" +
+    "  transform: scale(1.18);\\n" +
+    "  opacity: 1;\\n" +
+    "  border-color: #5db8a6;\\n" +
+    "}\\n" +
+    "#__se_navdots button.active {\\n" +
+    "  background: #5db8a6;\\n" +
+    "  border-color: #5db8a6;\\n" +
+    "  opacity: 1;\\n" +
+    "}";
+  document.head.appendChild(dotStyle);
 
   let sync = null;
   if (syncId) {
@@ -248,10 +304,60 @@ const interactiveBoot = `
     onSlideChange: ({ index, section_id, total }) => {
       if (counter) counter.textContent = (index + 1) + " / " + total;
       if (progress) progress.style.width = ((index + 1) / Math.max(1, total)) * 100 + "%";
+      if (navDots) {
+        Array.from(navDots.children).forEach((btn, i) => {
+          btn.classList.toggle("active", i === index);
+          btn.setAttribute("aria-current", i === index ? "true" : "false");
+        });
+      }
       if (sync) sync.broadcast({ section_id, index });
     },
   });
-  if (${startIndex} > 0) runtime.goTo(${startIndex});
+
+  document.querySelectorAll(".slide").forEach((slide) => {
+    const hl = slide.dataset.hl;
+    const hr = slide.dataset.hr;
+    const pg = slide.dataset.page;
+
+    if (hl || hr) {
+      const header = document.createElement("div");
+      header.className = "slide-header reveal";
+      header.innerHTML =
+        '<div class="left"><span class="spike"></span>' +
+        (hl || "") +
+        '</div><div>' +
+        (hr || "") +
+        "</div>";
+      slide.prepend(header);
+    }
+    if (pg) {
+      const footer = document.createElement("div");
+      footer.className = "slide-footer";
+      footer.innerHTML =
+        '<span class="slide-page">' + pg.replace("/", " / ") + "</span>";
+      slide.append(footer);
+    }
+  });
+
+  if (navDots) {
+    navDots.innerHTML = "";
+    runtime.slides.forEach((slide, index) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.setAttribute(
+        "aria-label",
+        "Slide " + (index + 1) + ": " + (slide.dataset.title || ""),
+      );
+      btn.title = slide.dataset.title || "Slide " + (index + 1);
+      btn.addEventListener("click", () => runtime.goTo(index));
+      navDots.appendChild(btn);
+    });
+    Array.from(navDots.children).forEach((btn, i) => {
+      btn.classList.toggle("active", i === initialIndex);
+      btn.setAttribute("aria-current", i === initialIndex ? "true" : "false");
+    });
+  }
+  if (initialIndex > 0) runtime.goTo(initialIndex);
 <\/script>
 `;
 

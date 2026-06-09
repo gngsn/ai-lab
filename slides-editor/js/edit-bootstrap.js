@@ -30,7 +30,7 @@ bindShortcutsHelp("Edit", [
 ]);
 
 // ── auth gate ──────────────────────────────────────────────────────
-if (!ensureAuthed()) {
+if (!(await ensureAuthed())) {
   document.body.innerHTML =
     '<p style="padding:2rem;color:#ef4444;font-family:monospace">' +
     "Edit access denied.</p>";
@@ -62,6 +62,10 @@ const NOTES_FONT_SIZE_KEY = "slidesEditor.notesFontSize";
 const NOTES_FONT_SIZE_MIN = 11;
 const NOTES_FONT_SIZE_MAX = 20;
 const NOTES_FONT_SIZE_STEP = 1;
+const speechSynth =
+  typeof window !== "undefined" && "speechSynthesis" in window
+    ? window.speechSynthesis
+    : null;
 const LAST_SECTION_KEY_PREFIX = "slidesEditor.lastSectionId:";
 const SLIDE_LIST_WIDTH_KEY = "slidesEditor.slideListWidth";
 const SLIDE_LIST_WIDTH_MIN = 180;
@@ -632,16 +636,90 @@ async function setSlideHiddenState(sectionId, hidden) {
 let notesPending = null; // { sid, content }
 let notesSaveTimer = 0;
 
+function cleanNotesForSpeech(text) {
+  return String(text)
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^---\s*$/gm, "")
+    .replace(/^\[Next\]\s*/gm, "Next. ")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/`(.+?)`/g, "$1")
+    .replace(/\s+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function updateNotesSpeechButtons() {
+  const playBtn = $("notes-tts-toggle");
+  const stopBtn = $("notes-tts-stop");
+  if (!playBtn || !stopBtn) return;
+
+  if (!speechSynth) {
+    playBtn.disabled = true;
+    stopBtn.disabled = true;
+    playBtn.textContent = "TTS unavailable";
+    return;
+  }
+
+  const speaking = speechSynth.speaking;
+  const paused = speechSynth.paused;
+  const hasText = !!$("notes-textarea")?.value.trim();
+
+  playBtn.disabled = !hasText && !speaking && !paused;
+  playBtn.textContent = paused ? "▶ Resume" : speaking ? "⏸ Pause" : "▶ TTS";
+  playBtn.classList.toggle("warn", speaking || paused);
+  stopBtn.disabled = !speaking && !paused;
+}
+
+function stopNotesSpeech() {
+  if (!speechSynth) return;
+  speechSynth.cancel();
+  updateNotesSpeechButtons();
+}
+
+function speakNotes() {
+  const ta = $("notes-textarea");
+  if (!speechSynth) {
+    toast("This browser does not support speech synthesis.", "err");
+    return;
+  }
+  if (!ta || !ta.value.trim()) return;
+
+  if (speechSynth.speaking && speechSynth.paused) {
+    speechSynth.resume();
+    updateNotesSpeechButtons();
+    return;
+  }
+
+  if (speechSynth.speaking) {
+    speechSynth.pause();
+    updateNotesSpeechButtons();
+    return;
+  }
+
+  const utterance = new SpeechSynthesisUtterance(cleanNotesForSpeech(ta.value));
+  utterance.lang = "en-US";
+  utterance.rate = 1;
+  utterance.pitch = 1;
+  utterance.onend = updateNotesSpeechButtons;
+  utterance.onerror = updateNotesSpeechButtons;
+  speechSynth.speak(utterance);
+  updateNotesSpeechButtons();
+}
+
 function loadNotesForCurrent() {
+  stopNotesSpeech();
   const ta = $("notes-textarea");
   if (!currentSectionId) {
     ta.value = "";
     ta.disabled = true;
+    updateNotesSpeechButtons();
     return;
   }
   // Read from in-memory cache — no network round-trip.
   ta.value = notes.get(currentSectionId) ?? "";
   ta.disabled = false;
+  updateNotesSpeechButtons();
 }
 
 async function flushNotesSave() {
@@ -669,6 +747,7 @@ $("notes-textarea").addEventListener("input", (e) => {
   } else {
     setStatus("notes: unsaved", "warn");
   }
+  updateNotesSpeechButtons();
 });
 
 function adjustNotesFontSize(delta) {
@@ -678,6 +757,9 @@ function adjustNotesFontSize(delta) {
 
 $("notes-size-down")?.addEventListener("click", () => adjustNotesFontSize(-1));
 $("notes-size-up")?.addEventListener("click", () => adjustNotesFontSize(1));
+$("notes-tts-toggle")?.addEventListener("click", speakNotes);
+$("notes-tts-stop")?.addEventListener("click", stopNotesSpeech);
+updateNotesSpeechButtons();
 
 window.addEventListener("beforeunload", () => {
   if (titlePending) flushTitleSave();
@@ -1898,8 +1980,10 @@ function initModeSelect() {
     // Pending HTML edits should land before we leave html mode.
     if (htmlMode && m !== "html") await flushHtmlSave();
     body.classList.remove("portrait-mode");
+    body.classList.toggle("html-mode", m === "html");
     wrap.classList.remove("aspect-169", "portrait-169", "html-mode");
     if (m === "html") {
+      body.style.gridTemplateRows = "";
       wrap.classList.add("html-mode");
       htmlMode = true;
       ensureHtmlCodeMirror();
@@ -1911,6 +1995,7 @@ function initModeSelect() {
         else $("html-editor")?.focus();
       });
     } else if (m === "portrait") {
+      body.classList.remove("html-mode");
       body.classList.add("portrait-mode");
       wrap.classList.add("portrait-169");
       body.style.gridTemplateRows = `minmax(0, 1fr) ${getStoredPx(
@@ -1920,16 +2005,19 @@ function initModeSelect() {
       htmlMode = false;
       if (currentSectionId) showSlide(currentSectionId);
     } else if (m === "aspect-169") {
+      body.classList.remove("html-mode");
       wrap.classList.add("aspect-169");
       body.style.gridTemplateRows = "";
       htmlMode = false;
       if (currentSectionId) showSlide(currentSectionId);
     } else if (m === "default") {
+      body.classList.remove("html-mode");
       body.style.gridTemplateRows = "";
       htmlMode = false;
       if (currentSectionId) showSlide(currentSectionId);
     } else {
       // "" (placeholder) or unknown → no class, iframe fills the canvas.
+      body.classList.remove("html-mode");
       body.style.gridTemplateRows = "";
       htmlMode = false;
       if (currentSectionId) showSlide(currentSectionId);

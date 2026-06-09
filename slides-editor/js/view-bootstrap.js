@@ -99,6 +99,7 @@ const HELP_CSS = new URL("./css/shortcuts-help.css", location.href).href;
 // View has runtime (nav/fragments) but no edit, no sync, no chrome.
 // A faint footer notes the read-only state.
 const overlay = `
+<a href="./index.html" title="Home" style="position:fixed;top:8px;left:10px;z-index:9999;display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:1px solid rgba(255,255,255,.14);border-radius:6px;background:rgba(20,20,20,.76);color:#f0f0f0;font:12px ui-monospace,monospace;text-decoration:none;pointer-events:auto;backdrop-filter:blur(8px);">⌂ Home</a>
 <div style="position:fixed;top:6px;right:10px;font:10px ui-monospace,monospace;color:#666;letter-spacing:.05em;z-index:9999;text-align:right;pointer-events:none;">
   read-only · shared view
 </div>
