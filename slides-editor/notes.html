@@ -111,6 +111,8 @@
       <span class="title" id="deck-title">…</span>
       <span class="spacer"></span>
       <a class="btn home" href="./index.html" title="Home">⌂ Home</a>
+      <a class="btn" id="pronunciation-link" href="#">🔊 Pronunciation</a>
+      <a class="btn" id="pronunciation-link" href="#">🔊 Pronunciation</a>
       <a class="btn" id="script-link" href="#" target="_blank">⌨ Script</a>
       <button class="btn" id="tts-btn">▶ TTS</button>
       <button class="btn" id="tts-stop-btn">■ Stop</button>
@@ -145,6 +147,8 @@
         throw new Error("no deck");
       }
 
+      $("pronunciation-link").href =
+        `./pronunciation.html?deck=${encodeURIComponent(deckId)}`;
       $("script-link").href =
         `./script.html?deck=${encodeURIComponent(deckId)}`;
 

@@ -3,3 +3,20 @@
 window.SUPABASE_URL      = "https://YOUR-PROJECT-REF.supabase.co";
 window.SUPABASE_ANON_KEY = "YOUR-ANON-KEY";
 window.OWNER_PASSPHRASE  = "set-me"; // M6 인증에서 사용
+
+// ── Pronunciation training (pronunciation.html) ───────────────────
+// TTS engine: "kokoro" (local Kokoro-82M, default) | "openai" | "elevenlabs"
+window.PRONUNCIATION_TTS   = "kokoro";
+// Local Kokoro-82M served via an OpenAI-compatible API (e.g. Kokoro-FastAPI):
+//   docker run -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest
+window.KOKORO_TTS_URL      = "http://localhost:8880/v1/audio/speech"; // local TTS endpoint
+window.KOKORO_TTS_MODEL    = "kokoro";                                // model name exposed by local server
+window.KOKORO_VOICE        = "af_heart";                              // see server's /v1/audio/voices
+window.ELEVENLABS_API_KEY  = "";                        // ElevenLabs free API key
+window.ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";   // Rachel (default)
+// STT engine: "vibevoice" (local MLX, default) | "webspeech" (free browser) | "whisper" (OpenAI)
+// vibevoice falls back to webspeech automatically if the MLX server is unreachable.
+window.PRONUNCIATION_STT   = "vibevoice";
+window.MLX_STT_URL         = "http://localhost:8000/v1/audio/transcriptions"; // local MLX STT server
+window.MLX_STT_MODEL       = "mlx-community/VibeVoice-ASR-4bit";
+window.OPENAI_API_KEY      = "";                        // only needed if PRONUNCIATION_STT = "whisper"

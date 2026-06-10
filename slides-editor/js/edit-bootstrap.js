@@ -650,61 +650,115 @@ function cleanNotesForSpeech(text) {
 }
 
 function updateNotesSpeechButtons() {
-  const playBtn = $("notes-tts-toggle");
+  const listenBtn = $("notes-tts-listen");
   const stopBtn = $("notes-tts-stop");
-  if (!playBtn || !stopBtn) return;
-
-  if (!speechSynth) {
-    playBtn.disabled = true;
-    stopBtn.disabled = true;
-    playBtn.textContent = "TTS unavailable";
-    return;
-  }
-
-  const speaking = speechSynth.speaking;
-  const paused = speechSynth.paused;
+  if (!listenBtn || !stopBtn) return;
   const hasText = !!$("notes-textarea")?.value.trim();
-
-  playBtn.disabled = !hasText && !speaking && !paused;
-  playBtn.textContent = paused ? "▶ Resume" : speaking ? "⏸ Pause" : "▶ TTS";
-  playBtn.classList.toggle("warn", speaking || paused);
-  stopBtn.disabled = !speaking && !paused;
+  listenBtn.disabled = !hasText && !_notesAudioEl?.src;
 }
 
-function stopNotesSpeech() {
-  if (!speechSynth) return;
-  speechSynth.cancel();
-  updateNotesSpeechButtons();
+// ── ElevenLabs notes TTS ─────────────────────────────────────────
+let _notesAudioEl = null;
+let _notesAudioCache = null; // { key, url }
+
+async function _notesCacheKey(text) {
+  const voiceId = window.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM";
+  const buf = await crypto.subtle.digest(
+    "SHA-1",
+    new TextEncoder().encode(text),
+  );
+  const hash = Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return `edit-notes/${voiceId}/${hash}`;
 }
 
-function speakNotes() {
+async function speakNotes() {
   const ta = $("notes-textarea");
-  if (!speechSynth) {
-    toast("This browser does not support speech synthesis.", "err");
+  const apiKey = window.ELEVENLABS_API_KEY || "";
+  const voiceId = window.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM";
+
+  if (!apiKey) {
+    toast("ELEVENLABS_API_KEY not set in config.local.js", "err");
     return;
   }
   if (!ta || !ta.value.trim()) return;
 
-  if (speechSynth.speaking && speechSynth.paused) {
-    speechSynth.resume();
-    updateNotesSpeechButtons();
+  // If already playing → stop
+  if (_notesAudioEl && !_notesAudioEl.paused) {
+    _notesAudioEl.pause();
+    _notesAudioEl.currentTime = 0;
+    updateNotesTtsState(false);
     return;
   }
 
-  if (speechSynth.speaking) {
-    speechSynth.pause();
-    updateNotesSpeechButtons();
-    return;
-  }
+  const listenBtn = $("notes-tts-listen");
+  listenBtn.disabled = true;
+  listenBtn.textContent = "…";
 
-  const utterance = new SpeechSynthesisUtterance(cleanNotesForSpeech(ta.value));
-  utterance.lang = "en-US";
-  utterance.rate = 1;
-  utterance.pitch = 1;
-  utterance.onend = updateNotesSpeechButtons;
-  utterance.onerror = updateNotesSpeechButtons;
-  speechSynth.speak(utterance);
-  updateNotesSpeechButtons();
+  try {
+    const cleanText = cleanNotesForSpeech(ta.value);
+    const key = await _notesCacheKey(cleanText);
+
+    let url;
+    if (_notesAudioCache?.key === key) {
+      url = _notesAudioCache.url;
+    } else {
+      // Fetch from ElevenLabs
+      const resp = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+        {
+          method: "POST",
+          headers: {
+            "xi-api-key": apiKey,
+            "Content-Type": "application/json",
+            Accept: "audio/mpeg",
+          },
+          body: JSON.stringify({
+            text: cleanText,
+            model_id: "eleven_multilingual_v2",
+            voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+          }),
+        },
+      );
+      if (!resp.ok) throw new Error(`ElevenLabs ${resp.status}`);
+      const blob = await resp.blob();
+      url = URL.createObjectURL(blob);
+      if (_notesAudioCache) URL.revokeObjectURL(_notesAudioCache.url);
+      _notesAudioCache = { key, url };
+    }
+
+    if (!_notesAudioEl) {
+      _notesAudioEl = new Audio();
+      _notesAudioEl.onended = () => updateNotesTtsState(false);
+      _notesAudioEl.onerror = () => updateNotesTtsState(false);
+    }
+    _notesAudioEl.src = url;
+    _notesAudioEl.play();
+    updateNotesTtsState(true);
+  } catch (err) {
+    toast("TTS error: " + err.message, "err");
+  } finally {
+    listenBtn.disabled = false;
+    listenBtn.textContent = "▶ Listen";
+  }
+}
+
+function stopNotesSpeech() {
+  if (_notesAudioEl) {
+    _notesAudioEl.pause();
+    _notesAudioEl.currentTime = 0;
+  }
+  updateNotesTtsState(false);
+}
+
+function updateNotesTtsState(playing) {
+  const listenBtn = $("notes-tts-listen");
+  const stopBtn = $("notes-tts-stop");
+  if (!listenBtn || !stopBtn) return;
+  listenBtn.textContent = playing ? "⏹ Playing…" : "▶ Listen";
+  listenBtn.classList.toggle("warn", playing);
+  stopBtn.disabled = !playing;
 }
 
 function loadNotesForCurrent() {
@@ -757,7 +811,7 @@ function adjustNotesFontSize(delta) {
 
 $("notes-size-down")?.addEventListener("click", () => adjustNotesFontSize(-1));
 $("notes-size-up")?.addEventListener("click", () => adjustNotesFontSize(1));
-$("notes-tts-toggle")?.addEventListener("click", speakNotes);
+$("notes-tts-listen")?.addEventListener("click", speakNotes);
 $("notes-tts-stop")?.addEventListener("click", stopNotesSpeech);
 updateNotesSpeechButtons();
 

@@ -919,6 +919,14 @@
         font-size: 14px;
         line-height: 1;
       }
+      .notes-tts-btn {
+        height: 24px;
+        padding: 0 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        line-height: 1;
+        white-space: nowrap;
+      }
       #props .field {
         margin-bottom: 14px;
       }
@@ -1147,9 +1155,9 @@
   <body>
     <div id="app">
       <header id="toolbar">
+        <a class="btn home" href="./index.html" title="Home">🏠</a>
         <span class="title" id="deck-title">…</span>
-        <a class="btn home" href="./index.html" title="Home">⌂ Home</a>
-        <button
+        <!-- <button
           class="btn"
           id="save-html-btn"
           title="Save all pending changes now (notes · HTML · inline)"
@@ -1177,7 +1185,7 @@
             style="margin: 0; cursor: pointer"
           />
           <span>Auto save</span>
-        </label>
+        </label> -->
         <select
           id="mode-select"
           class="btn"
@@ -1292,20 +1300,21 @@
                 +
               </button>
               <button
-                class="btn notes-size-btn"
-                id="notes-tts-toggle"
+                class="btn notes-tts-btn"
+                id="notes-tts-listen"
                 type="button"
-                aria-label="Read notes aloud"
+                aria-label="Listen with ElevenLabs TTS"
               >
-                ▶ TTS
+                ▶ Listen
               </button>
               <button
-                class="btn notes-size-btn"
+                class="btn notes-tts-btn"
                 id="notes-tts-stop"
                 type="button"
-                aria-label="Stop reading notes"
+                aria-label="Stop audio"
+                disabled
               >
-                ■ Stop
+                ■
               </button>
             </div>
           </div>
