@@ -104,7 +104,7 @@
 
 /* ── Model audio ── */
 .training-panel #audio-row {
-  padding: 12px 14px 40px;
+  padding: 12px 14px 5px;
   flex-shrink: 0;
 }
 .training-panel #section-audio {

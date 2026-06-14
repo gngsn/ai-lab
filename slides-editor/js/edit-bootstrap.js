@@ -96,9 +96,7 @@ function slideOf(sid) {
 function currentTrainingSection() {
   const live = $("notes-textarea");
   const text =
-    live && live.value != null
-      ? live.value
-      : notes.get(currentSectionId) || "";
+    live && live.value != null ? live.value : notes.get(currentSectionId) || "";
   return {
     sectionId: currentSectionId,
     title: slideOf(currentSectionId)?.title || "",

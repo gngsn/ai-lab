@@ -13,6 +13,8 @@
  * still build a full-deck WAV.
  */
 
+import * as audioRepo from "./repo/audio-repo.js";
+
 // ── Config ────────────────────────────────────────────────────────
 const EL_API_KEY = window.ELEVENLABS_API_KEY || "";
 const EL_VOICE_ID = window.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM";
@@ -21,7 +23,8 @@ const OPENAI_KEY = window.OPENAI_API_KEY || "";
 // Local MLX speech-to-text (OpenAI-compatible /v1/audio/transcriptions server).
 const MLX_STT_URL =
   window.MLX_STT_URL || "http://localhost:8000/v1/audio/transcriptions";
-const MLX_STT_MODEL = window.MLX_STT_MODEL || "mlx-community/VibeVoice-ASR-4bit";
+const MLX_STT_MODEL =
+  window.MLX_STT_MODEL || "mlx-community/VibeVoice-ASR-4bit";
 // Local Kokoro-82M TTS via an OpenAI-compatible server (e.g. Kokoro-FastAPI).
 const KOKORO_TTS_URL =
   window.KOKORO_TTS_URL || "http://localhost:8880/v1/audio/speech";
@@ -175,7 +178,8 @@ function scoreClass(s) {
 function renderDiff(diff) {
   return diff
     .map(
-      ({ word, status }) => `<span class="${status}">${escapeHtml(word)}</span>`,
+      ({ word, status }) =>
+        `<span class="${status}">${escapeHtml(word)}</span>`,
     )
     .join(" ");
 }
@@ -189,7 +193,10 @@ function fmtTime(ts) {
   });
 }
 function engineTag(engine) {
-  return engine === "openai" ? "☁️" : engine === "elevenlabs" ? "🎤" : "🏠";
+  if (engine === "supabase") return "☁️";
+  if (engine === "openai") return "🌐";
+  if (engine === "elevenlabs") return "🎤";
+  return "🏠";
 }
 
 function splitTextChunks(text, limit) {
@@ -305,13 +312,16 @@ export async function mergeBlobs(blobs) {
 
 // ── Panel markup ──────────────────────────────────────────────────
 const PANEL_HTML = `
+  <div id="action-row">
+    <button class="btn" id="listen-btn">🔄 Generate</button>
+    <span id="stt-status" class="stt-status"></span>
+    <button class="btn" id="save-btn" title="Upload the current take to Supabase (shared)">☁️ Upload</button>
+  </div>
   <div id="audio-row">
     <audio id="section-audio" controls></audio>
     <select id="history-select" class="history-select" title="Saved takes (history)" style="display:none"></select>
   </div>
   <div id="action-row">
-    <button class="btn" id="listen-btn">🔄 Generate</button>
-    <button class="btn" id="save-btn" title="Save the current take into a folder on disk">💾 Save</button>
     <button class="btn" id="record-btn">🎙 Record</button>
     <button class="btn ok" id="retry-btn" style="display:none">↺ Retry</button>
     <span id="stt-status" class="stt-status"></span>
@@ -358,7 +368,10 @@ const PANEL_HTML = `
  * @param {() => {sectionId,title,text}} [opts.getSection]  live section source.
  * @param {(sectionId, score, cls) => void} [opts.onScore]  score callback.
  */
-export function createTrainingPanel(container, { deckId, getSection, onScore }) {
+export function createTrainingPanel(
+  container,
+  { deckId, getSection, onScore },
+) {
   // ── Per-instance state ──────────────────────────────────────────
   let currentSpeed = 1.0;
   let currentTTSEngine = window.PRONUNCIATION_TTS || "kokoro"; // "kokoro" | "openai" | "elevenlabs"
@@ -370,7 +383,6 @@ export function createTrainingPanel(container, { deckId, getSection, onScore }) 
   let recStream = null;
   let recChunks = [];
   let recEngine = null; // STT engine used for the current recording
-  let outputDirHandle = null;
   let recRootHandle = null;
   const versionUrlCache = new Map(); // version.ts → objectURL
   const recUrlCache = new Map(); // recording.ts → objectURL
@@ -524,8 +536,12 @@ export function createTrainingPanel(container, { deckId, getSection, onScore }) 
     const textHash = await sha1(cleanText);
     const hist = await getHistory(sectionId);
     if (!forceNew) {
+      // Reuse a same-engine take, or any take that came from Supabase
+      // (the shared authoritative copy) for this exact text.
       const match = hist.versions.find(
-        (v) => v.textHash === textHash && v.engine === currentTTSEngine,
+        (v) =>
+          v.textHash === textHash &&
+          (v.engine === currentTTSEngine || v.remotePath),
       );
       if (match) return { version: match, hist, reused: true };
     }
@@ -618,37 +634,11 @@ export function createTrainingPanel(container, { deckId, getSection, onScore }) 
     recHistorySelectEl.style.display = "";
   }
 
-  // ── Save TTS take to a folder on disk (File System Access API) ──
-  function audioFileName(title, mime) {
-    const ext = mime && mime.includes("wav") ? "wav" : "mp3";
-    const safe = (title || section.sectionId || "slide")
-      .replace(/[^a-zA-Z0-9가-힣_\- ]/g, "_")
-      .trim();
-    return `${deckId}__${safe}.${ext}`;
-  }
-
+  // ── File System Access helpers (used by recording disk-save) ────
   async function verifyPermission(handle) {
     const opts = { mode: "readwrite" };
     if ((await handle.queryPermission(opts)) === "granted") return true;
     return (await handle.requestPermission(opts)) === "granted";
-  }
-
-  // Must be called from a user gesture (the Save click) so the folder
-  // picker / permission re-grant is allowed.
-  async function ensureOutputDir() {
-    if (outputDirHandle && (await verifyPermission(outputDirHandle)))
-      return outputDirHandle;
-    const saved = await dbGet("__output_dir__");
-    if (saved && (await verifyPermission(saved))) {
-      outputDirHandle = saved;
-      return saved;
-    }
-    outputDirHandle = await window.showDirectoryPicker({
-      id: "slides-tts-output",
-      mode: "readwrite",
-    });
-    await dbPut("__output_dir__", outputDirHandle);
-    return outputDirHandle;
   }
 
   async function writeBlobToDir(dirHandle, name, blob) {
@@ -768,42 +758,33 @@ export function createTrainingPanel(container, { deckId, getSection, onScore }) 
   }
 
   // Save the current section's latest take into the chosen output folder.
-  async function onSaveToFolder() {
+  // Upload the current section's take to Supabase Storage (shared copy).
+  // Reuses the saved take, synthesizing once only if none exists yet.
+  async function onUploadToSupabase() {
     const cleanText = cleanForSpeech(section.text || "");
     if (!cleanText || !section.sectionId) return;
 
     saveBtn.disabled = true;
     const prev = saveBtn.textContent;
     try {
-      // Reuse the saved take (synthesize only if none exists yet).
-      const { version } = await getOrCreateVersion(
-        section.sectionId,
-        cleanText,
-      );
+      saveBtn.textContent = "…";
+      const sectionId = section.sectionId;
+      const { version, hist } = await getOrCreateVersion(sectionId, cleanText);
       const blob = new Blob([version.buf], {
         type: version.mime || "audio/mpeg",
       });
-      const name = audioFileName(section.title, version.mime);
-
-      if (window.showDirectoryPicker) {
-        saveBtn.textContent = "…";
-        const dir = await ensureOutputDir();
-        await writeBlobToDir(dir, name, blob);
-        saveBtn.textContent = "✓ Saved";
-      } else {
-        // Firefox / Safari: no File System Access API → download instead.
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = name;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
-        saveBtn.textContent = "✓ Downloaded";
-      }
+      const { path } = await audioRepo.uploadSlideAudio(
+        deckId,
+        sectionId,
+        blob,
+      );
+      // Mark this take as the uploaded/remote copy so it's reused on reload.
+      version.remotePath = path;
+      await saveHistory(sectionId, hist);
+      saveBtn.textContent = "✓ Uploaded";
       setTimeout(() => (saveBtn.textContent = prev), 1500);
     } catch (err) {
-      // AbortError = user dismissed the folder picker; not an error.
-      if (err.name !== "AbortError") alert(err.message);
+      alert("Upload failed: " + (err.message || err));
       saveBtn.textContent = prev;
     } finally {
       saveBtn.disabled = false;
@@ -931,10 +912,7 @@ export function createTrainingPanel(container, { deckId, getSection, onScore }) 
     } catch (err) {
       // VibeVoice failed at transcription (recording is still saved).
       if (recEngine === "vibevoice") {
-        console.warn(
-          "MLX STT failed, falling back to WebSpeech:",
-          err.message,
-        );
+        console.warn("MLX STT failed, falling back to WebSpeech:", err.message);
         sttStatusEl.className = "stt-status";
         sttStatusEl.textContent = "MLX failed (recording saved) → record again";
       } else {
@@ -1058,7 +1036,7 @@ export function createTrainingPanel(container, { deckId, getSection, onScore }) 
 
   // ── Bind actions ────────────────────────────────────────────────
   listenBtn.onclick = onListen;
-  saveBtn.onclick = onSaveToFolder;
+  saveBtn.onclick = onUploadToSupabase;
   historySelectEl.onchange = async () => {
     if (!section.sectionId) return;
     const hist = await getHistory(section.sectionId);
@@ -1099,7 +1077,11 @@ export function createTrainingPanel(container, { deckId, getSection, onScore }) 
   }
 
   async function setSection({ sectionId, title, text } = {}) {
-    section = { sectionId: sectionId || null, title: title || "", text: text || "" };
+    section = {
+      sectionId: sectionId || null,
+      title: title || "",
+      text: text || "",
+    };
 
     resetFeedback();
     listenBtn.textContent = "🔄 Generate";
@@ -1120,11 +1102,48 @@ export function createTrainingPanel(container, { deckId, getSection, onScore }) 
     // Restore the latest saved recording of the user's own voice.
     try {
       const recHist = await getRecordings(section.sectionId);
-      if (recHist.versions.length)
-        showRecording(recHist.versions[0], recHist);
+      if (recHist.versions.length) showRecording(recHist.versions[0], recHist);
     } catch {
       /* silent */
     }
+    // Prefer the shared Supabase take if one exists for this slide.
+    adoptRemoteAudio(section.sectionId).catch(() => {});
+  }
+
+  // If Supabase has audio for this slide, download it once, cache it as a
+  // take (so Generate/replay reuse it — no re-synthesis), and show it.
+  async function adoptRemoteAudio(sectionId) {
+    let remote;
+    try {
+      remote = await audioRepo.getSlideAudio(deckId, sectionId);
+    } catch {
+      return; // offline / bucket missing — keep the local take
+    }
+    if (!remote || sectionId !== section.sectionId) return;
+
+    const hist = await getHistory(sectionId);
+    const cached = hist.versions.find((v) => v.remotePath === remote.path);
+    if (cached) {
+      if (sectionId === section.sectionId) showVersion(cached, hist);
+      return;
+    }
+    const resp = await fetch(remote.url);
+    if (!resp.ok || sectionId !== section.sectionId) return;
+    const blob = await resp.blob();
+    const buf = await blob.arrayBuffer();
+    const version = {
+      ts: Date.now(),
+      engine: "supabase",
+      voice: "",
+      textHash: await sha1(cleanForSpeech(section.text || "")),
+      mime: blob.type || "audio/mpeg",
+      buf,
+      remotePath: remote.path,
+    };
+    hist.versions.unshift(version);
+    if (hist.versions.length > MAX_HISTORY) hist.versions.length = MAX_HISTORY;
+    await saveHistory(sectionId, hist);
+    if (sectionId === section.sectionId) showVersion(version, hist);
   }
 
   // For deck export: reuse cache/history, returns the raw take.
