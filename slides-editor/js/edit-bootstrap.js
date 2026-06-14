@@ -14,9 +14,10 @@ import * as slideRepo from "./repo/slide-repo.js";
 import * as storageRepo from "./repo/storage-repo.js";
 import { bindShortcutsHelp } from "./shortcuts-help.js";
 import {
-    isSlideHiddenContent,
-    setSlideHiddenContent,
+  isSlideHiddenContent,
+  setSlideHiddenContent,
 } from "./slide-visibility.js";
+import { createTrainingPanel } from "./training-panel.js";
 
 bindShortcutsHelp("Edit", [
   { keys: ["E"], desc: "Toggle edit mode (canvas)" },
@@ -82,9 +83,31 @@ const PROPS_PANEL_HEIGHT_MAX = 520;
 // or by `flushAllPending()` (e.g., on slide switch / beforeunload).
 let autoSave = localStorage.getItem("slidesEditor.autoSave") !== "false";
 
+let trainingPanel = null; // shared pronunciation training panel
+
 // Tiny helper: find a slide object by section_id.
 function slideOf(sid) {
   return slides.find((s) => s.section_id === sid) || null;
+}
+
+// Current section descriptor for the training panel. Prefer the live
+// textarea value so recording scores against the current (possibly
+// unsaved) notes text; fall back to the notes cache.
+function currentTrainingSection() {
+  const live = $("notes-textarea");
+  const text =
+    live && live.value != null
+      ? live.value
+      : notes.get(currentSectionId) || "";
+  return {
+    sectionId: currentSectionId,
+    title: slideOf(currentSectionId)?.title || "",
+    text,
+  };
+}
+
+function syncTrainingPanel() {
+  if (trainingPanel) trainingPanel.setSection(currentTrainingSection());
 }
 
 function lastSectionKey() {
@@ -476,6 +499,7 @@ async function switchSlide(sid) {
   renderSlideList();
   renderProps();
   loadNotesForCurrent(); // reads from cache — synchronous
+  syncTrainingPanel();
   if (htmlMode) {
     loadCurrentSlideHtml(); // reads from cache — synchronous
   } else {
@@ -2064,7 +2088,7 @@ function initModeSelect() {
       body.style.gridTemplateRows = "";
       htmlMode = false;
       if (currentSectionId) showSlide(currentSectionId);
-    } else if (m === "default") {
+    } else if (m === "stretch") {
       body.classList.remove("html-mode");
       body.style.gridTemplateRows = "";
       htmlMode = false;
@@ -2211,6 +2235,18 @@ function initSlideListResizer() {
 
 // ── init ───────────────────────────────────────────────────────────
 await refresh();
+
+// Shared pronunciation training panel (bottom of the props column).
+const trainingMount = $("training-mount");
+if (trainingMount) {
+  trainingPanel = createTrainingPanel(trainingMount, {
+    deckId,
+    getSection: currentTrainingSection,
+    onScore: () => {},
+  });
+  syncTrainingPanel();
+}
+
 initModeSelect();
 initSlideListResizer();
 initPropsResizer();

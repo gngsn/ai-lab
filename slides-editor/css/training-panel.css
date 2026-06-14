@@ -1,0 +1,278 @@
+/**
+ * training-panel.css — shared styles for the pronunciation training panel.
+ *
+ * Every selector is scoped under `.training-panel` so it can't clash with a
+ * host page's own global `.btn` (e.g. edit.html). Uses CSS vars shared by
+ * both pages: --accent, --bg, --surface, --surface-2, --border, --border-2,
+ * --text, --text-mid, --text-bright, --green, --yellow, --red, --blue.
+ */
+
+/* ── Wrapper ── */
+/* A flex column so #feedback-area can grow to fill the host pane (e.g. the
+   pronunciation.html #training-panel column, which sets its own height). In
+   edit.html the mount is flex:0 0 auto, so the panel sizes to its content. */
+.training-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Buttons ── */
+.training-panel .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-mid);
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
+}
+.training-panel .btn:hover {
+  background: #1e1e1e;
+  color: var(--text);
+  border-color: #333;
+}
+.training-panel .btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.training-panel .btn.primary {
+  color: var(--blue);
+  border-color: var(--blue);
+}
+.training-panel .btn.primary:hover {
+  background: rgba(59, 130, 246, 0.12);
+}
+.training-panel .btn.ok {
+  color: var(--green);
+  border-color: var(--green);
+}
+.training-panel .btn.ok:hover {
+  background: rgba(34, 197, 94, 0.12);
+}
+.training-panel .btn.warn {
+  color: var(--yellow);
+  border-color: var(--yellow);
+}
+.training-panel .btn.recording {
+  color: var(--red);
+  border-color: var(--red);
+  animation: tp-pulse 1s infinite;
+}
+@keyframes tp-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* ── Saved-takes / recordings history selector ── */
+.training-panel .history-select {
+  width: 100%;
+  margin-top: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  color: var(--text);
+  font:
+    11px "JetBrains Mono",
+    monospace;
+  padding: 3px 6px;
+  cursor: pointer;
+  height: 24px;
+}
+.training-panel .history-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ── Model audio ── */
+.training-panel #audio-row {
+  padding: 12px 14px 40px;
+  flex-shrink: 0;
+}
+.training-panel #section-audio {
+  width: 100%;
+  height: 28px;
+  display: none;
+}
+.training-panel #section-audio.show {
+  display: block;
+}
+
+/* ── Your-recording playback ── */
+.training-panel #rec-row {
+  padding: 4px 14px 8px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.training-panel .rec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.training-panel .rec-label {
+  font:
+    10px "JetBrains Mono",
+    monospace;
+  color: var(--text-mid);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.training-panel #rec-audio {
+  width: 100%;
+  height: 28px;
+  display: none;
+}
+.training-panel #rec-audio.show {
+  display: block;
+}
+
+/* ── Action row ── */
+.training-panel #action-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 8px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  background: var(--surface);
+}
+.training-panel #stt-status {
+  font:
+    11px "JetBrains Mono",
+    monospace;
+  color: var(--text-mid);
+  flex: 1;
+  min-width: 80px;
+  transition: color 0.2s;
+}
+.training-panel #stt-status.listening {
+  color: var(--red);
+}
+.training-panel #stt-status.processing {
+  color: var(--yellow);
+}
+
+/* ── Feedback area ── */
+.training-panel #feedback-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface);
+}
+.training-panel .fb-block {
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.training-panel .fb-label {
+  font:
+    10px "JetBrains Mono",
+    monospace;
+  color: var(--text-mid);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+/* diff */
+.training-panel .diff-text {
+  font-size: 13px;
+  line-height: 2;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.training-panel .diff-text .hit {
+  color: var(--green);
+}
+.training-panel .diff-text .near {
+  color: var(--yellow);
+  text-decoration: underline dotted;
+}
+.training-panel .diff-text .miss {
+  color: var(--red);
+  text-decoration: line-through;
+}
+.training-panel .diff-text .extra {
+  color: #444;
+  font-style: italic;
+}
+/* score */
+.training-panel #score-display {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.training-panel #score-big {
+  font:
+    700 32px "JetBrains Mono",
+    monospace;
+  line-height: 1;
+  color: var(--text-bright);
+}
+.training-panel #score-meta {
+  font-size: 12px;
+  color: var(--text-mid);
+  line-height: 1.7;
+}
+.training-panel #score-desc {
+  display: block;
+  font-size: 13px;
+}
+/* transcript */
+.training-panel #transcript-raw {
+  font:
+    11px "JetBrains Mono",
+    monospace;
+  color: var(--text-mid);
+  line-height: 1.6;
+  word-break: break-all;
+}
+.training-panel #transcript-raw strong {
+  color: var(--text);
+  font-weight: 400;
+}
+
+/* hint */
+.training-panel #feedback-hint {
+  color: var(--text-mid);
+  font-size: 12px;
+  text-align: center;
+  padding: 20px 8px;
+  line-height: 2.2;
+}
+.training-panel #feedback-hint kbd {
+  display: inline-block;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  padding: 1px 7px;
+  font:
+    11px "JetBrains Mono",
+    monospace;
+  color: var(--text);
+}

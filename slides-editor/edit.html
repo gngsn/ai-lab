@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="./vendor/fonts/fonts.css" />
     <link rel="stylesheet" href="./css/history-ui.css" />
     <link rel="stylesheet" href="./css/shortcuts-help.css" />
+    <link rel="stylesheet" href="./css/training-panel.css" />
     <style>
       *,
       *::before,
@@ -21,12 +22,17 @@
         --surface: #141414;
         --surface-2: #1a1a1a;
         --border: #1f1f1f;
+        --border-2: #2a2a2a;
         --text: #c8c8c8;
         --text-mid: #777;
         --text-bright: #f0f0f0;
         --danger: #ef4444;
         --warn: #e8a55a;
         --ok: #22c55e;
+        --green: #22c55e;
+        --yellow: #f59e0b;
+        --red: #ef4444;
+        --blue: #3b82f6;
       }
       body {
         background: var(--bg);
@@ -975,6 +981,12 @@
         font-size: var(--notes-font-size, 14px);
       }
 
+      /* Training panel mount (bottom of props column) */
+      #training-mount {
+        flex: 0 0 auto;
+        margin-top: 10px;
+      }
+
       /* Modal */
       .modal-bg {
         position: fixed;
@@ -1191,10 +1203,10 @@
           class="btn"
           style="width: auto; min-width: 80px"
         >
-          <option value="default" selected>default</option>
-          <option value="aspect-169">16:9</option>
+          <option value="aspect-169" selected>16:9</option>
           <option value="portrait">portrait</option>
           <option value="html">html</option>
+          <option value="stretch">stretch</option>
         </select>
         <!-- Save and Export moved to More menu -->
         <span class="spacer"></span>
@@ -1331,6 +1343,7 @@
               "
             ></textarea>
           </div>
+          <div id="training-mount"></div>
         </aside>
       </main>
     </div>
