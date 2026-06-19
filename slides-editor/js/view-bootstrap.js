@@ -7,10 +7,11 @@
 // Tier 2 (future): proper RLS that scopes anon access by share_token at the
 // database layer so a leaked anon key alone can't pull all decks.
 
-import DOMPurify from "https://esm.sh/dompurify@3";
+import DOMPurify from "../vendor/modules/dompurify.mjs";
 import { getDeck } from "./repo/deck-repo.js";
 import { listByDeck } from "./repo/slide-repo.js";
 import { tagSection } from "./slide-render.js";
+import { resolveStorageSourcesInHtml } from "./storage-src.js";
 
 const params = new URLSearchParams(location.search);
 const deckId = params.get("deck");
@@ -82,10 +83,13 @@ if (slides.length === 0) {
 }
 
 const slidesHtml = slides
-  .map((s) => cleanSlide(tagSection(s.content, s.section_id)))
+  .map((s) =>
+    resolveStorageSourcesInHtml(cleanSlide(tagSection(s.content, s.section_id))),
+  )
   .join("\n");
 
 let html = cleanFrame(deck.frame_html);
+html = resolveStorageSourcesInHtml(html);
 if (html.includes("<!-- slides -->")) {
   html = html.replace("<!-- slides -->", slidesHtml);
 } else {

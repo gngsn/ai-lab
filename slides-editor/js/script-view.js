@@ -12,7 +12,9 @@ const escapeHtml = (s) =>
   String(s).replace(
     /[&<>"']/g,
     (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ],
   );
 
 export function mountScriptView({ deck, sections, syncId }) {
@@ -131,7 +133,8 @@ export function mountScriptView({ deck, sections, syncId }) {
   document.addEventListener("keydown", (e) => {
     // OS autorepeat would otherwise jump multiple sections per key hold.
     if (e.repeat) return;
-    if (e.target?.tagName === "INPUT" || e.target?.tagName === "TEXTAREA") return;
+    if (e.target?.tagName === "INPUT" || e.target?.tagName === "TEXTAREA")
+      return;
     switch (e.key) {
       case "ArrowDown":
       case "ArrowRight":

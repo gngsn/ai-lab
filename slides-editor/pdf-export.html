@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PDF Export</title>
+    <!-- jsPDF UMD — sets window.jspdf -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      :root {
+        --accent: #5db8a6;
+        --bg: #0c0c0c;
+        --surface: #141414;
+        --border: #1f1f1f;
+        --text: #c8c8c8;
+        --text-mid: #777;
+        --text-bright: #f0f0f0;
+        --ok: #22c55e;
+        --danger: #ef4444;
+        --warn: #e8a55a;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "IBM Plex Sans KR", "Noto Sans KR", sans-serif;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 28px;
+        width: min(460px, 100%);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      h1 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-bright);
+      }
+      .deck-title {
+        font-size: 13px;
+        color: var(--text-mid);
+        font-style: italic;
+        min-height: 1.4em;
+      }
+      .options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .option-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .option-row input[type="checkbox"] {
+        margin-top: 2px;
+        accent-color: var(--accent);
+        width: 15px;
+        height: 15px;
+        flex-shrink: 0;
+        cursor: pointer;
+      }
+      .option-label {
+        font-size: 13px;
+        color: var(--text);
+        line-height: 1.45;
+      }
+      .option-label small {
+        display: block;
+        font-size: 11px;
+        color: var(--text-mid);
+        margin-top: 2px;
+      }
+      .btn-generate {
+        background: var(--accent);
+        border: none;
+        color: #000;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-family: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.15s;
+        align-self: flex-start;
+      }
+      .btn-generate:hover { opacity: 0.85; }
+      .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; }
+
+      /* Progress */
+      #progress-section { display: none; flex-direction: column; gap: 10px; }
+      #progress-section.show { display: flex; }
+      .progress-bar-wrap {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        height: 6px;
+        overflow: hidden;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        background: var(--accent);
+        transition: width 0.2s;
+        width: 0%;
+      }
+      .progress-label {
+        font-size: 12px;
+        color: var(--text-mid);
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      /* Result */
+      #result-section { display: none; flex-direction: column; gap: 10px; }
+      #result-section.show { display: flex; }
+      .result-ok {
+        font-size: 13px;
+        color: var(--ok);
+      }
+      .result-err {
+        font-size: 13px;
+        color: var(--danger);
+        white-space: pre-wrap;
+      }
+      .btn-again {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-mid);
+        padding: 7px 14px;
+        border-radius: 5px;
+        font-size: 12px;
+        font-family: inherit;
+        cursor: pointer;
+        align-self: flex-start;
+      }
+      .btn-again:hover { color: var(--text); border-color: #333; background: #1e1e1e; }
+
+      /* Hidden iframe used for slide rendering */
+      #render-frame {
+        position: fixed;
+        left: -9999px;
+        top: 0;
+        width: 1280px;
+        height: 720px;
+        border: 0;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>📄 PDF Export (Screenshot)</h1>
+      <div class="deck-title" id="deck-title">loading…</div>
+
+      <div id="options-section" class="options">
+        <label class="option-row">
+          <input type="checkbox" id="opt-notes" />
+          <span class="option-label">
+            발표자 노트 포함
+            <small>각 슬라이드 뒤에 노트 페이지를 추가합니다.</small>
+          </span>
+        </label>
+        <label class="option-row">
+          <input type="checkbox" id="opt-hidden" />
+          <span class="option-label">
+            숨김 슬라이드 포함
+            <small>Hidden으로 표시된 슬라이드도 PDF에 포함합니다.</small>
+          </span>
+        </label>
+      </div>
+
+      <button class="btn-generate" id="btn-generate" disabled>Generate PDF</button>
+
+      <div id="progress-section">
+        <div class="progress-label" id="progress-label">준비 중…</div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="progress-bar"></div>
+        </div>
+      </div>
+
+      <div id="result-section">
+        <div id="result-msg"></div>
+        <button class="btn-again" id="btn-again">다시 내보내기</button>
+      </div>
+    </div>
+
+    <!-- Off-screen iframe for rendering each slide -->
+    <iframe id="render-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+
+    <script src="./js/config.local.js"></script>
+    <script type="module">
+      import * as deckRepo from "./js/repo/deck-repo.js";
+      import * as slideRepo from "./js/repo/slide-repo.js";
+      import * as notesRepo from "./js/repo/notes-repo.js";
+      import { isSlideHiddenContent } from "./js/slide-visibility.js";
+
+      // ── URL params ──────────────────────────────────────────────
+      const params = new URLSearchParams(location.search);
+      const deckId = params.get("deck");
+      if (!deckId) {
+        document.getElementById("deck-title").textContent = "?deck= 파라미터가 없습니다.";
+        throw new Error("no deck");
+      }
+
+      // ── DOM refs ────────────────────────────────────────────────
+      const $deckTitle     = document.getElementById("deck-title");
+      const $optNotes      = document.getElementById("opt-notes");
+      const $optHidden     = document.getElementById("opt-hidden");
+      const $btnGenerate   = document.getElementById("btn-generate");
+      const $optSection    = document.getElementById("options-section");
+      const $progressSec   = document.getElementById("progress-section");
+      const $progressLabel = document.getElementById("progress-label");
+      const $progressBar   = document.getElementById("progress-bar");
+      const $resultSec     = document.getElementById("result-section");
+      const $resultMsg     = document.getElementById("result-msg");
+      const $btnAgain      = document.getElementById("btn-again");
+      const $frame         = document.getElementById("render-frame");
+
+      // ── Load deck info ──────────────────────────────────────────
+      let deck = null;
+      try {
+        deck = await deckRepo.getDeck(deckId);
+        $deckTitle.textContent = deck.title || deckId;
+        $btnGenerate.disabled = false;
+      } catch (err) {
+        $deckTitle.textContent = "덱 로드 실패: " + err.message;
+      }
+
+      // ── helpers ─────────────────────────────────────────────────
+      function setProgress(current, total, label) {
+        const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+        $progressBar.style.width = pct + "%";
+        $progressLabel.textContent = label || `${current} / ${total}`;
+      }
+
+      function showResult(ok, msg) {
+        $progressSec.classList.remove("show");
+        $resultSec.classList.add("show");
+        $resultMsg.className = ok ? "result-ok" : "result-err";
+        $resultMsg.textContent = ok ? "✓ " + msg : "✗ " + msg;
+      }
+
+      /** Load a URL into the hidden iframe and wait for it to settle. */
+      function loadFrame(src) {
+        return new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error("iframe timeout: " + src)), 15000);
+          $frame.onload = () => {
+            clearTimeout(timeout);
+            // Extra wait for CSS/web fonts to paint
+            setTimeout(resolve, 700);
+          };
+          $frame.src = src;
+        });
+      }
+
+      /**
+       * Inject html2canvas into the iframe's document, run it, and return
+       * a dataURL of the rendered slide (JPEG, q=0.88).
+       */
+      async function captureFrame() {
+        const iframeWin = $frame.contentWindow;
+        const iframeDoc = $frame.contentDocument;
+        if (!iframeWin || !iframeDoc) throw new Error("iframe not accessible");
+
+        // Inject html2canvas if not already present
+        if (!iframeWin.html2canvas) {
+          await new Promise((resolve, reject) => {
+            const s = iframeDoc.createElement("script");
+            s.src = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
+            s.onload = resolve;
+            s.onerror = () => reject(new Error("html2canvas CDN load failed"));
+            iframeDoc.head.appendChild(s);
+          });
+        }
+
+        const canvas = await iframeWin.html2canvas(iframeDoc.documentElement, {
+          width: 1280,
+          height: 720,
+          windowWidth: 1280,
+          windowHeight: 720,
+          scale: 1,
+          useCORS: true,
+          allowTaint: false,
+          logging: false,
+          backgroundColor: null,
+        });
+        return canvas.toDataURL("image/jpeg", 0.88);
+      }
+
+      /**
+       * Render a notes page directly into jsPDF (no screenshot needed).
+       * Uses a simple dark-on-white text layout to keep file size small.
+       */
+      function addNotesPage(pdf, pdfW, pdfH, slideTitle, notesText) {
+        pdf.addPage();
+        const margin = 14;
+        const maxW = pdfW - margin * 2;
+
+        // Header bar
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(0, 0, pdfW, 16, "F");
+        pdf.setFontSize(9);
+        pdf.setTextColor(80, 80, 80);
+        pdf.text("발표자 노트", margin, 10.5);
+        if (slideTitle) {
+          const titleStr = String(slideTitle);
+          pdf.setFontSize(9);
+          pdf.setTextColor(40, 40, 40);
+          pdf.text(titleStr, margin, 24, { maxWidth: maxW });
+        }
+
+        // Notes body
+        const bodyY = slideTitle ? 34 : 22;
+        pdf.setFontSize(10);
+        pdf.setTextColor(30, 30, 30);
+        const lines = pdf.splitTextToSize(notesText || "(노트 없음)", maxW);
+        pdf.text(lines, margin, bodyY);
+      }
+
+      // ── main export logic ───────────────────────────────────────
+      async function runExport() {
+        if (!deck) { showResult(false, "덱 데이터가 없습니다."); return; }
+
+        const includeNotes  = $optNotes.checked;
+        const includeHidden = $optHidden.checked;
+
+        // Hide options, show progress
+        $optSection.style.display  = "none";
+        $btnGenerate.style.display = "none";
+        $progressSec.classList.add("show");
+        $resultSec.classList.remove("show");
+
+        try {
+          // Load all data
+          setProgress(0, 1, "슬라이드 데이터 로딩 중…");
+          const [allSlides, allNotes] = await Promise.all([
+            slideRepo.listByDeck(deckId),
+            notesRepo.listByDeck(deckId),
+          ]);
+
+          const notesByKey = new Map(allNotes.map((n) => [n.section_id, n.content ?? ""]));
+          const slides = includeHidden
+            ? allSlides
+            : allSlides.filter((s) => !isSlideHiddenContent(s.content));
+
+          if (slides.length === 0) {
+            showResult(false, "내보낼 슬라이드가 없습니다. '숨김 포함' 옵션을 확인하세요.");
+            resetUI();
+            return;
+          }
+
+          // jsPDF — landscape, 16:9 mm dimensions
+          const pdfW = 297;
+          const pdfH = 167.0625; // 297 × (9/16)
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF({
+            orientation: "landscape",
+            unit: "mm",
+            format: [pdfW, pdfH],
+          });
+
+          let firstPage = true;
+          const total = slides.length;
+
+          for (let i = 0; i < total; i++) {
+            const slide = slides[i];
+            setProgress(i, total, `슬라이드 렌더링 중 ${i + 1} / ${total} — ${slide.title || slide.section_id}`);
+
+            // Load slide in hidden iframe (view mode, no edit)
+            const frameUrl =
+              `./edit-frame.html?deck=${encodeURIComponent(deckId)}` +
+              `&section=${encodeURIComponent(slide.section_id)}`;
+            await loadFrame(frameUrl);
+
+            // Screenshot
+            const imgData = await captureFrame();
+
+            if (!firstPage) pdf.addPage();
+            firstPage = false;
+            pdf.addImage(imgData, "JPEG", 0, 0, pdfW, pdfH);
+
+            // Notes page (optional)
+            if (includeNotes) {
+              const noteText = (notesByKey.get(slide.section_id) || "").trim();
+              addNotesPage(pdf, pdfW, pdfH, slide.title || slide.section_id, noteText);
+            }
+          }
+
+          setProgress(total, total, "PDF 저장 중…");
+
+          const slugify = (s) =>
+            (s || "deck")
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-+|-+$/g, "") || "deck";
+          const filename = `${slugify(deck.title)}.pdf`;
+          pdf.save(filename);
+
+          showResult(true, `${filename} 다운로드 완료 (${total}장)`);
+        } catch (err) {
+          showResult(false, err.message);
+          resetUI();
+        }
+      }
+
+      function resetUI() {
+        $optSection.style.display  = "";
+        $btnGenerate.style.display = "";
+        $progressSec.classList.remove("show");
+        $progressBar.style.width = "0%";
+      }
+
+      $btnGenerate.addEventListener("click", runExport);
+      $btnAgain.addEventListener("click", () => {
+        $resultSec.classList.remove("show");
+        resetUI();
+      });
+    </script>
+  </body>
+</html>

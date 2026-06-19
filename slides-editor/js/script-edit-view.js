@@ -1,12 +1,10 @@
 // Fullscreen note editor — 3-column on desktop, stacked on mobile.
 // Used by script-edit.html. Edits hit `notes.upsert` with debounce; switching
 // sections always flushes the pending save first.
-import { marked } from "https://esm.sh/marked@11";
+import { markdownToHtml } from "./markdown-lite.js";
 import * as notesRepo from "./repo/notes-repo.js";
 import { HistoryUI, saveVersionPrompt } from "./history-ui.js";
 import { bindShortcutsHelp } from "./shortcuts-help.js";
-
-marked.setOptions({ breaks: true, gfm: true });
 
 const SAVE_DEBOUNCE_MS = 800;
 
@@ -58,7 +56,7 @@ export function mountScriptEditView({ deck, deckId, sections }) {
 
   function updatePreview(text) {
     $("edit-preview").innerHTML = text
-      ? marked.parse(text)
+      ? markdownToHtml(text)
       : '<p style="opacity:.4">(빈 노트)</p>';
   }
 

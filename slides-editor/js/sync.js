@@ -5,9 +5,9 @@
 //     so reordering a deck doesn't desync the script viewer.
 // Standalone: creates its own Supabase client so it works inside the rewritten
 // `present.html` document where module identity may differ.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "../vendor/modules/supabase-client.mjs";
 
-export function createSlideSync(syncId, onSlideChange) {
+export function createSlideSync(syncId, onSlideChange, onStatusChange) {
   if (!syncId) return null;
 
   const url = window.SUPABASE_URL;
@@ -27,7 +27,10 @@ export function createSlideSync(syncId, onSlideChange) {
       onSlideChange(payload);
     });
   }
-  channel.subscribe();
+  channel.subscribe((status, err) => {
+    console.info("[sync]", syncId, status, err || "");
+    onStatusChange?.(status, err);
+  });
 
   return {
     broadcast: (payload) =>

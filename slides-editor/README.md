@@ -59,10 +59,15 @@ cp js/config.local.js.example js/config.local.js
 
 ### 3. Run Locally
 ```bash
+npm install
+npm run build:vendor
 python3 -m http.server 8000
 # or: npx serve .
 ```
 Open [http://localhost:8000](http://localhost:8000) — you should see **"✓ connected — 1 deck(s)"** and `seed-hello` if setup is correct.
+
+`build:vendor` generates local browser bundles under `vendor/modules/` for
+Supabase client and DOMPurify, so runtime no longer depends on `esm.sh`.
 
 ---
 
@@ -121,10 +126,14 @@ Images are stored in the Supabase Storage `slides-images` bucket (public-read).
 
 - **Enable**: Run `migrations/005_storage.sql` (once)
 - **Use**: In edit.html, open 🖼 Images (or press `I`) → drag-and-drop or `+ Upload`
-- **Insert**: Click `↩` to insert `<img>` at the current selection and autosave
-- **Copy**: Click `📋` to copy the public URL (paste directly in HTML)
+- **Insert**: Click `↩` to insert `<img src="supabase://slides-images/...">` at the current selection and autosave
+- **Copy**: Click `📋` to copy the local storage path (`supabase://slides-images/...`)
 - **Delete**: Click `🗑` (permanent). Deleting breaks `<img src>` references in slides
 - **Path**: `{deck_id}/{ts36}-{safe-name}` — timestamp prefix prevents filename collisions
+
+The editor stores image references as storage paths (not absolute public URLs).
+At runtime/export, those paths are resolved against `SUPABASE_URL`, so deck HTML
+stays environment-agnostic and does not hardcode a remote host.
 
 > **Tier 1:** anon can upload/delete. **Tier 2:** restrict to owner after authentication.
 

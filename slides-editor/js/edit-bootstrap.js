@@ -6,7 +6,13 @@
 // Owns: passphrase gate, slide list (incl. DnD reorder), iframe canvas
 // switching, props panel, add/delete, frame_html modal, IPC with iframe.
 import { ensureAuthed } from "./auth.js";
-import { exportHtml, exportNotesMd, exportPdf, exportPptx } from "./export.js";
+import {
+  exportHtml,
+  exportNotesMd,
+  exportPdf,
+  exportPptx,
+  exportScreenshotPdf,
+} from "./export.js";
 import { HistoryUI, saveVersionPrompt } from "./history-ui.js";
 import * as deckRepo from "./repo/deck-repo.js";
 import * as notesRepo from "./repo/notes-repo.js";
@@ -1960,6 +1966,8 @@ document.querySelectorAll("[data-export]").forEach((btn) => {
         toast("PPTX 생성 중…", "ok");
         const r = await exportPptx(deckId);
         toast(`Saved ${r.filename}`, "ok");
+      } else if (kind === "screenshot-pdf") {
+        exportScreenshotPdf(deckId);
       }
     } catch (err) {
       toast("Export failed: " + err.message, "err");

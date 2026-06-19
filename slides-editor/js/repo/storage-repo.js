@@ -2,8 +2,8 @@
 // Bucket is public-read; uploads are scoped under each deck's deck_id prefix.
 //
 // Path: `{deck_id}/{base36-timestamp}-{safe-filename}`
-// Public URL: from supabase.storage.getPublicUrl()
 import { supabase } from "../supabase.js";
+import { resolveStorageSrc, toStorageSrc } from "../storage-src.js";
 
 const BUCKET = "slides-images";
 
@@ -19,8 +19,7 @@ function safeName(name) {
 }
 
 export function getPublicUrl(path) {
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  return resolveStorageSrc(toStorageSrc(path));
 }
 
 export async function uploadImage(deckId, file) {
@@ -33,7 +32,14 @@ export async function uploadImage(deckId, file) {
     .from(BUCKET)
     .upload(path, file, { upsert: false, cacheControl: "3600", contentType: file.type });
   if (error) throw error;
-  return { path, url: getPublicUrl(path), name: file.name, size: file.size };
+  const storageSrc = toStorageSrc(path);
+  return {
+    path,
+    storageSrc,
+    previewUrl: resolveStorageSrc(storageSrc),
+    name: file.name,
+    size: file.size,
+  };
 }
 
 export async function listImages(deckId) {
@@ -49,10 +55,12 @@ export async function listImages(deckId) {
     .filter((o) => o.id || (o.metadata && o.metadata.size != null))
     .map((o) => {
       const path = `${deckId}/${o.name}`;
+      const storageSrc = toStorageSrc(path);
       return {
         name: o.name,
         path,
-        url: getPublicUrl(path),
+        storageSrc,
+        previewUrl: resolveStorageSrc(storageSrc),
         size: o.metadata?.size ?? null,
         createdAt: o.created_at ?? null,
       };

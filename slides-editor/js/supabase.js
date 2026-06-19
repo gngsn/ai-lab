@@ -1,6 +1,6 @@
 // Single Supabase client for the whole app.
 // Loaded after `config.local.js` (which sets the globals on `window`).
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "../vendor/modules/supabase-client.mjs";
 
 const url = window.SUPABASE_URL;
 const key = window.SUPABASE_ANON_KEY;

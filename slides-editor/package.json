@@ -5,10 +5,16 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build-config.mjs",
+    "build:vendor": "node scripts/build-vendor-modules.mjs",
     "dev": "python3 -m http.server 8000",
     "import": "node scripts/import.mjs"
   },
   "dependencies": {
-    "vercel": "^54.10.2"
+    "@supabase/supabase-js": "^2.49.8",
+    "dompurify": "^3.2.6",
+    "vercel": "^54.13.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.5"
   }
 }

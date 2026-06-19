@@ -4,6 +4,7 @@
 import * as deckRepo from "./repo/deck-repo.js";
 import * as notesRepo from "./repo/notes-repo.js";
 import * as slideRepo from "./repo/slide-repo.js";
+import { resolveStorageSourcesInHtml } from "./storage-src.js";
 
 const slugify = (s) =>
   (s || "deck")
@@ -43,8 +44,10 @@ export async function buildHtml(deckId) {
   ]);
   let slidesHtml = slides.map((s) => s.content).join("\n");
   slidesHtml = stripEditAttrs(slidesHtml);
+  slidesHtml = resolveStorageSourcesInHtml(slidesHtml);
 
   let html = deck.frame_html;
+  html = resolveStorageSourcesInHtml(html);
   if (html.includes("<!-- slides -->")) {
     html = html.replace("<!-- slides -->", slidesHtml);
   } else {
@@ -70,6 +73,19 @@ export function exportPdf(deckId) {
   const w = window.open(url, "_blank");
   if (!w) throw new Error("Popup blocked — allow popups for this site.");
   return { url };
+}
+
+// ── PDF (screenshot via html2canvas + jsPDF) ──────────────────────
+
+export function exportScreenshotPdf(deckId) {
+  const url = `./pdf-export.html?deck=${encodeURIComponent(deckId)}`;
+  const a = document.createElement("a");
+  a.href = url;
+  a.target = "_blank";
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
 
 // ── Marp notes ────────────────────────────────────────────────────
