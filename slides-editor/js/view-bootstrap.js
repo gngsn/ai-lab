@@ -84,7 +84,9 @@ if (slides.length === 0) {
 
 const slidesHtml = slides
   .map((s) =>
-    resolveStorageSourcesInHtml(cleanSlide(tagSection(s.content, s.section_id))),
+    resolveStorageSourcesInHtml(
+      cleanSlide(tagSection(s.content, s.section_id)),
+    ),
   )
   .join("\n");
 

@@ -1,9 +1,9 @@
 // Fullscreen note editor — 3-column on desktop, stacked on mobile.
 // Used by script-edit.html. Edits hit `notes.upsert` with debounce; switching
 // sections always flushes the pending save first.
+import { HistoryUI, saveVersionPrompt } from "./history-ui.js";
 import { markdownToHtml } from "./markdown-lite.js";
 import * as notesRepo from "./repo/notes-repo.js";
-import { HistoryUI, saveVersionPrompt } from "./history-ui.js";
 import { bindShortcutsHelp } from "./shortcuts-help.js";
 
 const SAVE_DEBOUNCE_MS = 800;
@@ -12,7 +12,9 @@ const escapeHtml = (s) =>
   String(s).replace(
     /[&<>"']/g,
     (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ],
   );
 
 export function mountScriptEditView({ deck, deckId, sections }) {
@@ -39,9 +41,11 @@ export function mountScriptEditView({ deck, deckId, sections }) {
         </div>`,
       )
       .join("");
-    $("edit-sections").querySelectorAll(".edit-sec").forEach((el) => {
-      el.addEventListener("click", () => select(el.dataset.sectionId));
-    });
+    $("edit-sections")
+      .querySelectorAll(".edit-sec")
+      .forEach((el) => {
+        el.addEventListener("click", () => select(el.dataset.sectionId));
+      });
   }
 
   function renderEditor() {
@@ -159,10 +163,7 @@ export function mountScriptEditView({ deck, deckId, sections }) {
   });
 
   document.addEventListener("keydown", (e) => {
-    if (
-      e.target?.tagName === "TEXTAREA" ||
-      e.target?.tagName === "INPUT"
-    ) {
+    if (e.target?.tagName === "TEXTAREA" || e.target?.tagName === "INPUT") {
       if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
         e.preventDefault();
         $("save-version").click();

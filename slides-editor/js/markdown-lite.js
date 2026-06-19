@@ -13,7 +13,10 @@ function renderInline(text) {
   html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
   html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  html = html.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener">$1</a>',
+  );
   return html;
 }
 
@@ -34,7 +37,9 @@ function isListLine(line) {
 }
 
 export function markdownToHtml(markdown) {
-  const lines = String(markdown || "").replace(/\r\n?/g, "\n").split("\n");
+  const lines = String(markdown || "")
+    .replace(/\r\n?/g, "\n")
+    .split("\n");
   const out = [];
 
   let i = 0;
@@ -73,7 +78,9 @@ export function markdownToHtml(markdown) {
         quoteLines.push(lines[i].trim().replace(/^>\s+/, ""));
         i++;
       }
-      out.push(`<blockquote>${renderInline(quoteLines.join("<br>"))}</blockquote>`);
+      out.push(
+        `<blockquote>${renderInline(quoteLines.join("<br>"))}</blockquote>`,
+      );
       continue;
     }
 
@@ -83,7 +90,9 @@ export function markdownToHtml(markdown) {
       while (
         i < lines.length &&
         lines[i].trim() &&
-        (ordered ? /^\d+\.\s+/.test(lines[i].trim()) : /^[*+-]\s+/.test(lines[i].trim()))
+        (ordered
+          ? /^\d+\.\s+/.test(lines[i].trim())
+          : /^[*+-]\s+/.test(lines[i].trim()))
       ) {
         listLines.push(lines[i].trim());
         i++;
@@ -93,9 +102,17 @@ export function markdownToHtml(markdown) {
     }
 
     const paragraph = [];
-    while (i < lines.length && lines[i].trim() && !isListLine(lines[i].trim())) {
+    while (
+      i < lines.length &&
+      lines[i].trim() &&
+      !isListLine(lines[i].trim())
+    ) {
       const probe = lines[i].trim();
-      if (/^```/.test(probe) || /^(#{1,6})\s+/.test(probe) || /^>\s+/.test(probe)) {
+      if (
+        /^```/.test(probe) ||
+        /^(#{1,6})\s+/.test(probe) ||
+        /^>\s+/.test(probe)
+      ) {
         break;
       }
       paragraph.push(probe);
