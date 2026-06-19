@@ -2,20 +2,22 @@
 // Bucket is public-read; uploads are scoped under each deck's deck_id prefix.
 //
 // Path: `{deck_id}/{base36-timestamp}-{safe-filename}`
-import { supabase } from "../supabase.js";
 import { resolveStorageSrc, toStorageSrc } from "../storage-src.js";
+import { supabase } from "../supabase.js";
 
 const BUCKET = "slides-images";
 
 function safeName(name) {
-  return (name || "image")
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9.\-_]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80) || "image";
+  return (
+    (name || "image")
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9.\-_]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80) || "image"
+  );
 }
 
 export function getPublicUrl(path) {
@@ -30,7 +32,11 @@ export async function uploadImage(deckId, file) {
   const path = `${deckId}/${ts}-${safeName(file.name)}`;
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(path, file, { upsert: false, cacheControl: "3600", contentType: file.type });
+    .upload(path, file, {
+      upsert: false,
+      cacheControl: "3600",
+      contentType: file.type,
+    });
   if (error) throw error;
   const storageSrc = toStorageSrc(path);
   return {
@@ -43,28 +49,28 @@ export async function uploadImage(deckId, file) {
 }
 
 export async function listImages(deckId) {
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .list(deckId, {
-      limit: 500,
-      sortBy: { column: "created_at", order: "desc" },
-    });
+  const { data, error } = await supabase.storage.from(BUCKET).list(deckId, {
+    limit: 500,
+    sortBy: { column: "created_at", order: "desc" },
+  });
   if (error) throw error;
-  return (data || [])
-    // .list returns sub-folders too; filter to actual files.
-    .filter((o) => o.id || (o.metadata && o.metadata.size != null))
-    .map((o) => {
-      const path = `${deckId}/${o.name}`;
-      const storageSrc = toStorageSrc(path);
-      return {
-        name: o.name,
-        path,
-        storageSrc,
-        previewUrl: resolveStorageSrc(storageSrc),
-        size: o.metadata?.size ?? null,
-        createdAt: o.created_at ?? null,
-      };
-    });
+  return (
+    (data || [])
+      // .list returns sub-folders too; filter to actual files.
+      .filter((o) => o.id || (o.metadata && o.metadata.size != null))
+      .map((o) => {
+        const path = `${deckId}/${o.name}`;
+        const storageSrc = toStorageSrc(path);
+        return {
+          name: o.name,
+          path,
+          storageSrc,
+          previewUrl: resolveStorageSrc(storageSrc),
+          size: o.metadata?.size ?? null,
+          createdAt: o.created_at ?? null,
+        };
+      })
+  );
 }
 
 export async function deleteImage(path) {
