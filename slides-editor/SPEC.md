@@ -1036,7 +1036,7 @@ HTML export:
 - Strip `contenteditable`, `data-editable`, `data-edit-id`, and `data-section-id`.
 - Resolve `supabase://slides-images/...` sources.
 - Inject into frame and prepend `<!DOCTYPE html>` if missing.
-- Download `{slugify(deck.title)}.html`.
+- Download `{slugify(deck1cc.title)}.html`.
 
 PDF exports:
 
