@@ -1,0 +1,53 @@
+/* App chrome base. Dark by default; depends only on semantic tokens. */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-main);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-main);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-main-hover);
+}
+
+h1,
+h2,
+h3 {
+  color: var(--color-text-bright);
+  font-weight: 600;
+}
+
+code,
+pre {
+  font-family: var(--font-mono);
+}
+
+.app-placeholder {
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  height: 100%;
+  text-align: center;
+}
+
+.app-placeholder small {
+  color: var(--color-text-muted);
+}

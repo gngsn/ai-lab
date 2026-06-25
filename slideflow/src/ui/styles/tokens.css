@@ -1,0 +1,97 @@
+/*
+ * Theme tokens (SPEC §12). Component CSS must use only the semantic --color-*
+ * variables below, never raw hex. Themes are selected via [data-theme] on <html>.
+ */
+
+:root,
+:root[data-theme='midnight'] {
+  --color-main: #5b8cff;
+  --color-main-hover: #7aa2ff;
+  --color-main-soft: rgba(91, 140, 255, 0.16);
+
+  --color-secondary: #38bda8;
+  --color-secondary-hover: #4fd3bd;
+  --color-secondary-soft: rgba(56, 189, 168, 0.16);
+
+  --color-bg: #0d1017;
+  --color-surface: #151a23;
+  --color-surface-2: #1c222e;
+  --color-surface-raised: #232b39;
+
+  --color-border: #2a3140;
+  --color-border-strong: #3a4456;
+
+  --color-text: #c7cedb;
+  --color-text-bright: #f1f4fa;
+  --color-text-muted: #8b94a6;
+  --color-text-dim: #5c6678;
+
+  --color-success: #46c46a;
+  --color-warning: #e0a73a;
+  --color-danger: #e5544b;
+  --color-info: #4aa8e0;
+
+  --font-main: 'IBM Plex Sans KR', 'IBM Plex Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  --radius-control: 5px;
+  --radius-panel: 6px;
+  --toolbar-height: 48px;
+  --slide-export-width: 1280px;
+  --slide-export-height: 720px;
+}
+
+:root[data-theme='slate'] {
+  --color-main: #8a7bff;
+  --color-main-hover: #a394ff;
+  --color-main-soft: rgba(138, 123, 255, 0.16);
+
+  --color-secondary: #4ab0c8;
+  --color-secondary-hover: #62c6dc;
+  --color-secondary-soft: rgba(74, 176, 200, 0.16);
+
+  --color-bg: #14161c;
+  --color-surface: #1d2028;
+  --color-surface-2: #252934;
+  --color-surface-raised: #2e3340;
+
+  --color-border: #333845;
+  --color-border-strong: #454c5c;
+
+  --color-text: #cdd2dc;
+  --color-text-bright: #f4f6fa;
+  --color-text-muted: #8e95a3;
+  --color-text-dim: #626a78;
+
+  --color-success: #4cc472;
+  --color-warning: #d9a73f;
+  --color-danger: #e25b51;
+  --color-info: #54a6d6;
+
+  --font-main: 'IBM Plex Sans KR', 'IBM Plex Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  --radius-control: 5px;
+  --radius-panel: 6px;
+  --toolbar-height: 48px;
+  --slide-export-width: 1280px;
+  --slide-export-height: 720px;
+}
+
+/* Compatibility aliases (SPEC §12). */
+:root {
+  --accent: var(--color-main);
+  --bg: var(--color-bg);
+  --surface: var(--color-surface);
+  --surface-2: var(--color-surface-2);
+  --border: var(--color-border);
+  --border-2: var(--color-border-strong);
+  --text: var(--color-text);
+  --text-bright: var(--color-text-bright);
+  --text-mid: var(--color-text-muted);
+  --text-dim: var(--color-text-dim);
+  --ok: var(--color-success);
+  --danger: var(--color-danger);
+  --warn: var(--color-warning);
+  --blue: var(--color-info);
+}
