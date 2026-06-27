@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import globals from 'globals';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
 
@@ -16,22 +17,47 @@ const banAdapters = {
   message: 'Use ports + the composition root; never import an adapter directly.',
 };
 const banInfraAndUp = {
-  group: ['@ports/*', '@adapters/*', '@features/*', '@composition/*', '@ui/*', '@supabase/*', 'dompurify'],
-  message: 'core/ is pure domain: it may not import ports, adapters, features, ui, composition, or any SDK.',
+  group: [
+    '@ports/*',
+    '@adapters/*',
+    '@features/*',
+    '@composition/*',
+    '@ui/*',
+    '@supabase/*',
+    'dompurify',
+  ],
+  message:
+    'core/ is pure domain: it may not import ports, adapters, features, ui, composition, or any SDK.',
 };
 
 export default [
   { ignores: ['dist/**', 'node_modules/**', 'vendor/**'] },
   js.configs.recommended,
+  // Node scripts (plain ESM JS).
+  {
+    files: ['scripts/**/*.mjs', '*.config.js', 'eslint.config.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: { ...globals.node },
+    },
+  },
+  // App + tooling TypeScript. TS already checks undefined symbols, so no-undef is off.
   {
     files: ['**/*.ts'],
     languageOptions: {
       parser: tsparser,
       parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+      globals: { ...globals.browser },
     },
     plugins: { '@typescript-eslint': tseslint },
     rules: {
       ...tseslint.configs.recommended.rules,
+      'no-undef': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
+      ],
       'no-restricted-imports': ['error', { patterns: [banSupabase] }],
     },
   },

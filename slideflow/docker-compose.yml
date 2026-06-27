@@ -1,7 +1,9 @@
 # Path A — vendor-neutral local backend (PLAN §3.5).
 # Brings up a full backend with no Supabase account:
 #   data   -> Postgres + PostgREST
-#   auth   -> GoTrue (OSS; same JWT claims as Supabase Auth, so RLS SQL is identical)
+#   auth   -> dev-JWT issued by adapters/local/local-auth.ts, signed with the
+#             shared PGRST_JWT_SECRET. The auth-compat migration (0001) provides a
+#             Supabase-compatible auth.uid()/auth.users so RLS SQL is identical to cloud.
 #   blobs  -> MinIO (S3-compatible)
 # The realtime WebSocket broadcaster is added in Phase 4.
 #
@@ -20,6 +22,8 @@ services:
       - '5432:5432'
     volumes:
       - db-data:/var/lib/postgresql/data
+      # Create PostgREST's roles at init time so `rest` always connects cleanly.
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres -d slideflow']
       interval: 3s
@@ -39,30 +43,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/ || exit 1']
-      interval: 5s
-      timeout: 3s
-      retries: 20
-
-  auth:
-    image: supabase/gotrue:v2.151.0
-    environment:
-      GOTRUE_DB_DRIVER: postgres
-      GOTRUE_DB_DATABASE_URL: postgres://postgres:postgres@db:5432/slideflow?search_path=auth
-      GOTRUE_SITE_URL: http://localhost:5173
-      GOTRUE_JWT_SECRET: super-secret-dev-jwt-token-with-at-least-32-chars
-      GOTRUE_JWT_EXP: '3600'
-      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
-      GOTRUE_MAILER_AUTOCONFIRM: 'true'
-      GOTRUE_DISABLE_SIGNUP: 'false'
-      API_EXTERNAL_URL: http://localhost:3002
-      PORT: '9999'
-    ports:
-      - '3002:9999'
-    depends_on:
-      db:
-        condition: service_healthy
+    # PostgREST's minimal image has no shell/wget for a healthcheck; it starts in
+    # well under a second once the DB is healthy. Readiness is verified by db:migrate.
 
   blobs:
     image: minio/minio:latest

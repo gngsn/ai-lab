@@ -1235,7 +1235,7 @@ Base style:
 - Script view requires login, follows sync unless in manual mode, and supports font size/highlight/navigation.
 - Script edit supports Markdown preview, debounced save, history, and manual snapshot.
 - Notes view outputs Marp Markdown and supports copy/download/TTS.
-- HTML/PDF/screenshot PDF/PPTX/notes exports work for owned decks.
+- HTML/PDF/PPTX/notes exports work for owned decks.
 - Image upload/list/copy/insert/delete works with owner-scoped storage policies.
 - SVG picker inserts generated and custom SVG.
 - Pronunciation page loads sections, slide preview, script text, TTS/STT training, scoring, history, and full-deck WAV export.

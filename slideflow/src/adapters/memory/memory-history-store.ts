@@ -25,9 +25,7 @@ export class MemoryHistoryStore implements HistoryStorePort {
     const latest = this.db.history
       .filter(
         (h) =>
-          h.deckId === entry.deckId &&
-          h.sectionId === entry.sectionId &&
-          h.source === entry.source,
+          h.deckId === entry.deckId && h.sectionId === entry.sectionId && h.source === entry.source,
       )
       .at(-1);
     return latest?.content === entry.content;
