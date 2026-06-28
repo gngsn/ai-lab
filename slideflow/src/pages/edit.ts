@@ -1,4 +1,3 @@
-import { bootPage, renderPlaceholder } from './boot';
+import { bootOwnerPage, renderOwnerPlaceholder } from './boot';
 
-bootPage();
-renderPlaceholder('Edit');
+void bootOwnerPage().then((ctx) => renderOwnerPlaceholder('Edit', ctx));

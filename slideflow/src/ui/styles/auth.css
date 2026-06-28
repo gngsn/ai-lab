@@ -1,0 +1,96 @@
+/* Compact login UI (SPEC §12: same dark theme, not a marketing page). */
+
+.auth-wrap {
+  display: grid;
+  place-content: center;
+  min-height: 100%;
+  padding: 24px;
+}
+
+.auth-card {
+  width: 320px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  padding: 28px 24px;
+}
+
+.auth-card h1 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.auth-card .auth-sub {
+  margin: 0 0 20px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.auth-field {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.auth-field input {
+  width: 100%;
+  padding: 9px 11px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.auth-field input:focus {
+  outline: none;
+  border-color: var(--color-main);
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-btn-primary {
+  background: var(--color-main);
+  color: #fff;
+}
+
+.auth-btn-primary:hover {
+  background: var(--color-main-hover);
+}
+
+.auth-btn-ghost {
+  margin-top: 8px;
+  background: var(--color-surface-2);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.auth-btn-ghost:hover {
+  background: var(--color-surface-raised);
+}
+
+.auth-error {
+  margin-top: 12px;
+  min-height: 16px;
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
+.auth-status {
+  margin-top: 12px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.auth-divider {
+  margin: 16px 0 12px;
+  border: none;
+  border-top: 1px solid var(--color-border);
+}

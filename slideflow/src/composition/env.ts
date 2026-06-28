@@ -9,6 +9,8 @@ export interface Env {
   localAuthUrl: string;
   localStorageUrl: string;
   localRealtimeUrl: string;
+  /** DEV ONLY: shared HS256 secret for the local dev-JWT auth adapter. */
+  localJwtSecret: string;
   pronunciationTts: string;
 }
 
@@ -24,5 +26,9 @@ export const env: Env = {
   localAuthUrl: read('VITE_LOCAL_AUTH_URL', 'http://localhost:3002'),
   localStorageUrl: read('VITE_LOCAL_STORAGE_URL', 'http://localhost:9000'),
   localRealtimeUrl: read('VITE_LOCAL_REALTIME_URL', 'ws://localhost:3003'),
+  localJwtSecret: read(
+    'VITE_LOCAL_JWT_SECRET',
+    'super-secret-dev-jwt-token-with-at-least-32-chars',
+  ),
   pronunciationTts: read('VITE_PRONUNCIATION_TTS', 'kokoro'),
 };
