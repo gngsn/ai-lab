@@ -58,7 +58,8 @@ export class RestClient {
       const detail = await res.text().catch(() => '');
       throw new Error(`PostgREST ${method} ${url} failed: ${res.status} ${detail}`);
     }
-    if (res.status === 204 || method === 'DELETE') return undefined as T;
-    return (await res.json()) as T;
+    // `return=minimal` and 204 responses have an empty body — don't JSON.parse those.
+    const text = await res.text();
+    return (text ? JSON.parse(text) : undefined) as T;
   }
 }

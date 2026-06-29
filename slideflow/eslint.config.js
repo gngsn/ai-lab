@@ -86,4 +86,9 @@ export default [
     files: ['src/adapters/supabase/**/*.ts'],
     rules: { 'no-restricted-imports': 'off' },
   },
+  // Tests may wire concrete adapters (as test doubles); the @supabase ban still holds.
+  {
+    files: ['**/*.test.ts'],
+    rules: { 'no-restricted-imports': ['error', { patterns: [banSupabase] }] },
+  },
 ];
