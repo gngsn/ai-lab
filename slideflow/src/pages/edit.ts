@@ -9,10 +9,9 @@ import { installPanelResizers } from '@features/editor/panel-resize';
 import { el, elOpt } from '@ui/dom';
 import { debounce } from '@ui/debounce';
 import { QueryParams, StorageKeys } from '@ui/constants';
-import { isSlideHiddenContent } from '@core/slide/slide-visibility';
 import type { DownMessage, UpMessage } from '@features/editor/frame-messages';
 
-type Mode = 'aspect-169' | 'portrait' | 'html' | 'stretch';
+type Mode = 'aspect-169' | 'html' | 'stretch';
 
 const NOTES_FONT_MIN = 11;
 const NOTES_FONT_MAX = 20;
@@ -44,13 +43,13 @@ async function start(): Promise<void> {
 
   rawEditor = new RawHtmlEditor(el('#html-editor'), session, setError);
   new SlideList(el('#slide-list-items'), session, setError);
-  new NotesEditor(el('#notes-textarea'), el('#notes-preview'), session, setError);
+  new NotesEditor(el('#notes-textarea'), session, setError);
 
   initToolbar();
   initSlideTitle();
   initNotesFontSize();
   initMoreMenu();
-  installPanelResizers(el('#body'), el('#slide-list-resizer'), el('#props-resizer'), () => mode);
+  installPanelResizers(el('#body'), el('#slide-list-resizer'), el('#props-resizer'));
   window.addEventListener('message', onFrameMessage);
   session.onChange(onSessionChange);
 
@@ -67,7 +66,6 @@ function renderShell(): void {
       <input id="deck-title" class="title" type="text" autocomplete="off" />
       <select id="mode-select" class="btn" style="width:auto;min-width:80px">
         <option value="aspect-169">16:9</option>
-        <option value="portrait">portrait</option>
         <option value="html">html</option>
         <option value="stretch">stretch</option>
       </select>
@@ -108,7 +106,6 @@ function renderShell(): void {
               <input id="slide-list-title" class="slide-list-title-input" type="text"
                      placeholder="Select a slide" autocomplete="off" />
             </label>
-            <div class="slide-list-info" id="slide-list-info"></div>
           </div>
           <div id="slide-list-items" class="slide-list-items"></div>
           <button id="add-slide" type="button">+ Add slide</button>
@@ -132,7 +129,6 @@ function renderShell(): void {
             placeholder="Speaker notes for this slide (Markdown). Autosaves after 800ms."></textarea>
         </div>
         <div id="edit-error" class="edit-error"></div>
-        <div id="notes-preview"></div>
         <div id="training-mount"></div>
       </aside>
     </main>
@@ -160,7 +156,8 @@ function initSlideTitle(): void {
   const titleInput = el<HTMLInputElement>('#slide-list-title');
   const save = debounce(() => {
     const id = session.currentSectionId;
-    if (id) void session.saveTitle(id, titleInput.value).catch((e: unknown) => setError(asMessage(e)));
+    if (id)
+      void session.saveTitle(id, titleInput.value).catch((e: unknown) => setError(asMessage(e)));
   }, 600);
   titleInput.addEventListener('input', () => save());
   titleInput.addEventListener('blur', () => save.flush());
@@ -199,7 +196,14 @@ function clampFont(value: number): number {
 
 /** Phase 5 features (frame/history/images/svg/share/export) are not wired yet. */
 function initMoreMenu(): void {
-  const pending = ['#save-version', '#history-toggle', '#frame-edit', '#share-btn', '#svg-btn', '#images-btn'];
+  const pending = [
+    '#save-version',
+    '#history-toggle',
+    '#frame-edit',
+    '#share-btn',
+    '#svg-btn',
+    '#images-btn',
+  ];
   for (const selector of pending) {
     elOpt(selector)?.addEventListener('click', () => toast('Available in a later phase'));
   }
@@ -213,10 +217,9 @@ function applyMode(next: Mode): void {
   el<HTMLSelectElement>('#mode-select').value = next;
   const body = el('#body');
   const wrap = el('#canvas-wrap');
-  body.classList.toggle('portrait-mode', mode === 'portrait');
   body.classList.toggle('html-mode', mode === 'html');
   wrap.classList.toggle('html-mode', mode === 'html');
-  wrap.classList.toggle('aspect-169', mode === 'aspect-169' || mode === 'portrait');
+  wrap.classList.toggle('aspect-169', mode === 'aspect-169');
   if (mode === 'html') rawEditor.load();
   else reloadCanvas();
 }
@@ -237,21 +240,6 @@ function syncMeta(): void {
   if (titleInput && document.activeElement !== titleInput) {
     titleInput.value = current?.title ?? '';
   }
-
-  const info = elOpt('#slide-list-info');
-  if (info) {
-    info.innerHTML = current
-      ? infoRow('ID', current.sectionId) +
-        infoRow('Order', String(session.slides.indexOf(current) + 1)) +
-        infoRow('Hidden', isSlideHiddenContent(current.content) ? 'yes' : 'no')
-      : '';
-  }
-}
-
-function infoRow(key: string, value: string): string {
-  return `<div class="slide-list-info-row"><span class="k">${key}</span><span class="v">${escapeHtml(
-    value,
-  )}</span></div>`;
 }
 
 function reloadCanvas(): void {
@@ -314,11 +302,4 @@ function toast(message: string): void {
 
 function asMessage(err: unknown): string {
   return err instanceof Error ? err.message : 'Error';
-}
-
-function escapeHtml(value: string): string {
-  return value.replace(
-    /[&<>"']/g,
-    (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch] as string,
-  );
 }

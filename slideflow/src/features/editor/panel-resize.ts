@@ -4,14 +4,12 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 
 /**
  * Wire the slide-list and props panel resizers (SPEC §9.3). Widths are written to
- * CSS custom properties on `#body` and persisted to localStorage. In portrait mode
- * the props resizer adjusts height instead of width.
+ * CSS custom properties on `#body` and persisted to localStorage.
  */
 export function installPanelResizers(
   body: HTMLElement,
   slideHandle: HTMLElement,
   propsHandle: HTMLElement,
-  getMode: () => string,
 ): void {
   restore(body);
 
@@ -24,15 +22,9 @@ export function installPanelResizers(
 
   drag(propsHandle, (event) => {
     const rect = body.getBoundingClientRect();
-    if (getMode() === 'portrait') {
-      const height = clamp(rect.bottom - event.clientY, 120, rect.height - 160);
-      body.style.setProperty('--props-height', `${height}px`);
-      localStorage.setItem(StorageKeys.propsPanelHeight, String(height));
-    } else {
-      const width = clamp(rect.right - event.clientX, 220, 560);
-      body.style.setProperty('--props-width', `${width}px`);
-      localStorage.setItem(StorageKeys.propsPanelWidth, String(width));
-    }
+    const width = clamp(rect.right - event.clientX, 220, 560);
+    body.style.setProperty('--props-width', `${width}px`);
+    localStorage.setItem(StorageKeys.propsPanelWidth, String(width));
   });
 }
 
@@ -43,7 +35,6 @@ function restore(body: HTMLElement): void {
   };
   apply(StorageKeys.slideListWidth, '--slide-list-width');
   apply(StorageKeys.propsPanelWidth, '--props-width');
-  apply(StorageKeys.propsPanelHeight, '--props-height');
 }
 
 function drag(handle: HTMLElement, onMove: (event: PointerEvent) => void): void {

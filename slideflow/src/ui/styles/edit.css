@@ -160,27 +160,8 @@ body {
   grid-template-columns: var(--slide-list-width, 240px) 1fr var(--props-width, 280px);
   height: calc(100vh - var(--toolbar-height));
 }
-#body.portrait-mode {
-  grid-template-columns: var(--slide-list-width, 240px) 1fr;
-  grid-template-rows: minmax(0, 1fr) minmax(180px, var(--props-height, 280px));
-  grid-template-areas:
-    'slide-list canvas'
-    'slide-list props';
-}
 #body.html-mode {
   grid-template-columns: var(--slide-list-width, 240px) 1fr;
-}
-#body.portrait-mode #slide-list {
-  grid-area: slide-list;
-}
-#body.portrait-mode #canvas-wrap {
-  grid-area: canvas;
-}
-#body.portrait-mode #props {
-  grid-area: props;
-  border-left: 0;
-  border-top: 1px solid var(--border);
-  max-width: none;
 }
 #body.html-mode #props {
   display: none;
@@ -277,35 +258,6 @@ body {
 .slide-list-title-input:focus {
   outline: none;
   border-color: var(--accent);
-}
-.slide-list-info {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-}
-.slide-list-info-row {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 6px 8px;
-  min-width: 0;
-}
-.slide-list-info-row .k {
-  display: block;
-  font-size: 9px;
-  color: var(--text-mid);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 2px;
-}
-.slide-list-info-row .v {
-  display: block;
-  font-size: 11px;
-  color: var(--text);
-  font-family: var(--font-mono);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .slide-list-items {
   display: flex;
@@ -424,10 +376,6 @@ body {
   height: auto;
   max-height: 100%;
 }
-#body.portrait-mode #canvas-stage {
-  width: auto;
-  height: 100%;
-}
 #canvas-wrap.html-mode {
   display: block;
   padding: 0;
@@ -484,13 +432,6 @@ body {
   cursor: col-resize;
   touch-action: none;
   z-index: 2;
-}
-#body.portrait-mode #props-resizer {
-  left: 0;
-  top: -4px;
-  width: 100%;
-  height: 8px;
-  cursor: row-resize;
 }
 #props-resizer::before {
   content: '';
@@ -552,14 +493,6 @@ body {
 #notes-textarea:focus {
   outline: none;
   border-color: var(--accent);
-}
-#notes-preview {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border);
-  font-size: 13px;
-  overflow-y: auto;
-  max-height: 30vh;
 }
 .edit-error {
   color: var(--danger);
