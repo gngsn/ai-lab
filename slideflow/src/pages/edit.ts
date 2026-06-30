@@ -6,6 +6,7 @@ import { SlideList } from '@features/editor/slide-list';
 import { NotesEditor } from '@features/editor/notes-editor';
 import { RawHtmlEditor } from '@features/editor/raw-html-editor';
 import { installPanelResizers } from '@features/editor/panel-resize';
+import { openShareModal } from '@features/editor/share-modal';
 import { el, elOpt } from '@ui/dom';
 import { debounce } from '@ui/debounce';
 import { QueryParams, StorageKeys } from '@ui/constants';
@@ -194,16 +195,11 @@ function clampFont(value: number): number {
   return Math.max(NOTES_FONT_MIN, Math.min(NOTES_FONT_MAX, value));
 }
 
-/** Phase 5 features (frame/history/images/svg/share/export) are not wired yet. */
+/** Share is wired (Phase 4); the rest land in Phases 5–6. */
 function initMoreMenu(): void {
-  const pending = [
-    '#save-version',
-    '#history-toggle',
-    '#frame-edit',
-    '#share-btn',
-    '#svg-btn',
-    '#images-btn',
-  ];
+  el('#share-btn').addEventListener('click', () => openShareModal(session, setError));
+
+  const pending = ['#save-version', '#history-toggle', '#frame-edit', '#svg-btn', '#images-btn'];
   for (const selector of pending) {
     elOpt(selector)?.addEventListener('click', () => toast('Available in a later phase'));
   }

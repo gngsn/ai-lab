@@ -170,6 +170,11 @@ export class DeckSession {
     await this.ports.deckStore.updateTitle(this.deckId, title);
   }
 
+  async setShareToken(token: string | null): Promise<void> {
+    this.deck.shareToken = token;
+    await this.ports.deckStore.setShareToken(this.deckId, token);
+  }
+
   private nextOrder(): number {
     return this.slides.reduce((max, s) => Math.max(max, s.order), -1) + 1;
   }
