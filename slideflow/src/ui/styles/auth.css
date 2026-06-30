@@ -17,13 +17,15 @@
 
 .auth-card h1 {
   margin: 0 0 4px;
-  font-size: 20px;
+  font-size: 30px;
 }
 
 .auth-card .auth-sub {
   margin: 0 0 20px;
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .auth-field {
@@ -48,17 +50,19 @@
 
 .auth-btn {
   width: 100%;
-  padding: 9px 12px;
+  padding: 10px 12px;
   border: 1px solid transparent;
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-pill);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .auth-btn-primary {
   background: var(--color-main);
-  color: #fff;
+  color: var(--color-surface);
 }
 
 .auth-btn-primary:hover {

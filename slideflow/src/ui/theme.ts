@@ -1,10 +1,10 @@
 import { StorageKeys } from './constants';
 
 /** Theme keys map to `[data-theme]` blocks in styles/tokens.css. */
-export const THEMES = ['midnight', 'slate'] as const;
+export const THEMES = ['editorial', 'midnight'] as const;
 export type ThemeKey = (typeof THEMES)[number];
 
-export const DEFAULT_THEME: ThemeKey = 'midnight';
+export const DEFAULT_THEME: ThemeKey = 'editorial';
 
 /**
  * Apply the stored theme before page UI renders (SPEC §12). Unknown/missing

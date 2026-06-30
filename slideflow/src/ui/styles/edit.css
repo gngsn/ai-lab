@@ -348,7 +348,7 @@ body {
 
 /* Canvas */
 #canvas-wrap {
-  background: #434343;
+  background: var(--color-surface-2);
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -389,9 +389,9 @@ body {
   inset: 0;
   width: 100%;
   height: 100%;
-  background: #0a0a0a;
+  background: var(--color-surface-2);
   color: var(--text);
-  caret-color: var(--text);
+  caret-color: var(--color-main);
   border: 0;
   outline: 0;
   padding: 18px 22px;

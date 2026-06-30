@@ -82,13 +82,13 @@ function wireSync(options: RenderDeckOptions) {
 function injectRuntimeStyles(opts: { fallback: boolean; print: boolean }): void {
   const css: string[] = [
     '.fragment{opacity:0;transition:opacity .2s}.fragment.visible{opacity:1}',
-    '#__se_progress{position:fixed;top:0;left:0;height:3px;background:#5b8cff;width:0;z-index:9999;transition:width .2s}',
+    '#__se_progress{position:fixed;top:0;left:0;height:3px;background:#2e49d4;width:0;z-index:9999;transition:width .2s}',
     '#__se_chrome{position:fixed;top:10px;right:14px;display:flex;gap:10px;align-items:center;font:12px/1 system-ui;color:#fff;background:rgba(0,0,0,.45);padding:6px 10px;border-radius:14px;z-index:9999}',
     '#__se_sync{cursor:pointer;opacity:.8}',
     '#__se_navdots{position:fixed;top:50%;right:10px;transform:translateY(-50%);display:none;flex-direction:column;gap:6px;z-index:9999}',
     '#__se_navdots.show{display:flex}',
     '#__se_navdots button{width:8px;height:8px;border-radius:50%;border:0;background:rgba(255,255,255,.4);cursor:pointer;padding:0}',
-    '#__se_navdots button.active{background:#5b8cff}',
+    '#__se_navdots button.active{background:#2e49d4}',
     '#__se_share{position:fixed;top:10px;left:14px;font:12px/1 system-ui;color:#fff;background:rgba(0,0,0,.45);padding:6px 10px;border-radius:14px;z-index:9999}',
   ];
   if (opts.fallback) {

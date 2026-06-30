@@ -14,7 +14,7 @@
 }
 
 .dash-top h1 {
-  font-size: 20px;
+  font-size: 34px;
   margin: 0;
   flex: 1;
 }
@@ -44,8 +44,12 @@
 .btn-primary {
   background: var(--color-main);
   border-color: transparent;
-  color: #fff;
+  color: var(--color-surface);
   font-weight: 600;
+  border-radius: var(--radius-pill);
+  padding: 8px 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .btn-primary:hover {
@@ -71,15 +75,18 @@
 }
 
 .deck-card h2 {
-  font-size: 15px;
-  margin: 0 0 8px;
+  font-size: 22px;
+  margin: 0 0 10px;
 }
 
 .deck-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  font-size: 13px;
+  gap: 16px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
 }
 
 .deck-empty {

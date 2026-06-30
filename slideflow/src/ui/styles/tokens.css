@@ -1,9 +1,52 @@
 /*
  * Theme tokens (SPEC §12). Component CSS must use only the semantic --color-*
  * variables below, never raw hex. Themes are selected via [data-theme] on <html>.
+ *
+ * Default brand: "editorial" — warm cream + cobalt blue, classic serif display
+ * + grotesque sans (inspired by editorial/architecture studio sites).
  */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Libre+Caslon+Display&display=swap');
 
 :root,
+:root[data-theme='editorial'] {
+  --color-main: #2e49d4;
+  --color-main-hover: #2237ad;
+  --color-main-soft: rgba(46, 73, 212, 0.1);
+
+  --color-secondary: #c25a3a;
+  --color-secondary-hover: #a8492c;
+  --color-secondary-soft: rgba(194, 90, 58, 0.12);
+
+  --color-bg: #ece7db;
+  --color-surface: #f4efe5;
+  --color-surface-2: #e7e1d3;
+  --color-surface-raised: #efe9dd;
+
+  --color-border: #d6cdba;
+  --color-border-strong: #bdb29b;
+
+  --color-text: #322f29;
+  --color-text-bright: #1c1a16;
+  --color-text-muted: #786f5e;
+  --color-text-dim: #a89d89;
+
+  --color-success: #2f8f4e;
+  --color-warning: #b5791f;
+  --color-danger: #bf3a2b;
+  --color-info: #2e49d4;
+
+  --font-display: 'Libre Caslon Display', 'Times New Roman', Georgia, serif;
+  --font-main: 'Archivo', 'IBM Plex Sans KR', 'IBM Plex Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  --radius-control: 5px;
+  --radius-panel: 6px;
+  --radius-pill: 999px;
+  --toolbar-height: 48px;
+  --slide-export-width: 1280px;
+  --slide-export-height: 720px;
+}
+
 :root[data-theme='midnight'] {
   --color-main: #5b8cff;
   --color-main-hover: #7aa2ff;
@@ -31,48 +74,13 @@
   --color-danger: #e5544b;
   --color-info: #4aa8e0;
 
-  --font-main: 'IBM Plex Sans KR', 'IBM Plex Sans', sans-serif;
+  --font-display: 'Libre Caslon Display', Georgia, serif;
+  --font-main: 'Archivo', 'IBM Plex Sans KR', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
 
   --radius-control: 5px;
   --radius-panel: 6px;
-  --toolbar-height: 48px;
-  --slide-export-width: 1280px;
-  --slide-export-height: 720px;
-}
-
-:root[data-theme='slate'] {
-  --color-main: #8a7bff;
-  --color-main-hover: #a394ff;
-  --color-main-soft: rgba(138, 123, 255, 0.16);
-
-  --color-secondary: #4ab0c8;
-  --color-secondary-hover: #62c6dc;
-  --color-secondary-soft: rgba(74, 176, 200, 0.16);
-
-  --color-bg: #14161c;
-  --color-surface: #1d2028;
-  --color-surface-2: #252934;
-  --color-surface-raised: #2e3340;
-
-  --color-border: #333845;
-  --color-border-strong: #454c5c;
-
-  --color-text: #cdd2dc;
-  --color-text-bright: #f4f6fa;
-  --color-text-muted: #8e95a3;
-  --color-text-dim: #626a78;
-
-  --color-success: #4cc472;
-  --color-warning: #d9a73f;
-  --color-danger: #e25b51;
-  --color-info: #54a6d6;
-
-  --font-main: 'IBM Plex Sans KR', 'IBM Plex Sans', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
-
-  --radius-control: 5px;
-  --radius-panel: 6px;
+  --radius-pill: 999px;
   --toolbar-height: 48px;
   --slide-export-width: 1280px;
   --slide-export-height: 720px;
