@@ -52,6 +52,7 @@ services:
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_API_CORS_ALLOW_ORIGIN: '*'
     ports:
       - '9000:9000'
       - '9001:9001'
@@ -62,6 +63,20 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+
+  # One-shot: create the slides-images bucket and make it anonymously read/write
+  # (DEV ONLY — lets the browser upload directly without S3 signing).
+  blobs-init:
+    image: minio/mc:latest
+    depends_on:
+      blobs:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://blobs:9000 minioadmin minioadmin &&
+      mc mb --ignore-existing local/slides-images &&
+      mc anonymous set public local/slides-images
+      "
 
 volumes:
   db-data:

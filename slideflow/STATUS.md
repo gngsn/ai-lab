@@ -18,7 +18,7 @@
 | 3 | Edit core (slides + notes + iframe) | ✅ Done |
 | — | Edit UI parity with original `slides-editor` | ✅ Done |
 | 4 | Present + Sync + View + Share | ✅ Done (verified on Docker) |
-| 5 | Frame editor + History + Images + SVG | ⏳ Pending (More-menu buttons present, not wired) |
+| 5 | Frame editor + History + Images + SVG | ✅ Done (verified on Docker) |
 | 6 | Teleprompter (note) view + Export | ⏳ Pending |
 | 7 | Training (pronunciation) | ⏳ Pending |
 | 8 | Hardening | ⏳ Pending |
@@ -89,7 +89,7 @@ Layout matches the original `slides-editor/edit.html`. Toolbar (home, deck title
 
 Migrations in `supabase/migrations/` (plain SQL, same files to Docker or Supabase): `0001_auth_compat` (idempotent shim), `0002_init`, `0003_history`, `0004_profiles`, `0005_rls`, `0006_rpc` (`reorder_slides`, `public_get_deck/slides`), `seed.sql`; `dev-migrations/0001_dev_login` (local only).
 
-Ports in use: `AuthPort`, `DeckStorePort`, `SlideStorePort`, `NotesStorePort`, `RealtimePort`, `ShareReadPort`, `SanitizerPort`. Pending wiring (placeholders/memory): `HistoryStorePort`, `BlobStoragePort`, `AudioCachePort`.
+Ports in use: `AuthPort`, `DeckStorePort`, `SlideStorePort`, `NotesStorePort`, `HistoryStorePort`, `BlobStoragePort`, `RealtimePort`, `ShareReadPort`, `SanitizerPort`. Pending (memory placeholder): `AudioCachePort` (Phase 7).
 
 ---
 
@@ -103,8 +103,9 @@ Ports in use: `AuthPort`, `DeckStorePort`, `SlideStorePort`, `NotesStorePort`, `
 
 ## 7. Known gaps
 
-- ⋮ More: Save version / Export / History / Frame / Images / SVG render but toast "Available in a later phase" (Phases 5–6). **Share is wired.**
+- ⋮ More: Share / Frame / History / Save version / Images / SVG are all wired. **Export** still toasts "Export lands in a later phase" (Phase 6).
 - `note.html`, `training.html` are themed placeholders (Phases 6, 7).
-- `HistoryStorePort` / `BlobStoragePort` / `AudioCachePort` not implemented for local/supabase (placeholders throw on use).
+- `AudioCachePort` not yet implemented for local/supabase (memory placeholder); IndexedDB lands in Phase 7.
 - `boot` bundle statically imports the Supabase adapter; Phase 8 will lazy-load adapters per backend.
-- Browser-level E2E (slide nav, cross-tab sync, panel resize) is manual in the dev server; automated browser tests are Phase 8.
+- Local images use a MinIO bucket with an anonymous public policy (dev only); cloud uses Supabase Storage with owner-scoped policies.
+- Browser-level E2E (slide nav, cross-tab sync, panel resize, inline image/SVG insert) is manual in the dev server; automated browser tests are Phase 8.
