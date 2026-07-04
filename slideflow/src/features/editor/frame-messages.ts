@@ -13,6 +13,11 @@ export interface DataMessage {
   edit: boolean;
 }
 
+export interface InsertMessage {
+  type: 'edit-frame:insert';
+  html: string;
+}
+
 export interface DirtyMessage {
   type: 'edit:dirty';
   sectionId: string;
@@ -30,6 +35,6 @@ export interface FrameErrorMessage {
 }
 
 /** Parent → iframe. */
-export type DownMessage = DataMessage;
+export type DownMessage = DataMessage | InsertMessage;
 /** Iframe → parent. */
 export type UpMessage = RequestDataMessage | DirtyMessage | SaveMessage | FrameErrorMessage;

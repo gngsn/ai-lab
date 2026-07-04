@@ -3,6 +3,7 @@ import { createMemoryDb } from '@adapters/memory/memory-db';
 import { MemoryDeckStore } from '@adapters/memory/memory-deck-store';
 import { MemorySlideStore } from '@adapters/memory/memory-slide-store';
 import { MemoryNotesStore } from '@adapters/memory/memory-notes-store';
+import { MemoryHistoryStore } from '@adapters/memory/memory-history-store';
 import { DeckSession } from './deck-session';
 import { isSlideHiddenContent } from '@core/slide/slide-visibility';
 import type { Ports } from '@ports/ports';
@@ -13,6 +14,7 @@ function makePorts() {
     deckStore: new MemoryDeckStore(db),
     slideStore: new MemorySlideStore(db),
     notesStore: new MemoryNotesStore(db),
+    historyStore: new MemoryHistoryStore(db),
   } as unknown as Ports;
   return ports;
 }

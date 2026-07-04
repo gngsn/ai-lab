@@ -1,6 +1,7 @@
 import type { Ports } from '@ports/ports';
 import type { Deck } from '@core/model/deck';
 import type { Slide } from '@core/model/slide';
+import type { HistorySource } from '@core/model/history';
 import { newSectionId } from '@core/text/section-id';
 import { isSlideHiddenContent, setSlideHiddenContent } from '@core/slide/slide-visibility';
 
@@ -151,6 +152,36 @@ export class DeckSession {
     const slide = this.slides.find((s) => s.sectionId === sectionId);
     if (slide) slide.content = content;
     await this.ports.slideStore.updateContent(this.deckId, sectionId, content);
+    this.recordAuto('slide', sectionId, content);
+  }
+
+  async saveFrame(frameHtml: string): Promise<void> {
+    this.deck.frameHtml = frameHtml;
+    await this.ports.deckStore.updateFrame(this.deckId, frameHtml);
+    this.recordAuto('frame', 'frame', frameHtml);
+  }
+
+  listHistory(sectionId?: string) {
+    return this.ports.historyStore.list(this.deckId, sectionId);
+  }
+
+  /** Restore a history entry back to its surface (creates a fresh auto snapshot). */
+  async restore(source: HistorySource, sectionId: string, content: string): Promise<void> {
+    if (source === 'frame') await this.saveFrame(content);
+    else if (source === 'notes') await this.saveNote(sectionId, content);
+    else await this.saveContent(sectionId, content);
+  }
+
+  /** Manual snapshot of every slide, note, and the frame under one message (SPEC §11). */
+  async saveVersion(message: string): Promise<void> {
+    const entries = [
+      ...this.slides.map((s) => entry('slide', s.sectionId, s.content)),
+      ...[...this.notes].map(([sectionId, content]) => entry('notes', sectionId, content)),
+      entry('frame', 'frame', this.deck.frameHtml),
+    ];
+    await this.ports.historyStore.appendManualBatch(
+      entries.map((e) => ({ deckId: this.deckId, kind: 'manual' as const, message, ...e })),
+    );
   }
 
   async saveTitle(sectionId: string, title: string): Promise<void> {
@@ -163,6 +194,14 @@ export class DeckSession {
   async saveNote(sectionId: string, content: string): Promise<void> {
     this.notes.set(sectionId, content);
     await this.ports.notesStore.upsert(this.deckId, sectionId, content);
+    this.recordAuto('notes', sectionId, content);
+  }
+
+  /** Best-effort deduplicated auto snapshot; never blocks or fails a save. */
+  private recordAuto(source: HistorySource, sectionId: string, content: string): void {
+    void this.ports.historyStore
+      .appendAuto({ deckId: this.deckId, sectionId, content, kind: 'auto', message: null, source })
+      .catch(() => {});
   }
 
   async saveDeckTitle(title: string): Promise<void> {
@@ -189,4 +228,8 @@ export class DeckSession {
   private emit(): void {
     for (const listener of this.changeListeners) listener();
   }
+}
+
+function entry(source: HistorySource, sectionId: string, content: string) {
+  return { source, sectionId, content };
 }

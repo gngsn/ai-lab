@@ -7,10 +7,15 @@ import { NotesEditor } from '@features/editor/notes-editor';
 import { RawHtmlEditor } from '@features/editor/raw-html-editor';
 import { installPanelResizers } from '@features/editor/panel-resize';
 import { openShareModal } from '@features/editor/share-modal';
+import { openFrameEditor } from '@features/editor/frame-editor';
+import { openHistoryDrawer } from '@features/editor/history-ui';
 import { el, elOpt } from '@ui/dom';
 import { debounce } from '@ui/debounce';
+import { openImagesModal } from '@features/editor/images-modal';
+import { openSvgPicker } from '@features/editor/svg-picker';
 import { QueryParams, StorageKeys } from '@ui/constants';
-import type { DownMessage, UpMessage } from '@features/editor/frame-messages';
+import type { Ports } from '@ports/ports';
+import type { DownMessage, InsertMessage, UpMessage } from '@features/editor/frame-messages';
 
 type Mode = 'aspect-169' | 'html' | 'stretch';
 
@@ -19,6 +24,7 @@ const NOTES_FONT_MAX = 20;
 
 const deckId = new URLSearchParams(location.search).get(QueryParams.deck) ?? '';
 
+let ports: Ports;
 let session: DeckSession;
 let rawEditor: RawHtmlEditor;
 let mode: Mode = 'aspect-169';
@@ -29,6 +35,7 @@ void start();
 
 async function start(): Promise<void> {
   const ctx = await bootOwnerPage();
+  ports = ctx.ports;
   renderShell();
   bindAccountMenu(ctx.ports, ctx.session);
 
@@ -195,17 +202,33 @@ function clampFont(value: number): number {
   return Math.max(NOTES_FONT_MIN, Math.min(NOTES_FONT_MAX, value));
 }
 
-/** Share is wired (Phase 4); the rest land in Phases 5–6. */
+/** Share + frame + history wired here; export lands in Phase 6. */
 function initMoreMenu(): void {
   el('#share-btn').addEventListener('click', () => openShareModal(session, setError));
+  el('#frame-edit').addEventListener('click', () => openFrameEditor(session, setError));
+  el('#history-toggle').addEventListener('click', () => openHistoryDrawer(session, setError));
+  el('#save-version').addEventListener('click', () => {
+    const message = prompt('Version message (optional):') ?? '';
+    void session
+      .saveVersion(message)
+      .then(() => toast('Version saved'))
+      .catch((e: unknown) => setError(asMessage(e)));
+  });
 
-  const pending = ['#save-version', '#history-toggle', '#frame-edit', '#svg-btn', '#images-btn'];
-  for (const selector of pending) {
-    elOpt(selector)?.addEventListener('click', () => toast('Available in a later phase'));
-  }
+  el('#images-btn').addEventListener('click', () =>
+    openImagesModal(ports.blobStorage, deckId, insertIntoCanvas, setError),
+  );
+  el('#svg-btn').addEventListener('click', () => openSvgPicker(insertIntoCanvas));
+
   for (const btn of document.querySelectorAll('[data-export]')) {
     btn.addEventListener('click', () => toast('Export lands in a later phase'));
   }
+}
+
+/** Insert HTML (image/SVG) into the current slide via the edit-frame iframe. */
+function insertIntoCanvas(html: string): void {
+  const message: InsertMessage = { type: 'edit-frame:insert', html };
+  el<HTMLIFrameElement>('#canvas').contentWindow?.postMessage(message, '*');
 }
 
 function applyMode(next: Mode): void {

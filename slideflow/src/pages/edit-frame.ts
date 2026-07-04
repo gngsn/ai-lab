@@ -12,6 +12,7 @@ const editMode = params.get('edit') === '1';
 
 const embedded = window.parent !== window;
 let rendered = false;
+let inlineEditor: InlineEditor | null = null;
 
 if (embedded) {
   window.addEventListener('message', onParentMessage);
@@ -23,8 +24,9 @@ if (embedded) {
 }
 
 function onParentMessage(event: MessageEvent<DownMessage>): void {
-  if (event.data?.type !== 'edit-frame:data') return;
-  render(event.data.frameHtml, event.data.content, event.data.edit);
+  const msg = event.data;
+  if (msg?.type === 'edit-frame:data') render(msg.frameHtml, msg.content, msg.edit);
+  else if (msg?.type === 'edit-frame:insert') inlineEditor?.insertHtml(msg.html);
 }
 
 async function directFetch(): Promise<void> {
@@ -59,7 +61,7 @@ function render(frameHtml: string, content: string, edit: boolean): void {
 function mountInlineEditor(): void {
   const section = document.querySelector<HTMLElement>(`[data-section-id="${sectionId}"]`);
   if (!section) return;
-  new InlineEditor(section, {
+  inlineEditor = new InlineEditor(section, {
     sectionId,
     autosave: true,
     onDirty: () => postUp({ type: 'edit:dirty', sectionId }),

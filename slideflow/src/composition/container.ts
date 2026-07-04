@@ -1,6 +1,5 @@
 import type { Ports } from '@ports/ports';
 import { env, type Backend } from './env';
-import { notImplemented } from './not-implemented';
 import { createMemoryPorts } from '@adapters/memory';
 import { MemoryAudioCache } from '@adapters/memory/memory-audio-cache';
 import { DompurifySanitizer } from '@adapters/browser/dompurify-sanitizer';
@@ -10,12 +9,16 @@ import { LocalAuth } from '@adapters/local/local-auth';
 import { LocalDeckStore } from '@adapters/local/local-deck-store';
 import { LocalSlideStore } from '@adapters/local/local-slide-store';
 import { LocalNotesStore } from '@adapters/local/local-notes-store';
+import { LocalHistoryStore } from '@adapters/local/local-history-store';
+import { LocalBlobStorage } from '@adapters/local/local-blob-storage';
 import { LocalShareRead } from '@adapters/local/local-share-read';
 import { createSupabaseClient } from '@adapters/supabase/supabase-client';
 import { SupabaseAuth } from '@adapters/supabase/supabase-auth';
 import { SupabaseDeckStore } from '@adapters/supabase/supabase-deck-store';
 import { SupabaseSlideStore } from '@adapters/supabase/supabase-slide-store';
 import { SupabaseNotesStore } from '@adapters/supabase/supabase-notes-store';
+import { SupabaseHistoryStore } from '@adapters/supabase/supabase-history-store';
+import { SupabaseBlobStorage } from '@adapters/supabase/supabase-blob-storage';
 import { SupabaseShareRead } from '@adapters/supabase/supabase-share-read';
 import { SupabaseRealtime } from '@adapters/supabase/supabase-realtime';
 
@@ -45,8 +48,8 @@ function buildLocalPorts(): Ports {
     deckStore: new LocalDeckStore(rest),
     slideStore: new LocalSlideStore(rest),
     notesStore: new LocalNotesStore(rest),
-    historyStore: notImplemented('historyStore'), // Phase 5
-    blobStorage: notImplemented('blobStorage'), // Phase 5
+    historyStore: new LocalHistoryStore(rest),
+    blobStorage: new LocalBlobStorage(env.localStorageUrl),
     realtime: new BroadcastChannelRealtime(),
     shareRead: new LocalShareRead(rest),
     audioCache: new MemoryAudioCache(), // Phase 7 → IndexedDB
@@ -61,8 +64,8 @@ function buildSupabasePorts(): Ports {
     deckStore: new SupabaseDeckStore(sb),
     slideStore: new SupabaseSlideStore(sb),
     notesStore: new SupabaseNotesStore(sb),
-    historyStore: notImplemented('historyStore'), // Phase 5
-    blobStorage: notImplemented('blobStorage'), // Phase 5
+    historyStore: new SupabaseHistoryStore(sb),
+    blobStorage: new SupabaseBlobStorage(sb),
     realtime: new SupabaseRealtime(sb),
     shareRead: new SupabaseShareRead(sb),
     audioCache: new MemoryAudioCache(), // Phase 7 → IndexedDB

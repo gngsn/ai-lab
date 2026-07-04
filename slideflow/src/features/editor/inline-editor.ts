@@ -32,6 +32,17 @@ export class InlineEditor {
     this.save.cancel();
   }
 
+  /** Insert HTML (image/SVG) at the caret in the focused editable, or append to the first. */
+  insertHtml(html: string): void {
+    const doc = this.section.ownerDocument;
+    let target = doc.activeElement as HTMLElement | null;
+    if (!target || !this.editables.includes(target)) target = this.editables[0] ?? this.section;
+    target.focus();
+    if (!doc.execCommand('insertHTML', false, html)) target.insertAdjacentHTML('beforeend', html);
+    this.opts.onDirty();
+    if (this.opts.autosave) this.save();
+  }
+
   private markEditables(): HTMLElement[] {
     const tagged = [...this.section.querySelectorAll<HTMLElement>('[data-editable="true"]')];
     const targets = tagged.length > 0 ? tagged : this.autoMark();
