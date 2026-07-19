@@ -1,0 +1,10 @@
+{
+  "name": "english-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Personal English study app — TTS listening, STT speaking practice, AI writing feedback",
+  "scripts": {
+    "start": "python3 -m http.server 8899"
+  }
+}
