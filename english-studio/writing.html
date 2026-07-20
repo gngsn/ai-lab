@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Writing — English Studio</title>
+    <link rel="stylesheet" href="./css/style.css" />
+    <style>
+      #main-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      #write-pane textarea {
+        height: 50vh;
+      }
+      .action-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+      .word-count {
+        font: 11px "JetBrains Mono", monospace;
+        color: var(--text-mid);
+        margin-left: auto;
+      }
+      #feedback-pane .hint {
+        color: var(--text-mid);
+        font-size: 13px;
+        font-style: italic;
+        line-height: 1.8;
+        word-break: keep-all;
+      }
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 18px 0 8px;
+      }
+      .section-title h3 {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header id="toolbar">
+        <a class="btn" href="./index.html" title="Home">🏠</a>
+        <span class="title">✍️ 라이팅</span>
+        <nav>
+          <a href="./listening.html">Listening</a>
+          <a href="./speaking.html">Speaking</a>
+          <a href="./writing.html">Writing</a>
+        </nav>
+        <span class="spacer"></span>
+      </header>
+
+      <main class="main-grid" id="main-grid">
+        <!-- left: editor -->
+        <section class="pane" id="write-pane" style="border-right: 1px solid var(--border)">
+          <h3>영어로 써보기</h3>
+          <textarea
+            id="write-text"
+            placeholder="영어 문장이나 문단을 자유롭게 써보세요. 문법과 자연스러움을 함께 봐드립니다."
+          ></textarea>
+          <div class="action-row">
+            <button class="btn primary" id="grammar-btn">📐 문법 검사</button>
+            <select id="lt-source" title="LanguageTool 서버">
+              <option value="local">🏠 Local</option>
+              <option value="public">☁️ Public API</option>
+            </select>
+            <button class="btn accent" id="ai-btn">✨ AI 첨삭</button>
+            <span class="stt-status" id="check-status"></span>
+            <span class="word-count" id="word-count">0 words</span>
+          </div>
+        </section>
+
+        <!-- right: feedback -->
+        <section class="pane" id="feedback-pane">
+          <h3>피드백</h3>
+          <div class="hint" id="feedback-hint">
+            <b>📐 문법 검사</b>는 LanguageTool로 맞춤법·문법 오류를 찾고,<br />
+            <b>✨ AI 첨삭</b>은 Claude/GPT가 더 자연스러운 표현으로 고쳐주며<br />
+            이유를 한국어로 설명해줍니다. (AI 첨삭은 config.local.js에 API 키 필요)<br />
+            LanguageTool은 기본이 로컬 서버이며, 위 드롭다운에서 언제든 Public
+            API로 바꿀 수 있습니다.
+          </div>
+
+          <div id="grammar-result" style="display: none">
+            <div class="section-title">
+              <h3>📐 문법</h3>
+              <span class="stt-status" id="grammar-summary"></span>
+            </div>
+            <div id="grammar-issues"></div>
+          </div>
+
+          <div id="ai-result" style="display: none">
+            <div class="section-title">
+              <h3>✨ 자연스러운 표현</h3>
+              <span class="stt-status" id="ai-score"></span>
+            </div>
+            <div class="rewrite-box" id="ai-rewrite"></div>
+            <div class="section-title"><h3>왜 고쳤나요?</h3></div>
+            <div id="ai-issues"></div>
+            <div class="section-title"><h3>총평</h3></div>
+            <div class="hint" id="ai-overall" style="font-style: normal"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./js/config.local.js"></script>
+    <script type="module" src="./js/writing.js"></script>
+  </body>
+</html>

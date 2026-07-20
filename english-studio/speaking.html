@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Speaking — English Studio</title>
+    <link rel="stylesheet" href="./css/style.css" />
+    <style>
+      #main-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      #practice-pane textarea {
+        height: 160px;
+        margin-bottom: 10px;
+      }
+      .action-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+      }
+      #result-pane .hint {
+        color: var(--text-mid);
+        font-size: 13px;
+        font-style: italic;
+        line-height: 1.8;
+        word-break: keep-all;
+      }
+      .rec-section {
+        margin-top: 22px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header id="toolbar">
+        <a class="btn" href="./index.html" title="Home">🏠</a>
+        <span class="title">🎙 스피킹</span>
+        <nav>
+          <a href="./listening.html">Listening</a>
+          <a href="./speaking.html">Speaking</a>
+          <a href="./writing.html">Writing</a>
+        </nav>
+        <span class="spacer"></span>
+        <div class="speed-wrap">
+          <span>Speed</span>
+          <input type="range" id="speed-slider" min="0.6" max="1.5" step="0.05" value="1.0" />
+          <span class="speed-label" id="speed-label">1.0×</span>
+        </div>
+        <select id="tts-engine" title="TTS Engine">
+          <option value="kokoro">🏠 Local (Kokoro)</option>
+          <option value="openai">☁️ OpenAI</option>
+          <option value="elevenlabs">🎤 ElevenLabs</option>
+        </select>
+      </header>
+
+      <main class="main-grid" id="main-grid">
+        <!-- left: practice text + controls -->
+        <section class="pane" id="practice-pane" style="border-right: 1px solid var(--border)">
+          <h3>연습할 문장</h3>
+          <textarea
+            id="practice-text"
+            placeholder="따라 말할 영어 문장이나 문단을 입력하세요."
+          ></textarea>
+
+          <div class="action-row">
+            <button class="btn primary" id="listen-btn">▶ 원어민 듣기</button>
+            <button class="btn danger" id="record-btn">🎙 녹음</button>
+            <button class="btn ok" id="retry-btn" style="display: none">↺ 다시</button>
+            <span class="stt-status" id="stt-status"></span>
+          </div>
+          <audio id="model-audio" controls></audio>
+
+          <div class="rec-section">
+            <h3>🎙 내 녹음</h3>
+            <audio id="rec-audio" controls></audio>
+            <select id="rec-history" class="history-select" style="display: none"></select>
+          </div>
+        </section>
+
+        <!-- right: feedback -->
+        <section class="pane" id="result-pane">
+          <h3>피드백</h3>
+          <div class="hint" id="feedback-hint">
+            왼쪽에 문장을 입력하고 <b>▶ 원어민 듣기</b>로 모델 발음을 들은 뒤,<br />
+            <b>🎙 녹음</b>을 눌러 따라 말해보세요.<br />
+            발음이 단어 단위로 채점되고 말하기 속도(WPM)도 비교됩니다.
+          </div>
+
+          <div class="fb-block" id="fb-score" style="display: none">
+            <div class="score-big" id="score-big">—</div>
+            <div id="score-desc" style="font-size: 13px; margin-top: 2px"></div>
+            <div class="stat-row">
+              <span>내 속도 <b id="stat-wpm">—</b> WPM</span>
+              <span>길이 <b id="stat-dur">—</b>s</span>
+              <span>인식 단어 <b id="stat-words">—</b></span>
+            </div>
+          </div>
+
+          <div class="fb-block" id="fb-diff" style="display: none">
+            <h3>단어 비교 <span class="stt-status">(초록=정확 · 노랑=비슷 · 빨강=누락 · 회색=추가)</span></h3>
+            <div class="diff-text" id="diff-text"></div>
+          </div>
+
+          <div class="fb-block" id="fb-transcript" style="display: none">
+            <h3>인식된 문장</h3>
+            <div class="diff-text" id="transcript-raw"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./js/config.local.js"></script>
+    <script type="module" src="./js/speaking.js"></script>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+// Copy to `config.local.js` and fill in.
+// `config.local.js` is gitignored — API keys never leave your machine.
+
+// ── TTS (Listening / Speaking) ────────────────────────────────────
+// Engine: "kokoro" (local Kokoro-82M, default) | "openai" | "elevenlabs"
+window.TTS_ENGINE = "kokoro";
+// Local Kokoro-82M via an OpenAI-compatible server (e.g. Kokoro-FastAPI):
+//   docker run -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest
+window.KOKORO_TTS_URL = "http://localhost:8880/v1/audio/speech";
+window.KOKORO_TTS_MODEL = "kokoro";
+window.KOKORO_VOICE = "af_heart"; // see server's /v1/audio/voices
+window.OPENAI_TTS_VOICE = "alloy";
+window.ELEVENLABS_API_KEY = "";
+window.ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"; // Rachel
+
+// ── STT (Speaking) ────────────────────────────────────────────────
+// Engine: "vibevoice" (local MLX, default) | "webspeech" (free, browser) | "whisper" (OpenAI)
+// vibevoice falls back to webspeech automatically if the MLX server is down.
+window.STT_ENGINE = "vibevoice";
+window.MLX_STT_URL = "http://localhost:8000/v1/audio/transcriptions";
+window.MLX_STT_MODEL = "mlx-community/VibeVoice-ASR-4bit";
+
+// ── Writing feedback (Grammar + Naturalness) ──────────────────────
+// Grammar check: LanguageTool. Source: "local" (self-hosted, default) |
+// "public" (free public API, rate-limited, sends text to languagetool.org).
+// Switchable anytime from the dropdown in writing.html — this just sets
+// which one is selected on load.
+//   docker run -p 8010:8010 erikvl87/languagetool
+window.LANGUAGETOOL_SOURCE = "local";
+window.LANGUAGETOOL_LOCAL_URL = "http://localhost:8010/v2/check";
+window.LANGUAGETOOL_PUBLIC_URL = "https://api.languagetool.org/v2/check";
+
+// AI feedback (naturalness/rewrite) uses Claude if ANTHROPIC_API_KEY is
+// set, otherwise OpenAI if OPENAI_API_KEY is set.
+window.ANTHROPIC_API_KEY = "";
+window.OPENAI_API_KEY = ""; // also used by "whisper" STT / "openai" TTS
