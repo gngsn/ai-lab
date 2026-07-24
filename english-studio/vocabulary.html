@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vocabulary — English Studio</title>
+    <link rel="stylesheet" href="./css/style.css" />
+    <style>
+      #main-grid {
+        grid-template-columns: 220px 1fr;
+      }
+      #search-row {
+        display: flex;
+        gap: 8px;
+        max-width: 640px;
+        margin: 0 auto 24px;
+      }
+      #word-input {
+        flex: 1;
+        height: 38px;
+        font-size: 15px;
+        font-family: inherit;
+      }
+      #search-row .btn {
+        height: 38px;
+        padding: 0 16px;
+      }
+      #vocab-view {
+        max-width: 640px;
+        margin: 0 auto;
+      }
+      .word-hero {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+      .word-hero .headword {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-bright);
+      }
+      .word-hero .ipa {
+        font: 14px "JetBrains Mono", monospace;
+        color: var(--accent);
+        margin-left: 8px;
+      }
+      .word-hero .pos {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--text-mid);
+      }
+      .word-hero .pos span {
+        display: inline-block;
+        border: 1px solid var(--border-2);
+        border-radius: 10px;
+        padding: 1px 8px;
+        margin: 0 2px;
+      }
+      .core-meaning {
+        text-align: center;
+        font-size: 17px;
+        color: var(--text-bright);
+        line-height: 1.6;
+        word-break: keep-all;
+        margin-bottom: 24px;
+        padding: 14px 18px;
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+      }
+      .root-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        margin: 10px 0 6px;
+      }
+      .root-chip {
+        background: var(--surface-2);
+        border: 1px solid var(--border-2);
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 12px;
+        text-align: center;
+      }
+      .root-chip .morph {
+        font: 13px "JetBrains Mono", monospace;
+        color: var(--yellow);
+        font-weight: 600;
+      }
+      .root-chip .origin {
+        color: var(--text-mid);
+        font-size: 10px;
+      }
+      .root-chip .mean {
+        color: var(--text);
+        margin-top: 2px;
+      }
+      .prose {
+        font-size: 14px;
+        line-height: 1.9;
+        color: var(--text);
+        word-break: keep-all;
+      }
+      .example-item {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+      }
+      .example-item .en {
+        color: var(--text-bright);
+        font-size: 14px;
+      }
+      .example-item .ko {
+        color: var(--text-mid);
+        font-size: 12px;
+        margin-top: 3px;
+      }
+      .vocab-hint {
+        color: var(--text-mid);
+        font-size: 13px;
+        font-style: italic;
+        line-height: 1.8;
+        word-break: keep-all;
+        text-align: center;
+        margin-top: 60px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header id="toolbar">
+        <a class="btn" href="./index.html" title="Home">🏠</a>
+        <span class="title">🔤 단어 탐구</span>
+        <nav>
+          <a href="./listening.html">Listening</a>
+          <a href="./speaking.html">Speaking</a>
+          <a href="./writing.html">Writing</a>
+          <a href="./vocabulary.html">Vocabulary</a>
+        </nav>
+        <span class="spacer"></span>
+      </header>
+
+      <main class="main-grid" id="main-grid">
+        <aside class="sidebar">
+          <div class="side-head">
+            <span>최근 검색</span>
+          </div>
+          <div id="word-list"></div>
+        </aside>
+
+        <section class="pane" id="content-pane">
+          <div id="search-row">
+            <input
+              type="text"
+              id="word-input"
+              placeholder="궁금한 영어 단어를 입력하세요 (예: ubiquitous)"
+              autocomplete="off"
+            />
+            <button class="btn primary" id="search-btn">🔍 찾아보기</button>
+          </div>
+          <div class="stt-status" id="vocab-status" style="text-align: center"></div>
+
+          <div id="vocab-view" style="display: none">
+            <div class="word-hero">
+              <span class="headword" id="v-word"></span>
+              <span class="ipa" id="v-ipa"></span>
+              <div class="pos" id="v-pos"></div>
+            </div>
+
+            <div class="core-meaning" id="v-core"></div>
+
+            <div class="section-title" style="margin: 18px 0 8px">
+              <h3>🌱 어원</h3>
+            </div>
+            <div class="prose" id="v-etymology"></div>
+            <div class="root-chips" id="v-roots"></div>
+
+            <div class="section-title" style="margin: 18px 0 8px">
+              <h3>💡 왜 이런 뜻이 됐을까</h3>
+            </div>
+            <div class="prose" id="v-link"></div>
+
+            <div class="section-title" style="margin: 18px 0 8px">
+              <h3>✍️ 어떻게 쓰나요</h3>
+            </div>
+            <div class="prose" id="v-usage"></div>
+
+            <div class="section-title" style="margin: 18px 0 8px">
+              <h3>📖 예문</h3>
+            </div>
+            <div id="v-examples"></div>
+
+            <div id="v-confusion-wrap" style="display: none">
+              <div class="section-title" style="margin: 18px 0 8px">
+                <h3>⚠️ 헷갈리기 쉬운 표현</h3>
+              </div>
+              <div class="prose" id="v-confusion"></div>
+            </div>
+          </div>
+
+          <div class="vocab-hint" id="vocab-hint">
+            영어 단어를 하나 입력해 보세요.<br />
+            어원이 뭔지, 왜 그런 뜻을 갖게 됐는지, 실제로 어떻게 쓰는지<br />
+            간단하지만 확실하게 설명해드립니다.
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./js/config.local.js"></script>
+    <script type="module" src="./js/vocabulary.js"></script>
+  </body>
+</html>

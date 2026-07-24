@@ -33,6 +33,13 @@ body {
   grid-template-rows: 48px 1fr;
   height: 100vh;
 }
+/* Grid items default to min-width/height:auto, which lets a wide flex
+   child (e.g. wrapped mode cards) grow past the track instead of
+   wrapping. Force the row-2 content to respect the grid track. */
+#app > main {
+  min-width: 0;
+  min-height: 0;
+}
 
 /* ── Toolbar ── */
 #toolbar {
@@ -190,8 +197,10 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 20px;
   padding: 40px;
+  overflow-y: auto;
 }
 .mode-card {
   display: block;
