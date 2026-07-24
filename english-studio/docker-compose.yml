@@ -1,0 +1,39 @@
+# Local backend for english-studio — off-the-shelf images, no custom build
+# needed (a Dockerfile would just be `FROM <image>` with nothing added).
+#
+#   languagetool -> grammar check (writing.html, default LANGUAGETOOL_SOURCE)
+#   kokoro-tts   -> text-to-speech (listening.html / speaking.html, default TTS_ENGINE)
+#
+# STT (VibeVoice/MLX) isn't included — it needs Apple Silicon + MLX and runs
+# natively, not in a container. See README.md.
+#
+# `npm run stack:up` waits for healthchecks before returning.
+
+name: english-studio
+
+services:
+  languagetool:
+    image: erikvl87/languagetool:latest
+    restart: unless-stopped
+    ports:
+      - "8010:8010"
+    environment:
+      langtool_pipelineCaching: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8010/v2/languages || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  kokoro-tts:
+    image: ghcr.io/remsky/kokoro-fastapi-cpu:latest
+    restart: unless-stopped
+    ports:
+      - "8880:8880"
+    healthcheck:
+      # image has curl, not wget
+      test: ["CMD-SHELL", "curl -sf http://localhost:8880/v1/audio/voices || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 30s

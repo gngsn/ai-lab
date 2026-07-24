@@ -5,6 +5,10 @@
   "type": "module",
   "description": "Personal English study app — TTS listening, STT speaking practice, AI writing feedback",
   "scripts": {
-    "start": "python3 -m http.server 8899"
+    "start": "python3 -m http.server 8899",
+    "dev": "npm run stack:up && npm start",
+    "stack:up": "docker compose up -d --wait",
+    "stack:down": "docker compose down",
+    "stack:logs": "docker compose logs -f"
   }
 }
