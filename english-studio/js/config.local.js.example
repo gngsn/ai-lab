@@ -30,7 +30,16 @@ window.LANGUAGETOOL_SOURCE = "local";
 window.LANGUAGETOOL_LOCAL_URL = "http://localhost:8010/v2/check";
 window.LANGUAGETOOL_PUBLIC_URL = "https://api.languagetool.org/v2/check";
 
-// AI feedback (naturalness/rewrite) uses Claude if ANTHROPIC_API_KEY is
-// set, otherwise OpenAI if OPENAI_API_KEY is set.
+// ── Vocabulary lookup (vocabulary.html) ───────────────────────────
+// Engine: "claude" | "openai" | "ollama" (free, fully local — no API key).
+// Switchable anytime from the dropdown in vocabulary.html.
+// Needs a model pulled first: `ollama pull qwen3.5`, then `ollama serve`.
+window.VOCAB_AI_ENGINE = "ollama";
+window.OLLAMA_URL = "http://localhost:11434/api/chat";
+window.OLLAMA_MODEL = "qwen3.5";
+
+// AI feedback (naturalness/rewrite in writing.html; also used by
+// vocabulary.html when VOCAB_AI_ENGINE is "claude"/"openai") uses Claude if
+// ANTHROPIC_API_KEY is set, otherwise OpenAI if OPENAI_API_KEY is set.
 window.ANTHROPIC_API_KEY = "";
 window.OPENAI_API_KEY = ""; // also used by "whisper" STT / "openai" TTS

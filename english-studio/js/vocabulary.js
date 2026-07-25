@@ -13,6 +13,12 @@ initNav();
 
 const ANTHROPIC_KEY = window.ANTHROPIC_API_KEY || "";
 const OPENAI_KEY = window.OPENAI_API_KEY || "";
+const OLLAMA_URL = window.OLLAMA_URL || "http://localhost:11434/api/chat";
+const OLLAMA_MODEL = window.OLLAMA_MODEL || "qwen3.5";
+
+let aiEngine =
+  window.VOCAB_AI_ENGINE ||
+  (ANTHROPIC_KEY ? "claude" : OPENAI_KEY ? "openai" : "ollama");
 
 const STORAGE_KEY = "english-studio/vocab";
 const MAX_HISTORY = 60;
@@ -169,6 +175,30 @@ async function openaiLookup(word) {
   return JSON.parse(data.choices[0].message.content);
 }
 
+async function ollamaLookup(word) {
+  const resp = await fetch(OLLAMA_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: OLLAMA_MODEL,
+      stream: false,
+      messages: [{ role: "user", content: wordPrompt(word) }],
+      format: WORD_SCHEMA,
+    }),
+  });
+  if (!resp.ok) {
+    const msg = await resp.text().catch(() => resp.statusText);
+    throw new Error(`Ollama ${resp.status}: ${msg.slice(0, 200)}`);
+  }
+  const data = await resp.json();
+  const content = data.message?.content;
+  if (!content) throw new Error("Ollama returned no content");
+  return JSON.parse(content);
+}
+
+const AI_LOOKUPS = { claude: claudeLookup, openai: openaiLookup, ollama: ollamaLookup };
+const AI_LABELS = { claude: "Claude가", openai: "GPT가", ollama: `로컬 모델(${OLLAMA_MODEL})이` };
+
 // ── Sidebar (recent searches) ───────────────────────────────────────
 function renderList(activeWord) {
   const list = $("word-list");
@@ -248,9 +278,12 @@ async function search() {
   if (!raw) return;
   const key = raw.toLowerCase();
 
-  if (!ANTHROPIC_KEY && !OPENAI_KEY) {
-    $("vocab-status").textContent =
-      "config.local.js에 ANTHROPIC_API_KEY 또는 OPENAI_API_KEY를 설정하세요";
+  if (aiEngine === "claude" && !ANTHROPIC_KEY) {
+    $("vocab-status").textContent = "config.local.js에 ANTHROPIC_API_KEY를 설정하세요";
+    return;
+  }
+  if (aiEngine === "openai" && !OPENAI_KEY) {
+    $("vocab-status").textContent = "config.local.js에 OPENAI_API_KEY를 설정하세요";
     return;
   }
 
@@ -264,13 +297,9 @@ async function search() {
 
   const btn = $("search-btn");
   btn.disabled = true;
-  $("vocab-status").textContent = ANTHROPIC_KEY
-    ? "Claude가 찾아보는 중…"
-    : "GPT가 찾아보는 중…";
+  $("vocab-status").textContent = `${AI_LABELS[aiEngine]} 찾아보는 중…`;
   try {
-    const data = ANTHROPIC_KEY
-      ? await claudeLookup(raw)
-      : await openaiLookup(raw);
+    const data = await AI_LOOKUPS[aiEngine](raw);
     history = history.filter((h) => h.word.toLowerCase() !== key);
     history.unshift({ word: data.word || raw, ts: Date.now(), data });
     saveHistory();
@@ -278,7 +307,11 @@ async function search() {
     renderList(data.word || raw);
     $("vocab-status").textContent = "";
   } catch (err) {
-    $("vocab-status").textContent = "오류: " + err.message;
+    const hint =
+      aiEngine === "ollama"
+        ? " (Ollama가 꺼져 있나요? 터미널에서 `ollama serve` 실행 후 다시 시도하세요)"
+        : "";
+    $("vocab-status").textContent = "오류: " + err.message + hint;
   } finally {
     btn.disabled = false;
   }
@@ -288,5 +321,11 @@ $("search-btn").onclick = search;
 $("word-input").addEventListener("keydown", (e) => {
   if (e.key === "Enter") search();
 });
+
+const aiEngineSel = $("ai-engine");
+aiEngineSel.value = aiEngine;
+aiEngineSel.onchange = () => {
+  aiEngine = aiEngineSel.value;
+};
 
 renderList(null);

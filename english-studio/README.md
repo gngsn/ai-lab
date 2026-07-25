@@ -45,6 +45,15 @@ npm run stack:logs   # 로그 확인
   텍스트가 languagetool.org로 전송됨). 기본 선택값은 `config.local.js`의
   `LANGUAGETOOL_SOURCE`로 설정.
 - **AI 첨삭** — `ANTHROPIC_API_KEY`(Claude, 우선) 또는 `OPENAI_API_KEY`(GPT 폴백).
+- **단어 탐구 AI 엔진** — `vocabulary.html` 상단 드롭다운에서 Claude/OpenAI/
+  **Local (Ollama, 무료)** 중 언제든 전환 가능. Ollama는 GPU 가속(Apple
+  Silicon Metal)이 필요해 Docker가 아니라 네이티브로 띄워야 한다:
+  ```sh
+  ollama pull qwen3.5
+  ollama serve          # http://localhost:11434
+  ```
+  기본 모델/URL은 `config.local.js`의 `OLLAMA_MODEL` / `OLLAMA_URL`로
+  바꿀 수 있다.
 
 ## 구조
 
