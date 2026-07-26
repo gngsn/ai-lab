@@ -10,11 +10,14 @@
  *                       reason MLX STT runs natively — see README)
  *
  * Results are cached in localStorage per word so re-looking-up a word
- * already searched costs nothing, regardless of engine.
+ * already searched costs nothing, regardless of engine. They're also
+ * persisted to Supabase (js/repo/vocab-repo.js) so a word looked up once
+ * from any device never needs a fresh AI call again.
  */
 
 import { $, escapeHtml, initNav } from "./common.js";
 import { renderMarkdown } from "./markdown.js";
+import { getVocabLookup, saveVocabLookup } from "./repo/vocab-repo.js";
 
 initNav();
 
@@ -300,6 +303,11 @@ const AI_LABELS = {
   openai: "GPT가",
   ollama: `로컬 모델(${OLLAMA_MODEL})이 (다소 시간이 걸릴 수 있어요)`,
 };
+const AI_MODELS = {
+  claude: "claude-opus-4-8",
+  openai: "gpt-4o-mini",
+  ollama: OLLAMA_MODEL,
+};
 
 // ── Sidebar (recent searches) ───────────────────────────────────────
 function renderList(activeWord) {
@@ -366,7 +374,11 @@ async function search() {
   btn.disabled = true;
   $("vocab-status").textContent = `${AI_LABELS[aiEngine]} 찾아보는 중…`;
   try {
-    const markdown = await AI_LOOKUPS[aiEngine](raw);
+    // Shared Supabase cache first — a lookup already saved by any past
+    // session (regardless of which browser/device did it) skips the AI call.
+    const saved = await getVocabLookup(key, aiEngine);
+    const markdown = saved ? saved.markdown : await AI_LOOKUPS[aiEngine](raw);
+    if (!saved) saveVocabLookup(key, aiEngine, markdown, AI_MODELS[aiEngine]);
     history = history.filter((h) => h.word.toLowerCase() !== key);
     history.unshift({ word: raw, ts: Date.now(), markdown });
     saveHistory();

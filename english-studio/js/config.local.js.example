@@ -38,6 +38,14 @@ window.VOCAB_AI_ENGINE = "ollama";
 window.OLLAMA_URL = "http://localhost:11434/api/chat";
 window.OLLAMA_MODEL = "qwen3.5";
 
+// Persist Vocabulary lookups to Supabase so a word looked up once is never
+// re-generated (shared across devices/sessions). Optional — if left blank,
+// Vocabulary still works, it just re-asks the AI every time. Reuses the
+// same Supabase project as slides-editor; run migrations/001_vocab_lookups.sql
+// once via the Supabase SQL editor.
+window.SUPABASE_URL = "";
+window.SUPABASE_ANON_KEY = "";
+
 // AI feedback (naturalness/rewrite in writing.html; also used by
 // vocabulary.html when VOCAB_AI_ENGINE is "claude"/"openai") uses Claude if
 // ANTHROPIC_API_KEY is set, otherwise OpenAI if OPENAI_API_KEY is set.
