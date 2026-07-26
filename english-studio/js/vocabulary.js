@@ -57,7 +57,14 @@ You are an expert in English etymology and language teaching. Your goal is NOT t
 
 # Output structure
 
-Follow this exact structure and order. Separate every section with a "---" horizontal rule, including right after the opening line.
+Start with this exact 4-line header block, then a line containing only "---":
+
+WORD: <the headword, normal capitalization>
+IPA: <IPA pronunciation with slashes, e.g. /ˈɪmɪnənt/>
+POS: <part of speech, e.g. "adjective" or "noun, verb">
+MEANING: <one short, plain sentence — the core meaning, no markdown formatting>
+
+Then follow this exact structure and order for the rest of the response. Separate every section with a "---" horizontal rule, including right after the opening line.
 
 1. **Opening line** (no heading) — one engaging sentence introducing the word in bold, in the spirit of "**Word** is a great example of a word whose meaning becomes obvious once you know its roots."
 
@@ -90,6 +97,12 @@ Respond with the markdown content only — no preamble like "Here is an explanat
 # Worked example
 
 Here is a complete worked example at the exact style, structure, depth, and tone to match, for the word "imminent":
+
+WORD: Imminent
+IPA: /ˈɪmɪnənt/
+POS: adjective
+MEANING: about to happen very soon
+---
 
 **Imminent** is a great example of a word whose meaning becomes obvious once you know its roots.
 
@@ -339,12 +352,57 @@ function renderList(activeWord) {
   }
 }
 
+// The model is asked to open with a small "WORD: / IPA: / POS: / MEANING:"
+// header before a "---", so the hero (word + pronunciation + part of
+// speech + a highlighted core-meaning line) can be pulled out separately
+// from the free-form markdown body that follows.
+function parseFrontmatter(markdown) {
+  const m = String(markdown).match(
+    /^\s*WORD:\s*(.+?)\n\s*IPA:\s*(.+?)\n\s*POS:\s*(.+?)\n\s*MEANING:\s*(.+?)\n\s*---\s*\n([\s\S]*)$/,
+  );
+  if (!m) return null;
+  const [, word, ipa, pos, meaning, rest] = m;
+  return {
+    word: word.trim(),
+    ipa: ipa.trim(),
+    pos: pos.trim(),
+    meaning: meaning.trim(),
+    rest: rest.trim(),
+  };
+}
+
 // ── Render ────────────────────────────────────────────────────────
 function renderResult(word, markdown) {
   $("vocab-hint").style.display = "none";
   $("vocab-view").style.display = "";
-  $("v-word").textContent = word;
-  $("v-body").innerHTML = renderMarkdown(markdown);
+
+  const fm = parseFrontmatter(markdown);
+  if (fm) {
+    $("v-word").textContent = fm.word || word;
+    $("v-ipa").textContent = fm.ipa || "";
+    $("v-pos").innerHTML = fm.pos
+      ? fm.pos
+          .split(",")
+          .map((p) => `<span>${escapeHtml(p.trim())}</span>`)
+          .join(" ")
+      : "";
+    if (fm.meaning) {
+      $("v-core").textContent = fm.meaning;
+      $("v-core").style.display = "";
+    } else {
+      $("v-core").style.display = "none";
+    }
+    $("v-body").innerHTML = renderMarkdown(fm.rest);
+  } else {
+    // No frontmatter — either a legacy cached entry (from before this
+    // format existed) or a model that didn't follow it. Fall back to
+    // showing just the searched word and the full body as-is.
+    $("v-word").textContent = word;
+    $("v-ipa").textContent = "";
+    $("v-pos").innerHTML = "";
+    $("v-core").style.display = "none";
+    $("v-body").innerHTML = renderMarkdown(markdown);
+  }
 }
 
 // ── Search ────────────────────────────────────────────────────────

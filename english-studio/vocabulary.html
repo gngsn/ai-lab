@@ -38,6 +38,36 @@
         font-weight: 700;
         color: var(--text-bright);
       }
+      .word-hero .ipa {
+        font: 20px "JetBrains Mono", monospace;
+        color: var(--accent);
+        margin-left: 10px;
+      }
+      .word-hero .pos {
+        margin-top: 10px;
+      }
+      .word-hero .pos span {
+        display: inline-block;
+        border: 1px solid var(--border-2);
+        border-radius: 14px;
+        padding: 3px 14px;
+        margin: 0 2px;
+        font-size: 13px;
+        color: var(--text-mid);
+      }
+      .core-meaning {
+        text-align: center;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-bright);
+        line-height: 1.6;
+        word-break: keep-all;
+        margin: 20px 0 24px;
+        padding: 18px 24px;
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        border-radius: 10px;
+      }
       .vocab-hint {
         color: var(--text-mid);
         font-size: 13px;
@@ -184,7 +214,10 @@
           <div id="vocab-view" style="display: none">
             <div class="word-hero">
               <span class="headword" id="v-word"></span>
+              <span class="ipa" id="v-ipa"></span>
+              <div class="pos" id="v-pos"></div>
             </div>
+            <div class="core-meaning" id="v-core" style="display: none"></div>
             <div class="md-body" id="v-body"></div>
           </div>
 
