@@ -3,8 +3,10 @@
  *
  * Covers exactly what the vocabulary teaching prompt asks the model to
  * produce: headings, bold, horizontal rules, fenced code blocks (used for
- * ASCII diagrams), GFM pipe tables, and unordered/ordered lists. Not a
- * general-purpose markdown engine — deliberately small.
+ * ASCII diagrams), GFM pipe tables, unordered/ordered lists, and multi-line
+ * blockquotes (used for the meaning-chain and for example sentences — a
+ * bare ">" is a blank spacer line inside the chain). Not a general-purpose
+ * markdown engine — deliberately small.
  *
  * All text is HTML-escaped before any tag is inserted, so model output can
  * never inject markup.
@@ -94,6 +96,25 @@ export function renderMarkdown(md) {
       continue;
     }
 
+    // Blockquote — consecutive ">" lines group into one block; a bare ">"
+    // is a blank spacer line inside a chain (e.g. meaning-development arrows).
+    if (/^>/.test(line)) {
+      flushList();
+      const buf = [];
+      while (i < lines.length && /^>/.test(lines[i])) {
+        buf.push(lines[i].replace(/^>\s?/, ""));
+        i++;
+      }
+      out.push(
+        `<blockquote class="md-quote">${buf
+          .map((l) =>
+            l.trim() ? `<div>${inline(l)}</div>` : `<div class="md-quote-gap"></div>`,
+          )
+          .join("")}</blockquote>`,
+      );
+      continue;
+    }
+
     // Horizontal rule
     if (/^\s*-{3,}\s*$/.test(line) || /^\s*\*{3,}\s*$/.test(line)) {
       flushList();
@@ -133,6 +154,7 @@ export function renderMarkdown(md) {
       lines[i].trim() !== "" &&
       !/^```/.test(lines[i]) &&
       !/^(#{1,4})\s+/.test(lines[i]) &&
+      !/^>/.test(lines[i]) &&
       !/^\s*[-*]\s+/.test(lines[i]) &&
       !/^\s*\d+\.\s+/.test(lines[i]) &&
       !(lines[i].includes("|") && i + 1 < lines.length && isTableSep(lines[i + 1]))

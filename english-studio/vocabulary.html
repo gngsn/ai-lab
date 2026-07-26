@@ -59,6 +59,11 @@
         color: var(--accent);
         margin: 22px 0 8px;
         font-weight: 600;
+        /* Reset against the page-wide .pane h3 rule (sidebar/section
+           labels elsewhere in the app), which would otherwise leak
+           uppercase/letter-spacing into these AI-generated headings. */
+        text-transform: none;
+        letter-spacing: normal;
       }
       .md-body h4.md-h {
         font-size: 16px;
@@ -93,10 +98,24 @@
         overflow-x: auto;
         text-align: center;
       }
+      .md-body h3.md-h {
+        font-size: 18px;
+      }
       .md-body .md-hr {
         border: none;
         border-top: 1px solid var(--border);
         margin: 18px 0;
+      }
+      .md-body .md-quote {
+        border-left: 3px solid var(--accent);
+        margin: 10px 0 16px;
+        padding: 2px 0 2px 14px;
+      }
+      .md-body .md-quote div {
+        color: var(--text-bright);
+      }
+      .md-body .md-quote .md-quote-gap {
+        height: 6px;
       }
       .md-body ul,
       .md-body ol {
