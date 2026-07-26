@@ -1,6 +1,14 @@
 // Copy to `config.local.js` and fill in.
 // `config.local.js` is gitignored — API keys never leave your machine.
 
+// ── Supabase (vocabulary lookup persistence) ──────────────────────
+// Optional: without these, vocabulary.html still works, it just can't
+// persist/share lookups (localStorage-only, this browser). Reuse an
+// existing project (e.g. slides-editor's) or create a new one, then apply
+// migrations/001_vocab_lookups.sql via the Supabase SQL editor.
+window.SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co";
+window.SUPABASE_ANON_KEY = "YOUR-ANON-KEY";
+
 // ── TTS (Listening / Speaking) ────────────────────────────────────
 // Engine: "kokoro" (local Kokoro-82M, default) | "openai" | "elevenlabs"
 window.TTS_ENGINE = "kokoro";
@@ -33,18 +41,10 @@ window.LANGUAGETOOL_PUBLIC_URL = "https://api.languagetool.org/v2/check";
 // ── Vocabulary lookup (vocabulary.html) ───────────────────────────
 // Engine: "claude" | "openai" | "ollama" (free, fully local — no API key).
 // Switchable anytime from the dropdown in vocabulary.html.
-// Needs a model pulled first: `ollama pull qwen3.5`, then `ollama serve`.
+// Needs a model pulled first: `ollama pull qwen3.6`, then `ollama serve`.
 window.VOCAB_AI_ENGINE = "ollama";
 window.OLLAMA_URL = "http://localhost:11434/api/chat";
-window.OLLAMA_MODEL = "qwen3.5";
-
-// Persist Vocabulary lookups to Supabase so a word looked up once is never
-// re-generated (shared across devices/sessions). Optional — if left blank,
-// Vocabulary still works, it just re-asks the AI every time. Reuses the
-// same Supabase project as slides-editor; run migrations/001_vocab_lookups.sql
-// once via the Supabase SQL editor.
-window.SUPABASE_URL = "";
-window.SUPABASE_ANON_KEY = "";
+window.OLLAMA_MODEL = "qwen3.6";
 
 // AI feedback (naturalness/rewrite in writing.html; also used by
 // vocabulary.html when VOCAB_AI_ENGINE is "claude"/"openai") uses Claude if

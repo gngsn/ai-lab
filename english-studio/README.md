@@ -50,37 +50,30 @@ npm run stack:logs   # 로그 확인
   **Local (Ollama, 무료)** 중 언제든 전환 가능. Ollama는 GPU 가속(Apple
   Silicon Metal)이 필요해 Docker가 아니라 네이티브로 띄워야 한다:
   ```sh
-  ollama pull qwen3.5
+  ollama pull qwen3.6   # 기본 모델. 6GB+ 다운로드, 최초 1회만
   ollama serve          # http://localhost:11434
   ```
-  기본 모델/URL은 `config.local.js`의 `OLLAMA_MODEL` / `OLLAMA_URL`로
-  바꿀 수 있다.
-- **단어 탐구 결과 저장(Supabase)** — 한 번 찾아본 단어는 Supabase
-  `vocab_lookups` 테이블에 저장돼, 같은 단어를 다시 검색하면(어느 기기든)
-  AI를 다시 호출하지 않고 저장된 결과를 그대로 보여준다. slides-editor와
-  같은 Supabase 프로젝트를 재사용한다 — `config.local.js`에
-  `SUPABASE_URL` / `SUPABASE_ANON_KEY`를 채우고, `migrations/001_vocab_lookups.sql`을
-  Supabase SQL 에디터에서 한 번 실행하면 된다. 설정하지 않아도 단어 탐구
-  자체는 정상 동작한다(그냥 검색마다 AI를 다시 부를 뿐).
+  로컬 모델은 답변에 시간이 좀 걸린다(모델 크기·"thinking" 여부에 따라
+  수십 초~수 분). 기본 모델/URL은 `config.local.js`의 `OLLAMA_MODEL` /
+  `OLLAMA_URL`로 바꿀 수 있다. **주의**: 작은 모델이나 `think:false` 조합은
+  품질이 떨어지거나(빈 필드) 마크다운 형식을 무시하는 경우가 있었다 —
+  qwen3.6 같은 thinking 모델을 기본값 그대로 쓰는 걸 권장.
 
 ## 구조
 
 ```
-docker-compose.yml           로컬 백엔드 (languagetool, kokoro-tts)
-voca-prompt-sample.md        단어 탐구 시스템 프롬프트 원본 (js/vocabulary.js에 반영됨)
-migrations/001_vocab_lookups.sql   Supabase 단어 탐구 결과 저장 테이블
-index.html                   랜딩 (모드 선택)
-listening.html/.js           리스닝
-speaking.html/.js            스피킹
-writing.html/.js             라이팅
-vocabulary.html/.js          단어 탐구
-js/common.js                 공용 헬퍼 (문장 분리 등)
-js/tts.js                    TTS 엔진 3종 + IndexedDB 캐시 (1.0x로 합성, 재생속도는 playbackRate)
-js/stt.js                    STT 엔진 (vibevoice→webspeech 폴백, whisper)
-js/diff.js                   단어 정렬/채점 (LCS + levenshtein)
-js/audio-cache.js            IndexedDB (audio / recordings)
-js/markdown.js                단어 탐구 응답용 소형 마크다운→HTML 렌더러 (표/코드펜스/헤딩)
-js/supabase.js               Supabase 클라이언트 초기화
-js/repo/vocab-repo.js        vocab_lookups 테이블 read/write
-css/style.css                다크 테마 공용 스타일
+docker-compose.yml     로컬 백엔드 (languagetool, kokoro-tts)
+voca-prompt-sample.md  단어 탐구 시스템 프롬프트 원본 (js/vocabulary.js에 반영됨)
+index.html            랜딩 (모드 선택)
+listening.html/.js    리스닝
+speaking.html/.js     스피킹
+writing.html/.js      라이팅
+vocabulary.html/.js   단어 탐구
+js/common.js          공용 헬퍼 (문장 분리 등)
+js/tts.js             TTS 엔진 3종 + IndexedDB 캐시 (1.0x로 합성, 재생속도는 playbackRate)
+js/stt.js             STT 엔진 (vibevoice→webspeech 폴백, whisper)
+js/diff.js            단어 정렬/채점 (LCS + levenshtein)
+js/audio-cache.js     IndexedDB (audio / recordings)
+js/markdown.js         단어 탐구 응답용 소형 마크다운→HTML 렌더러 (표/코드펜스/헤딩)
+css/style.css         다크 테마 공용 스타일
 ```
