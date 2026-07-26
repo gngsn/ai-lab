@@ -77,6 +77,58 @@
         text-align: center;
         margin-top: 60px;
       }
+      #vocab-loading {
+        max-width: 480px;
+        margin: 60px auto 0;
+        text-align: center;
+        color: var(--text-mid);
+        font-size: 13px;
+        line-height: 1.8;
+        word-break: keep-all;
+      }
+      #vocab-loading b {
+        color: var(--text-bright);
+        font-size: 15px;
+      }
+      #vocab-loading .spin-icon {
+        font-size: 22px;
+        display: block;
+        margin-bottom: 10px;
+        animation: pulse 1.2s infinite;
+      }
+      #vocab-error {
+        max-width: 480px;
+        margin: 60px auto 0;
+        text-align: center;
+        padding: 20px 24px;
+        background: var(--surface);
+        border: 1px solid var(--red);
+        border-radius: 10px;
+      }
+      #vocab-error b {
+        color: var(--text-bright);
+        font-size: 15px;
+      }
+      #vocab-error #error-message {
+        display: block;
+        margin: 10px 0 4px;
+        color: var(--red);
+        font-size: 12px;
+        line-height: 1.6;
+        word-break: keep-all;
+      }
+
+      /* ── Sidebar: in-flight lookups ── */
+      .side-item.pending .spinner {
+        display: inline-block;
+        animation: pulse 1.2s infinite;
+      }
+      .side-item.pending.has-error .spinner {
+        animation: none;
+      }
+      .side-item.pending.has-error .label {
+        color: var(--red);
+      }
 
       /* ── Rendered markdown body (js/markdown.js output) ── */
       .md-body {
@@ -219,6 +271,20 @@
             </div>
             <div class="core-meaning" id="v-core" style="display: none"></div>
             <div class="md-body" id="v-body"></div>
+          </div>
+
+          <div id="vocab-loading" style="display: none">
+            <span class="spin-icon">⏳</span>
+            <b id="loading-word"></b>을(를) 찾아보는 중…<br />
+            <span id="loading-engine"></span><br /><br />
+            다른 단어를 검색하거나 사이드바를 둘러보셔도 됩니다 — 끝나면
+            여기로 돌아왔을 때 자동으로 보여드릴게요.
+          </div>
+
+          <div id="vocab-error" style="display: none">
+            ⚠️ <b id="error-word"></b> 검색에 실패했어요
+            <span id="error-message"></span>
+            <button class="btn ok" id="retry-btn">↺ 다시 시도</button>
           </div>
 
           <div class="vocab-hint" id="vocab-hint">

@@ -1,6 +1,8 @@
 /**
- * vocabulary.js — look up an English word and get a Korean explanation of
- * its etymology, why it carries that meaning, and how it's actually used.
+ * vocabulary.js — deep-dive English word explainer: etymology, historical
+ * meaning shift, a memorable mental image, related word families, and
+ * usage — written as free-form teaching markdown (not a fixed schema), per
+ * the prompt in voca-prompt-sample.md, and rendered with markdown.js.
  *
  * Three engines, switchable anytime from the toolbar selector:
  *   - claude / openai — cloud, needs an API key, costs money per lookup
@@ -9,13 +11,24 @@
  *                       can't use Apple Silicon GPU acceleration, same
  *                       reason MLX STT runs natively — see README)
  *
- * Results are cached in localStorage per word so re-looking-up a word
- * already searched costs nothing, regardless of engine. They're also
- * persisted to Supabase (js/repo/vocab-repo.js) so a word looked up once
- * from any device never needs a fresh AI call again.
+ * Results are cached in localStorage per word (instant, this browser only)
+ * and, best-effort, in Supabase (`vocab_lookups` table — shared across
+ * devices/browsers, and durable across a cleared localStorage). Supabase
+ * is checked between the local-cache miss and the AI call, so a lookup
+ * already done anywhere never re-runs the AI — worth it especially for the
+ * free local Ollama engine, which can take minutes per word.
+ *
+ * Lookups are async and non-blocking: submitting a search never locks the
+ * UI. Multiple words can be in flight at once (tracked in `pending`,
+ * keyed by lowercased word); the sidebar shows a spinner per in-flight
+ * word, and the main pane only re-renders on completion if the user is
+ * still looking at that word (`currentWord`) — finishing a background
+ * lookup never yanks the view away from whatever the user is doing. Each
+ * in-flight lookup carries an AbortController so dismissing it from the
+ * sidebar actually cancels the network request, not just hides it.
  */
 
-import { $, escapeHtml, initNav } from "./common.js";
+import { $, initNav, escapeHtml } from "./common.js";
 import { renderMarkdown } from "./markdown.js";
 import { getVocabLookup, saveVocabLookup } from "./repo/vocab-repo.js";
 
@@ -34,20 +47,31 @@ const STORAGE_KEY = "english-studio/vocab";
 const MAX_HISTORY = 60;
 
 let history = loadHistory(); // [{word, ts, markdown}], newest first
+// word_lower -> { word, engine, status: "loading"|"error", error?, controller }
+const pending = new Map();
+let currentWord = null; // lowercased word currently shown in the main pane, or null
 
 function saveHistory() {
   if (history.length > MAX_HISTORY) history.length = MAX_HISTORY;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
 }
+// Runs before `history` is assigned (called as its own initializer), so it
+// must not read or write the `history` binding — write to localStorage
+// directly instead of going through saveHistory().
 function loadHistory() {
+  let parsed;
   try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    // Drop entries from the old fixed-schema format (pre markdown rewrite) —
-    // they have no `markdown` string to render and can't be backfilled.
-    return parsed.filter((e) => typeof e?.markdown === "string");
+    parsed = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
   } catch {
     return [];
   }
+  // Drop entries from the old fixed-schema format (pre markdown rewrite) —
+  // they have no `markdown` string to render and can't be backfilled.
+  const clean = parsed.filter((e) => typeof e?.markdown === "string");
+  if (clean.length !== parsed.length) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
+  }
+  return clean;
 }
 
 // ── System prompt (v2 — English, blockquote/diagram-heavy style) ───
@@ -237,7 +261,9 @@ function userTurn(word) {
 }
 
 // ── Lookups ──────────────────────────────────────────────────────
-async function claudeLookup(word) {
+// Each takes an optional AbortSignal so an in-flight lookup can be
+// cancelled from the sidebar (see `pending` / dismissPending below).
+async function claudeLookup(word, signal) {
   const resp = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -252,6 +278,7 @@ async function claudeLookup(word) {
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userTurn(word) }],
     }),
+    signal,
   });
   if (!resp.ok) {
     const msg = await resp.text().catch(() => resp.statusText);
@@ -263,7 +290,7 @@ async function claudeLookup(word) {
   return textBlock.text;
 }
 
-async function openaiLookup(word) {
+async function openaiLookup(word, signal) {
   const resp = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -277,6 +304,7 @@ async function openaiLookup(word) {
         { role: "user", content: userTurn(word) },
       ],
     }),
+    signal,
   });
   if (!resp.ok) {
     const msg = await resp.text().catch(() => resp.statusText);
@@ -286,7 +314,7 @@ async function openaiLookup(word) {
   return data.choices[0].message.content;
 }
 
-async function ollamaLookup(word) {
+async function ollamaLookup(word, signal) {
   const resp = await fetch(OLLAMA_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -299,6 +327,7 @@ async function ollamaLookup(word) {
       ],
       options: { num_predict: 3072 },
     }),
+    signal,
   });
   if (!resp.ok) {
     const msg = await resp.text().catch(() => resp.statusText);
@@ -316,42 +345,72 @@ const AI_LABELS = {
   openai: "GPT가",
   ollama: `로컬 모델(${OLLAMA_MODEL})이 (다소 시간이 걸릴 수 있어요)`,
 };
-const AI_MODELS = {
-  claude: "claude-opus-4-8",
-  openai: "gpt-4o-mini",
-  ollama: OLLAMA_MODEL,
-};
+const AI_MODELS = { claude: "claude-opus-4-8", openai: "gpt-4o-mini", ollama: OLLAMA_MODEL };
 
-// ── Sidebar (recent searches) ───────────────────────────────────────
-function renderList(activeWord) {
+// ── Sidebar (recent searches + in-flight lookups) ─────────────────
+function renderList(activeWordLower) {
   const list = $("word-list");
   list.innerHTML = "";
-  if (!history.length) {
+
+  const pendingEntries = [...pending.entries()].reverse(); // newest first
+  if (!pendingEntries.length && !history.length) {
     list.innerHTML =
       '<div class="side-item" style="cursor:default">아직 찾아본 단어가 없어요</div>';
     return;
   }
-  for (const entry of history) {
+
+  for (const [key, p] of pendingEntries) {
     const item = document.createElement("div");
     item.className =
-      "side-item" + (entry.word === activeWord ? " active" : "");
-    item.innerHTML = `<span class="label">${escapeHtml(entry.word)}</span>
-      <button class="del" title="삭제">✕</button>`;
-    item.addEventListener("click", () => {
-      $("word-input").value = entry.word;
-      renderResult(entry.word, entry.markdown);
-      renderList(entry.word);
-    });
+      "side-item pending" +
+      (p.status === "error" ? " has-error" : "") +
+      (key === activeWordLower ? " active" : "");
+    item.innerHTML = `<span class="spinner">${p.status === "error" ? "⚠️" : "⏳"}</span>
+      <span class="label">${escapeHtml(p.word)}</span>
+      <button class="del" title="${p.status === "error" ? "지우기" : "취소"}">✕</button>`;
+    item.addEventListener("click", () => selectWord(key));
     item.querySelector(".del").addEventListener("click", (e) => {
       e.stopPropagation();
-      history = history.filter((x) => x.word !== entry.word);
+      dismissPending(key);
+    });
+    list.appendChild(item);
+  }
+
+  for (const entry of history) {
+    const key = entry.word.toLowerCase();
+    const item = document.createElement("div");
+    item.className = "side-item" + (key === activeWordLower ? " active" : "");
+    item.innerHTML = `<span class="label">${escapeHtml(entry.word)}</span>
+      <button class="del" title="삭제">✕</button>`;
+    item.addEventListener("click", () => selectWord(key));
+    item.querySelector(".del").addEventListener("click", (e) => {
+      e.stopPropagation();
+      history = history.filter((x) => x.word.toLowerCase() !== key);
       saveHistory();
-      renderList(activeWord);
+      if (currentWord === key) {
+        currentWord = null;
+        setPaneState("idle");
+      }
+      renderList(currentWord);
     });
     list.appendChild(item);
   }
 }
 
+// Cancel (if loading) or clear (if errored) an in-flight entry.
+function dismissPending(key) {
+  const p = pending.get(key);
+  if (!p) return;
+  p.controller?.abort();
+  pending.delete(key);
+  if (currentWord === key) {
+    currentWord = null;
+    setPaneState("idle");
+  }
+  renderList(currentWord);
+}
+
+// ── Render ────────────────────────────────────────────────────────
 // The model is asked to open with a small "WORD: / IPA: / POS: / MEANING:"
 // header before a "---", so the hero (word + pronunciation + part of
 // speech + a highlighted core-meaning line) can be pulled out separately
@@ -371,10 +430,51 @@ function parseFrontmatter(markdown) {
   };
 }
 
-// ── Render ────────────────────────────────────────────────────────
+// Exactly one of these panes is visible at a time.
+function setPaneState(state) {
+  $("vocab-hint").style.display = state === "idle" ? "" : "none";
+  $("vocab-loading").style.display = state === "loading" ? "" : "none";
+  $("vocab-error").style.display = state === "error" ? "" : "none";
+  $("vocab-view").style.display = state === "result" ? "" : "none";
+}
+
+function showLoading(word, engine) {
+  setPaneState("loading");
+  $("loading-word").textContent = word;
+  $("loading-engine").textContent = AI_LABELS[engine];
+}
+
+function showError(word, message, key, engine) {
+  setPaneState("error");
+  $("error-word").textContent = word;
+  $("error-message").textContent = message;
+  $("retry-btn").onclick = () => {
+    dismissPending(key);
+    $("word-input").value = word;
+    search();
+  };
+}
+
+// Show whatever `wordLower` currently is — cached result, in-flight
+// loading state, a past error, or nothing. Never blocks: this only ever
+// reads already-available state, it doesn't start or await a lookup.
+function selectWord(wordLower) {
+  currentWord = wordLower;
+  const p = pending.get(wordLower);
+  if (p) {
+    if (p.status === "error") showError(p.word, p.error, wordLower, p.engine);
+    else showLoading(p.word, p.engine);
+  } else {
+    const cached = history.find((h) => h.word.toLowerCase() === wordLower);
+    if (cached) renderResult(cached.word, cached.markdown);
+    else setPaneState("idle");
+  }
+  $("word-input").value = "";
+  renderList(wordLower);
+}
+
 function renderResult(word, markdown) {
-  $("vocab-hint").style.display = "none";
-  $("vocab-view").style.display = "";
+  setPaneState("result");
 
   const fm = parseFrontmatter(markdown);
   if (fm) {
@@ -406,7 +506,10 @@ function renderResult(word, markdown) {
 }
 
 // ── Search ────────────────────────────────────────────────────────
-async function search() {
+// Non-blocking: kicks a lookup off in the background and returns
+// immediately, so the input/sidebar/other pages stay fully usable while
+// it runs — never awaited here, never disables the UI.
+function search() {
   const raw = $("word-input").value.trim();
   if (!raw) return;
   const key = raw.toLowerCase();
@@ -419,38 +522,49 @@ async function search() {
     $("vocab-status").textContent = "config.local.js에 OPENAI_API_KEY를 설정하세요";
     return;
   }
+  $("vocab-status").textContent = "";
 
-  const cached = history.find((h) => h.word.toLowerCase() === key);
-  if (cached) {
-    renderResult(cached.word, cached.markdown);
-    renderList(cached.word);
-    $("vocab-status").textContent = "";
+  // Already resolved or already in flight — just switch to it, no new work.
+  if (history.some((h) => h.word.toLowerCase() === key) || pending.has(key)) {
+    selectWord(key);
     return;
   }
 
-  const btn = $("search-btn");
-  btn.disabled = true;
-  $("vocab-status").textContent = `${AI_LABELS[aiEngine]} 찾아보는 중…`;
+  const controller = new AbortController();
+  pending.set(key, { word: raw, engine: aiEngine, status: "loading", controller });
+  selectWord(key); // shows the loading state for this word right away
+  executeLookup(key, raw, aiEngine, controller); // fire-and-forget
+}
+
+async function executeLookup(key, raw, engine, controller) {
   try {
-    // Shared Supabase cache first — a lookup already saved by any past
-    // session (regardless of which browser/device did it) skips the AI call.
-    const saved = await getVocabLookup(key, aiEngine);
-    const markdown = saved ? saved.markdown : await AI_LOOKUPS[aiEngine](raw);
-    if (!saved) saveVocabLookup(key, aiEngine, markdown, AI_MODELS[aiEngine]);
+    const remote = await getVocabLookup(key, engine);
+    if (!pending.has(key)) return; // dismissed while checking Supabase
+
+    let markdown;
+    if (remote) {
+      markdown = remote.markdown;
+    } else {
+      markdown = await AI_LOOKUPS[engine](raw, controller.signal);
+      saveVocabLookup(key, engine, markdown, AI_MODELS[engine]); // best-effort
+    }
+    if (!pending.has(key)) return; // dismissed while the AI was responding
+
+    pending.delete(key);
     history = history.filter((h) => h.word.toLowerCase() !== key);
     history.unshift({ word: raw, ts: Date.now(), markdown });
     saveHistory();
-    renderResult(raw, markdown);
-    renderList(raw);
-    $("vocab-status").textContent = "";
+    if (currentWord === key) renderResult(raw, markdown);
+    renderList(currentWord);
   } catch (err) {
+    if (err.name === "AbortError" || !pending.has(key)) return; // cancelled — no error UI
     const hint =
-      aiEngine === "ollama"
+      engine === "ollama"
         ? " (Ollama가 꺼져 있나요? 터미널에서 `ollama serve` 실행 후 다시 시도하세요)"
         : "";
-    $("vocab-status").textContent = "오류: " + err.message + hint;
-  } finally {
-    btn.disabled = false;
+    pending.set(key, { word: raw, engine, status: "error", error: err.message + hint });
+    if (currentWord === key) showError(raw, err.message + hint, key, engine);
+    renderList(currentWord);
   }
 }
 
@@ -465,4 +579,5 @@ aiEngineSel.onchange = () => {
   aiEngine = aiEngineSel.value;
 };
 
+setPaneState("idle");
 renderList(null);
