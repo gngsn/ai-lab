@@ -26,96 +26,17 @@
         padding: 0 16px;
       }
       #vocab-view {
-        max-width: 640px;
+        max-width: 760px;
         margin: 0 auto;
       }
       .word-hero {
         text-align: center;
-        margin-bottom: 24px;
+        margin-bottom: 20px;
       }
       .word-hero .headword {
         font-size: 32px;
         font-weight: 700;
         color: var(--text-bright);
-      }
-      .word-hero .ipa {
-        font: 14px "JetBrains Mono", monospace;
-        color: var(--accent);
-        margin-left: 8px;
-      }
-      .word-hero .pos {
-        margin-top: 4px;
-        font-size: 12px;
-        color: var(--text-mid);
-      }
-      .word-hero .pos span {
-        display: inline-block;
-        border: 1px solid var(--border-2);
-        border-radius: 10px;
-        padding: 1px 8px;
-        margin: 0 2px;
-      }
-      .core-meaning {
-        text-align: center;
-        font-size: 17px;
-        color: var(--text-bright);
-        line-height: 1.6;
-        word-break: keep-all;
-        margin-bottom: 24px;
-        padding: 14px 18px;
-        background: var(--surface);
-        border: 1px solid var(--accent);
-        border-radius: 8px;
-      }
-      .root-chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        justify-content: center;
-        margin: 10px 0 6px;
-      }
-      .root-chip {
-        background: var(--surface-2);
-        border: 1px solid var(--border-2);
-        border-radius: 6px;
-        padding: 6px 10px;
-        font-size: 12px;
-        text-align: center;
-      }
-      .root-chip .morph {
-        font: 13px "JetBrains Mono", monospace;
-        color: var(--yellow);
-        font-weight: 600;
-      }
-      .root-chip .origin {
-        color: var(--text-mid);
-        font-size: 10px;
-      }
-      .root-chip .mean {
-        color: var(--text);
-        margin-top: 2px;
-      }
-      .prose {
-        font-size: 14px;
-        line-height: 1.9;
-        color: var(--text);
-        word-break: keep-all;
-      }
-      .example-item {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        padding: 10px 12px;
-        margin-bottom: 8px;
-      }
-      .example-item .en {
-        color: var(--text-bright);
-        font-size: 14px;
-      }
-      .example-item .ko {
-        color: var(--text-mid);
-        font-size: 12px;
-        margin-top: 3px;
       }
       .vocab-hint {
         color: var(--text-mid);
@@ -125,6 +46,80 @@
         word-break: keep-all;
         text-align: center;
         margin-top: 60px;
+      }
+
+      /* ── Rendered markdown body (js/markdown.js output) ── */
+      .md-body {
+        font-size: 14px;
+        line-height: 1.9;
+        color: var(--text);
+        word-break: keep-all;
+      }
+      .md-body .md-h {
+        color: var(--accent);
+        margin: 22px 0 8px;
+        font-weight: 600;
+      }
+      .md-body h4.md-h {
+        font-size: 16px;
+      }
+      .md-body h5.md-h {
+        font-size: 14px;
+      }
+      .md-body p {
+        margin-bottom: 10px;
+      }
+      .md-body strong {
+        color: var(--yellow);
+        font-weight: 700;
+      }
+      .md-body code {
+        background: var(--surface-2);
+        border: 1px solid var(--border-2);
+        border-radius: 4px;
+        padding: 1px 5px;
+        font: 12px "JetBrains Mono", monospace;
+        color: var(--text-bright);
+      }
+      .md-body .md-diagram {
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        padding: 14px 18px;
+        margin: 10px 0 16px;
+        font: 13px/1.6 "JetBrains Mono", monospace;
+        color: var(--text-bright);
+        white-space: pre-wrap;
+        overflow-x: auto;
+        text-align: center;
+      }
+      .md-body .md-hr {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 18px 0;
+      }
+      .md-body ul,
+      .md-body ol {
+        margin: 4px 0 14px 22px;
+      }
+      .md-body li {
+        margin-bottom: 4px;
+      }
+      .md-body .md-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0 16px;
+        font-size: 13px;
+      }
+      .md-body .md-table th,
+      .md-body .md-table td {
+        border: 1px solid var(--border-2);
+        padding: 6px 10px;
+        text-align: left;
+      }
+      .md-body .md-table th {
+        background: var(--surface-2);
+        color: var(--text-bright);
       }
     </style>
   </head>
@@ -170,39 +165,8 @@
           <div id="vocab-view" style="display: none">
             <div class="word-hero">
               <span class="headword" id="v-word"></span>
-              <span class="ipa" id="v-ipa"></span>
-              <div class="pos" id="v-pos"></div>
             </div>
-
-            <div class="core-meaning" id="v-core"></div>
-
-            <div class="section-title" style="margin: 18px 0 8px">
-              <h3>🌱 어원</h3>
-            </div>
-            <div class="prose" id="v-etymology"></div>
-            <div class="root-chips" id="v-roots"></div>
-
-            <div class="section-title" style="margin: 18px 0 8px">
-              <h3>💡 왜 이런 뜻이 됐을까</h3>
-            </div>
-            <div class="prose" id="v-link"></div>
-
-            <div class="section-title" style="margin: 18px 0 8px">
-              <h3>✍️ 어떻게 쓰나요</h3>
-            </div>
-            <div class="prose" id="v-usage"></div>
-
-            <div class="section-title" style="margin: 18px 0 8px">
-              <h3>📖 예문</h3>
-            </div>
-            <div id="v-examples"></div>
-
-            <div id="v-confusion-wrap" style="display: none">
-              <div class="section-title" style="margin: 18px 0 8px">
-                <h3>⚠️ 헷갈리기 쉬운 표현</h3>
-              </div>
-              <div class="prose" id="v-confusion"></div>
-            </div>
+            <div class="md-body" id="v-body"></div>
           </div>
 
           <div class="vocab-hint" id="vocab-hint">

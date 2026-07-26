@@ -10,6 +10,7 @@
 | 🎧 리스닝 | `listening.html` | 아티클을 붙여넣으면 문장 단위 TTS로 읽어줌. 문장 클릭 재생, 전체 재생(다음 문장 프리페치), 문장 반복, 속도 조절. 아티클은 localStorage, 오디오는 IndexedDB에 캐시. |
 | 🎙 스피킹 | `speaking.html` | 원어민 TTS를 듣고 따라 말하면 STT로 인식해 단어 단위 발음 채점 + WPM(말하기 속도) 표시. 내 녹음은 take별로 저장·재생 가능. |
 | ✍️ 라이팅 | `writing.html` | LanguageTool로 문법 검사(기본 로컬 서버, 언제든 Public API로 전환 가능), Claude/GPT로 자연스러움 첨삭(한국어 설명 + 전체 리라이트 + 점수). |
+| 🔤 단어 탐구 | `vocabulary.html` | 단어를 검색하면 어원·역사적 의미 변화·연상 이미지·같은 어원 단어 계열·헷갈리는 단어 비교까지 마크다운으로 깊이 있게 설명 (`voca-prompt-sample.md` 기반). Claude/GPT 또는 로컬 Ollama(무료) 중 언제든 선택 가능. |
 
 ## 실행
 
@@ -59,14 +60,17 @@ npm run stack:logs   # 로그 확인
 
 ```
 docker-compose.yml     로컬 백엔드 (languagetool, kokoro-tts)
+voca-prompt-sample.md  단어 탐구 시스템 프롬프트 원본 (js/vocabulary.js에 반영됨)
 index.html            랜딩 (모드 선택)
 listening.html/.js    리스닝
 speaking.html/.js     스피킹
 writing.html/.js      라이팅
+vocabulary.html/.js   단어 탐구
 js/common.js          공용 헬퍼 (문장 분리 등)
 js/tts.js             TTS 엔진 3종 + IndexedDB 캐시 (1.0x로 합성, 재생속도는 playbackRate)
 js/stt.js             STT 엔진 (vibevoice→webspeech 폴백, whisper)
 js/diff.js            단어 정렬/채점 (LCS + levenshtein)
 js/audio-cache.js     IndexedDB (audio / recordings)
+js/markdown.js         단어 탐구 응답용 소형 마크다운→HTML 렌더러 (표/코드펜스/헤딩)
 css/style.css         다크 테마 공용 스타일
 ```
