@@ -3,66 +3,86 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>slides-editor</title>
+    <title>Speakeasy</title>
+    <link rel="stylesheet" href="./css/theme.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&family=Space+Grotesk:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <style>
       :root {
-        --bg: #0c0c0c;
-        --surface: #141414;
-        --text: #f0f0f0;
-        --muted: #888;
-        --accent: #5db8a6;
-        --ok: #22c55e;
-        --bad: #ef4444;
+        --ink: var(--se-ink);
+        --vellum: var(--se-bg);
+        --black: var(--se-strong);
+        --muted: color-mix(in srgb, var(--se-ink) 60%, transparent);
+        --ok: var(--se-ok);
+        --bad: var(--se-bad);
+        --serif: "Fraunces", Georgia, serif;
+        --sans: "Space Grotesk", system-ui, sans-serif;
       }
       * {
         box-sizing: border-box;
       }
       body {
         margin: 0;
-        background: var(--bg);
-        color: var(--text);
-        font-family: ui-monospace, "JetBrains Mono", "SF Mono", monospace;
-        line-height: 1.65;
+        background: var(--vellum);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-weight: 400;
+        line-height: 1.5;
       }
       .wrap {
         max-width: 1200px;
-        margin: 4rem auto;
-        padding: 0 1.5rem;
+        margin: 0 auto;
+        padding: 2rem 1.5rem 6rem;
       }
       .header-row {
         display: flex;
         align-items: end;
         justify-content: space-between;
-        gap: 1rem;
-        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        padding-bottom: 3rem;
       }
       h1 {
-        font-size: 1.5rem;
-        margin: 0 0 0.4rem;
+        font-family: var(--serif);
+        font-weight: 400;
+        font-size: clamp(3rem, 9vw, 6rem);
+        line-height: 0.94;
+        letter-spacing: -0.036em;
+        margin: 2rem 0 1.5rem;
       }
       h2 {
-        font-size: 1rem;
-        margin: 2rem 0 0.6rem;
-        color: var(--muted);
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
+        font-family: var(--sans);
+        font-size: 15px;
+        font-weight: 400;
+        letter-spacing: 0.02em;
+        margin: 0;
+        padding: 1.5rem 0 2rem;
+        border-top: 1px solid var(--ink);
+      }
+      #status {
+        margin: 0;
+        font-size: 15px;
       }
       a {
-        color: var(--accent);
+        color: var(--ink);
         text-decoration: none;
       }
-      a:hover {
-        text-decoration: underline;
+      a:focus-visible,
+      button:focus-visible {
+        outline: 2px solid var(--se-primary);
+        outline-offset: 3px;
       }
       code {
-        background: var(--surface);
-        padding: 1px 6px;
-        border-radius: 4px;
         font-size: 0.9em;
+        border-bottom: 1px dotted var(--ink);
       }
       ul {
         padding-left: 1.2rem;
-        margin: 0.4rem 0;
+        margin: 0;
       }
       .ok {
         color: var(--ok);
@@ -72,19 +92,16 @@
       }
       .pill {
         display: inline-block;
-        padding: 0.1rem 0.5rem;
-        background: var(--surface);
-        border-radius: 999px;
+        padding: 0 0.5rem;
+        border: 1px solid var(--ink);
         font-size: 0.75rem;
-        color: var(--muted);
         margin-left: 0.4rem;
       }
       .import-panel {
         display: flex;
-        gap: 0.75rem;
+        gap: 1.5rem;
         align-items: center;
         justify-content: flex-end;
-        margin-top: 0.25rem;
       }
       .modal-bg {
         position: fixed;
@@ -92,7 +109,7 @@
         display: none;
         align-items: center;
         justify-content: center;
-        background: rgba(0, 0, 0, 0.72);
+        background: color-mix(in srgb, var(--se-bg) 85%, transparent);
         z-index: 50;
         padding: 1rem;
       }
@@ -100,149 +117,147 @@
         display: flex;
       }
       .modal {
-        width: min(520px, 100%);
-        background: var(--surface);
-        border: 1px solid #242424;
-        border-radius: 14px;
-        padding: 1rem;
-        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
+        width: min(560px, 100%);
+        background: var(--vellum);
+        border: 1px solid var(--ink);
+        padding: 2rem;
       }
       .modal h2 {
-        font-size: 1rem;
-        margin: 0 0 0.75rem;
+        font-family: var(--serif);
+        font-size: 2rem;
+        letter-spacing: -0.036em;
+        line-height: 1.1;
+        border-top: none;
+        padding: 0;
+        margin: 0 0 1rem;
       }
       .modal p {
-        margin: 0 0 1rem;
-        color: var(--muted);
-        font-size: 0.92rem;
+        margin: 0 0 1.5rem;
+        font-size: 15px;
       }
       .field {
         display: grid;
         gap: 0.35rem;
-        margin-bottom: 0.85rem;
+        margin-bottom: 1.25rem;
       }
       .field label {
-        font-size: 0.8rem;
+        font-size: 13px;
+        letter-spacing: 0.02em;
         color: var(--muted);
       }
       .field input {
         width: 100%;
-        border: 1px solid #272727;
-        background: #101010;
-        color: var(--text);
-        border-radius: 8px;
-        padding: 0.7rem 0.8rem;
+        border: none;
+        border-bottom: 1px solid var(--ink);
+        background: transparent;
+        color: var(--ink);
+        border-radius: 0;
+        padding: 0.5rem 0;
         font: inherit;
+      }
+      .field input:focus {
+        outline: none;
+        border-bottom-width: 2px;
       }
       .modal .actions {
         display: flex;
         justify-content: flex-end;
-        gap: 0.5rem;
-        margin-top: 1rem;
+        gap: 1.5rem;
+        margin-top: 1.5rem;
       }
 
-      /* Material Design Button Styles */
+      /* Underlined text-link buttons (editorial style) */
       .md-btn {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        font-family: inherit;
-        font-size: 0.7rem;
-        font-weight: 500;
+        font-family: var(--sans);
+        font-size: 15px;
+        font-weight: 400;
+        letter-spacing: 0.02em;
+        color: var(--ink);
+        background: none;
         border: none;
-        border-radius: 4px;
-        padding: 0.05rem 0.25rem;
+        border-bottom: 1px solid var(--black);
+        border-radius: 0;
+        padding: 0 0 2px;
         cursor: pointer;
-        transition:
-          background 0.18s,
-          box-shadow 0.18s,
-          color 0.18s;
-        outline: none;
-        min-width: 36px;
-        min-height: 18px;
-        letter-spacing: 0.01em;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        transition: opacity 0.18s;
       }
-      .md-btn:active {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      .md-btn:hover {
+        opacity: 0.6;
       }
       .md-btn.md-primary {
-        background: var(--accent);
-        color: #fff;
-        box-shadow: 0 2px 4px rgba(93, 184, 166, 0.1);
-      }
-      .md-btn.md-primary:hover {
-        background: #49a18d;
-      }
-      .md-btn.md-secondary {
-        background: var(--surface);
-        color: var(--accent);
-        border: 1.5px solid var(--accent);
-      }
-      .md-btn.md-secondary:hover {
-        background: #1a1a1a;
+        font-weight: 500;
+        color: var(--se-primary-text);
+        border-bottom-color: var(--se-primary);
       }
       .md-btn.md-text {
-        background: none;
-        color: var(--accent);
-        box-shadow: none;
-        padding: 0.05rem 0.25rem;
+        border-bottom-color: transparent;
       }
       .md-btn.md-danger {
-        background: none;
         color: var(--bad);
-        border: 1.5px solid var(--bad);
-      }
-      .md-btn.md-danger:hover {
-        background: rgba(239, 68, 68, 0.12);
+        border-bottom-color: var(--bad);
       }
       #deck-list {
         list-style: none;
         padding: 0;
+        border-top: 1px solid var(--ink);
       }
       .deck-item {
         display: grid;
-        gap: 0.7rem;
-        padding: 0.7rem 0.9rem;
-        margin-bottom: 0.5rem;
-        background: var(--surface);
-        border: 1px solid #242424;
-        border-radius: 8px;
+        gap: 1rem;
+        padding: 2rem 0;
+        border-bottom: 1px solid var(--ink);
       }
       .deck-row {
         display: flex;
-        align-items: center;
+        align-items: baseline;
         justify-content: space-between;
-        gap: 1rem;
+        gap: 1.5rem;
       }
       .deck-title {
-        font-weight: 600;
+        font-family: var(--serif);
+        font-size: clamp(1.6rem, 3.5vw, 2.25rem);
+        line-height: 1.1;
+        letter-spacing: -0.036em;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
       .deck-time {
         flex-shrink: 0;
-        font-size: 0.8rem;
+        font-size: 15px;
         color: var(--muted);
       }
       .deck-actions {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 0.4rem;
-        font-size: 0.8rem;
+        gap: 0.75rem 1.5rem;
       }
       .md-btn:disabled {
-        opacity: 0.5;
+        opacity: 0.4;
         cursor: not-allowed;
       }
       pre {
-        background: var(--surface);
+        border: 1px solid var(--ink);
         padding: 0.8rem 1rem;
-        border-radius: 6px;
         overflow-x: auto;
         font-size: 0.85rem;
+      }
+      @media (max-width: 560px) {
+        .deck-row {
+          flex-wrap: wrap;
+        }
+      }
+      .deck-title {
+        min-width: 0;
+      }
+      @media (max-width: 560px) {
+        .deck-title {
+          white-space: normal;
+          overflow-wrap: anywhere;
+        }
       }
     </style>
   </head>
@@ -250,7 +265,7 @@
     <div class="wrap">
       <div class="header-row">
         <div>
-          <h1>slides-editor</h1>
+          <h1>Speakeasy</h1>
           <p id="status">checking Supabase connection…</p>
         </div>
         <div class="import-panel">
@@ -522,7 +537,7 @@
         const id = encodeURIComponent(d.deck_id);
         const room = `r${d.deck_id.slice(0, 6)}`;
         const viewLink = d.share_token
-          ? `<a href="./view.html?deck=${id}&token=${encodeURIComponent(d.share_token)}" target="_blank">🔗 View (shared)</a>`
+          ? `<a href="./view.html?deck=${id}&token=${encodeURIComponent(d.share_token)}" target="_blank" class="md-btn">Shared view ↗</a>`
           : "";
         return (
           `<li class="deck-item">` +
@@ -532,13 +547,13 @@
           `</div>` +
           `<div class="deck-row">` +
           `<div class="deck-actions">` +
-          `<a class="md-btn md-secondary" href="./edit.html?deck=${id}">✎ Edit</a>` +
-          `<a class="md-btn md-secondary" href="./pronunciation.html?deck=${id}">✏ Practice</a>` +
-          `<a class="md-btn md-secondary" href="./present.html?deck=${id}&sync=${room}">▶ Present</a>` +
-          `<a class="md-btn md-secondary" href="./script.html?deck=${id}&sync=${room}">⌨ Script</a>` +
+          `<a class="md-btn md-secondary" href="./edit.html?deck=${id}">Edit</a>` +
+          `<a class="md-btn md-secondary" href="./pronunciation.html?deck=${id}">Practice</a>` +
+          `<a class="md-btn md-secondary" href="./present.html?deck=${id}&sync=${room}">Present</a>` +
+          `<a class="md-btn md-secondary" href="./script.html?deck=${id}&sync=${room}">Script</a>` +
           viewLink +
           `</div>` +
-          `<button class="md-btn md-danger" type="button" data-delete-deck="${escapeHtml(d.deck_id)}">🗑 Delete</button>` +
+          `<button class="md-btn md-danger" type="button" data-delete-deck="${escapeHtml(d.deck_id)}">Delete</button>` +
           `</div>` +
           `</li>`
         );
@@ -580,7 +595,7 @@
           console.error(err);
           alert(`삭제 실패: ${err.message}`);
           btn.disabled = false;
-          btn.textContent = "🗑 Delete";
+          btn.textContent = "Delete";
         }
       });
 

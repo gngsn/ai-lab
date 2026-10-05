@@ -4,10 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Edit</title>
+    <link rel="stylesheet" href="./css/theme.css" />
     <link rel="stylesheet" href="./vendor/fonts/fonts.css" />
     <link rel="stylesheet" href="./css/history-ui.css" />
     <link rel="stylesheet" href="./css/shortcuts-help.css" />
     <link rel="stylesheet" href="./css/training-panel.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&family=Space+Grotesk:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <style>
       *,
       *::before,
@@ -17,27 +24,28 @@
         padding: 0;
       }
       :root {
-        --accent: #5db8a6;
-        --bg: #0c0c0c;
-        --surface: #141414;
-        --surface-2: #1a1a1a;
-        --border: #1f1f1f;
-        --border-2: #2a2a2a;
-        --text: #c8c8c8;
-        --text-mid: #777;
-        --text-bright: #f0f0f0;
-        --danger: #ef4444;
-        --warn: #e8a55a;
-        --ok: #22c55e;
-        --green: #22c55e;
-        --yellow: #f59e0b;
-        --red: #ef4444;
-        --blue: #3b82f6;
+        --accent: var(--se-primary);
+        --bg: var(--se-bg);
+        --surface: var(--se-bg);
+        --surface-2: var(--se-fill);
+        --border: var(--se-ink);
+        --border-2: var(--se-rule);
+        --text: var(--se-ink);
+        --text-mid: var(--se-muted);
+        --text-bright: var(--se-strong);
+        --danger: var(--se-bad);
+        --warn: var(--se-warn);
+        --ok: var(--se-ok);
+        --green: var(--se-ok);
+        --yellow: var(--se-warn);
+        --red: var(--se-bad);
+        --blue: var(--se-ink);
       }
       body {
+        accent-color: var(--se-ink);
         background: var(--bg);
         color: var(--text);
-        font-family: "IBM Plex Sans KR", sans-serif;
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         height: 100vh;
         overflow: hidden;
       }
@@ -55,20 +63,23 @@
         gap: 8px;
         padding: 0 14px;
         background: var(--surface);
-        border-bottom: 1px solid var(--border);
+        /* border-bottom: 1px solid var(--border); */
       }
       #toolbar .title {
         font-size: 14px;
         font-weight: 500;
         color: var(--text-bright);
         margin-right: 8px;
+        font-family: "Fraunces", "IBM Plex Sans KR", Georgia, serif;
+        font-weight: 400;
+        letter-spacing: -0.02em;
       }
       #toolbar .spacer {
         flex: 1;
       }
       #status {
         font-size: 11px;
-        font-family: "JetBrains Mono", monospace;
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         color: var(--text-mid);
         min-width: 160px;
         text-align: right;
@@ -85,10 +96,10 @@
         align-items: center;
         gap: 4px;
         background: transparent;
-        border: 1px solid var(--border);
+        /* border: 1px solid var(--border); */
         color: var(--text-mid);
         padding: 5px 10px;
-        border-radius: 5px;
+        border-radius: 0;
         font-size: 12px;
         font-family: inherit;
         cursor: pointer;
@@ -99,16 +110,16 @@
           border-color 0.12s;
       }
       .btn:hover {
-        background: #1e1e1e;
+        background: var(--se-fill);
         color: var(--text);
-        border-color: #333;
+        border-color: var(--se-rule);
       }
       .btn.home {
         color: var(--text-bright);
       }
       .btn.active {
-        background: #1e2e1e;
-        color: var(--accent);
+        background: var(--se-fill-active);
+        color: var(--se-primary-text);
         border-color: var(--accent);
       }
       .btn.warn {
@@ -143,14 +154,14 @@
         right: 0;
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 5px;
+        border-radius: 0;
         padding: 4px;
         display: flex;
         flex-direction: column;
         gap: 2px;
         min-width: 160px;
         z-index: 200;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        box-shadow: none;
       }
       .dropdown-menu button,
       .dropdown-menu a {
@@ -162,19 +173,19 @@
         font-size: 12px;
         font-family: inherit;
         cursor: pointer;
-        border-radius: 3px;
+        border-radius: 0;
         text-decoration: none;
       }
       .dropdown-menu button:hover,
       .dropdown-menu a:hover {
-        background: #1e1e1e;
+        background: var(--se-fill);
         color: var(--text);
       }
 
       /* Image library */
       .drop-zone {
         border: 1px dashed var(--border);
-        border-radius: 6px;
+        border-radius: 0;
         padding: 18px;
         text-align: center;
         color: var(--text-mid);
@@ -187,8 +198,8 @@
       }
       .drop-zone.dragging {
         border-color: var(--accent);
-        color: var(--accent);
-        background: rgba(93, 184, 166, 0.08);
+        color: var(--se-primary-text);
+        background: color-mix(in srgb, var(--se-primary) 8%, transparent);
       }
       .image-grid {
         display: grid;
@@ -202,13 +213,13 @@
         position: relative;
         background: var(--bg);
         border: 1px solid var(--border);
-        border-radius: 4px;
+        border-radius: 0;
         overflow: hidden;
         display: flex;
         flex-direction: column;
       }
       .img-card .thumb {
-        background: #000;
+        background: var(--se-fill);
         aspect-ratio: 1;
         display: grid;
         place-items: center;
@@ -220,7 +231,7 @@
         object-fit: contain;
       }
       .img-card .meta {
-        font-family: "JetBrains Mono", monospace;
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
       }
       .img-card .meta .nm {
         overflow: hidden;
@@ -238,17 +249,17 @@
         display: flex;
       }
       .img-card .actions button {
-        background: rgba(20, 20, 20, 0.92);
+        background: color-mix(in srgb, var(--se-bg) 92%, transparent);
         border: 1px solid var(--border);
         color: var(--text);
         font-size: 11px;
         padding: 3px 6px;
-        border-radius: 3px;
+        border-radius: 0;
         cursor: pointer;
         line-height: 1;
       }
       .img-card .actions button:hover {
-        background: #1e1e1e;
+        background: var(--se-fill);
         border-color: var(--accent);
       }
       .img-card.uploading {
@@ -262,7 +273,7 @@
         place-items: center;
         font-size: 11px;
         color: var(--warn);
-        background: rgba(20, 20, 20, 0.6);
+        background: color-mix(in srgb, var(--se-bg) 60%, transparent);
       }
 
       /* SVG picker */
@@ -274,7 +285,7 @@
       .svg-tab {
         padding: 4px 14px;
         border: 1px solid var(--border);
-        border-radius: 4px;
+        border-radius: 0;
         background: none;
         color: var(--text-mid);
         cursor: pointer;
@@ -282,7 +293,7 @@
       }
       .svg-tab.active {
         background: var(--accent);
-        color: #000;
+        color: var(--se-on-primary);
         border-color: var(--accent);
       }
       .svg-controls {
@@ -303,7 +314,7 @@
         width: 32px;
         height: 24px;
         border: 1px solid var(--border);
-        border-radius: 3px;
+        border-radius: 0;
         cursor: pointer;
         padding: 0;
         background: none;
@@ -313,7 +324,7 @@
         border: 1px solid var(--border);
         color: var(--text);
         padding: 3px 6px;
-        border-radius: 4px;
+        border-radius: 0;
         font-size: 12px;
       }
       .svg-shape-grid {
@@ -350,7 +361,7 @@
       .svg-shape-btn {
         background: var(--bg);
         border: 1px solid var(--border);
-        border-radius: 6px;
+        border-radius: 0;
         padding: 8px 4px 6px;
         cursor: pointer;
         display: flex;
@@ -363,7 +374,7 @@
       }
       .svg-shape-btn:hover {
         border-color: var(--accent);
-        background: rgba(93, 184, 166, 0.08);
+        background: color-mix(in srgb, var(--se-primary) 8%, transparent);
       }
       .svg-shape-btn span {
         font-size: 10px;
@@ -376,7 +387,7 @@
         border: 1px solid var(--border);
         color: var(--text);
         padding: 8px;
-        border-radius: 4px;
+        border-radius: 0;
         font-family: "JetBrains Mono", monospace;
         font-size: 12px;
         resize: none;
@@ -393,9 +404,9 @@
       .svg-source-canvas {
         flex: 1;
         min-height: 280px;
-        background: linear-gradient(180deg, #101010, #0a0a0a);
+        background: var(--se-bg);
         border: 1px solid var(--border);
-        border-radius: 6px;
+        border-radius: 0;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -478,7 +489,7 @@
       /* Slide list */
       #slide-list {
         background: var(--surface);
-        border-right: 1px solid var(--border);
+        /* border-right: 1px solid var(--border); */
         padding: 8px;
         position: relative;
         display: flex;
@@ -486,7 +497,7 @@
         min-height: 0; /* grid-item default is auto → can defeat overflow */
         overflow: hidden;
         scrollbar-width: thin;
-        scrollbar-color: #444 var(--surface);
+        scrollbar-color: var(--se-dim) var(--surface);
       }
       #slide-list-scroll {
         display: flex;
@@ -506,12 +517,12 @@
       }
       #slide-list::-webkit-scrollbar-thumb,
       #slide-list-scroll::-webkit-scrollbar-thumb {
-        background: #3a3a3a;
-        border-radius: 4px;
+        background: var(--se-dim);
+        border-radius: 0;
       }
       #slide-list::-webkit-scrollbar-thumb:hover,
       #slide-list-scroll::-webkit-scrollbar-thumb:hover {
-        background: #555;
+        background: var(--se-muted);
       }
       #slide-list-resizer {
         position: absolute;
@@ -531,15 +542,15 @@
       }
       #slide-list-resizer:hover::before,
       #slide-list-resizer.dragging::before {
-        background: rgba(93, 184, 166, 0.12);
+        background: color-mix(in srgb, var(--se-primary) 12%, transparent);
       }
       .slide-list-meta {
         position: sticky;
         top: 0;
         z-index: 1;
         background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 8px;
+        /* border: 1px solid var(--border); */
+        border-radius: 0;
         padding: 10px;
         display: flex;
         flex-direction: column;
@@ -561,7 +572,7 @@
       .slide-list-count {
         font-size: 11px;
         color: var(--text-mid);
-        font-family: "JetBrains Mono", monospace;
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
       }
       .slide-list-title-label {
         display: flex;
@@ -578,7 +589,7 @@
         border: 1px solid var(--border);
         color: var(--text);
         padding: 6px 8px;
-        border-radius: 4px;
+        border-radius: 0;
         font-family: inherit;
         font-size: 12px;
       }
@@ -594,7 +605,7 @@
       .slide-list-info-row {
         background: var(--bg);
         border: 1px solid var(--border);
-        border-radius: 4px;
+        border-radius: 0;
         padding: 6px 8px;
         min-width: 0;
       }
@@ -610,7 +621,7 @@
         display: block;
         font-size: 11px;
         color: var(--text);
-        font-family: "JetBrains Mono", monospace;
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -625,7 +636,7 @@
         align-items: center;
         gap: 6px;
         padding: 8px 10px;
-        border-radius: 5px;
+        border-radius: 0;
         cursor: pointer;
         font-size: 13px;
         color: var(--text-mid);
@@ -633,32 +644,35 @@
         user-select: none;
       }
       .slide-item[data-hidden="true"] {
-        color: #2e2e2e;
+        color: var(--se-rule);
       }
       .slide-item[data-hidden="true"]:hover {
-        color: #2e2e2e;
+        color: var(--se-rule);
       }
       .slide-item[data-hidden="true"] .order,
       .slide-item[data-hidden="true"] .slide-item-info,
       .slide-item[data-hidden="true"] .title {
-        color: #2e2e2e;
+        color: var(--se-rule);
+        font-family: "Fraunces", "IBM Plex Sans KR", Georgia, serif;
+        font-weight: 400;
+        letter-spacing: -0.02em;
       }
       .slide-item[data-hidden="true"] .hidden-slide-icon {
-        color: #2e2e2e;
+        color: var(--se-rule);
       }
       .slide-item:hover {
         background: var(--surface-2);
         color: var(--text);
       }
       .slide-item.active {
-        background: #1e2e1e;
+        background: var(--se-fill-active);
         color: var(--text-bright);
         border-color: var(--accent);
       }
       .slide-item .order {
         font-size: 10px;
         color: var(--text-mid);
-        font-family: "JetBrains Mono", monospace;
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         min-width: 18px;
         text-align: right;
       }
@@ -667,11 +681,14 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        font-family: "Fraunces", "IBM Plex Sans KR", Georgia, serif;
+        font-weight: 400;
+        letter-spacing: -0.02em;
       }
       .slide-item .slide-item-info {
         font-size: 10px;
         color: var(--text-mid);
-        font-family: "JetBrains Mono", monospace;
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         white-space: nowrap;
       }
       .slide-item.dragging {
@@ -687,7 +704,7 @@
         background: transparent;
         border: 1px dashed var(--border);
         color: var(--text-mid);
-        border-radius: 5px;
+        border-radius: 0;
         cursor: pointer;
         font-family: inherit;
         font-size: 12px;
@@ -695,12 +712,12 @@
       }
       #add-slide:hover {
         border-color: var(--accent);
-        color: var(--accent);
+        color: var(--se-primary-text);
       }
 
       /* Canvas */
       #canvas-wrap {
-        background: #434343;
+        background: var(--se-stage);
         display: grid;
         place-items: center;
         overflow: hidden;
@@ -718,14 +735,14 @@
         width: 100%;
         height: 100%;
         border: 0;
-        background: #0c0c0c;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+        background: var(--se-bg);
+        box-shadow: none;
         transition:
           width 0.2s,
           height 0.2s;
       }
       #canvas-wrap.aspect-169 {
-        background: #434343;
+        background: var(--se-stage);
       }
       #canvas-wrap.aspect-169 #canvas-stage,
       #canvas-wrap.portrait-169 #canvas-stage {
@@ -739,8 +756,8 @@
       #canvas-wrap.portrait-169 #canvas {
         width: 100%;
         height: 100%;
-        background: #434343;
-        box-shadow: 0 4px 32px rgba(0, 0, 0, 0.7);
+        background: var(--se-fill);
+        box-shadow: none;
       }
       #body.portrait-mode #canvas-stage {
         width: auto;
@@ -777,8 +794,8 @@
         height: 100%;
       }
       #canvas-wrap.html-mode .CodeMirror-gutters {
-        background: #090909;
-        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--se-bg);
+        border-right: 1px solid color-mix(in srgb, var(--se-strong) 6%, transparent);
       }
       #canvas-wrap.html-mode .CodeMirror pre {
         font-family: "JetBrains Mono", ui-monospace, monospace;
@@ -794,7 +811,7 @@
         padding: 18px 22px;
         box-sizing: border-box;
         overflow: hidden;
-        background: #0a0a0a;
+        background: var(--se-bg);
         color: var(--text);
         border: 0;
         outline: 0;
@@ -854,7 +871,7 @@
       /* Props */
       #props {
         background: var(--surface);
-        border-left: 1px solid var(--border);
+        /* border-left: 1px solid var(--border); */
         padding: 16px;
         overflow: hidden;
         overflow-y: auto;
@@ -893,7 +910,7 @@
       }
       #props-resizer:hover::before,
       #props-resizer.dragging::before {
-        background: rgba(93, 184, 166, 0.12);
+        background: color-mix(in srgb, var(--se-primary) 12%, transparent);
       }
       #props h3 {
         font-size: 10px;
@@ -919,14 +936,15 @@
         width: 24px;
         height: 24px;
         padding: 0;
-        border-radius: 4px;
-        font-size: 14px;
+        border: none;
+        font-size: 1.5rem;
         line-height: 1;
+        justify-content: center;
       }
       .notes-tts-btn {
         height: 24px;
         padding: 0 8px;
-        border-radius: 4px;
+        border-radius: 0;
         font-size: 11px;
         line-height: 1;
         white-space: nowrap;
@@ -953,7 +971,7 @@
         border: 1px solid var(--border);
         color: var(--text);
         padding: 6px 8px;
-        border-radius: 4px;
+        border-radius: 0;
         font-family: inherit;
         font-size: 12px;
       }
@@ -970,7 +988,7 @@
         display: block;
         padding: 4px 6px;
         background: var(--bg);
-        border-radius: 3px;
+        border-radius: 0;
       }
       #props #notes-textarea {
         height: 100%;
@@ -995,7 +1013,7 @@
       .modal-bg {
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.7);
+        background: color-mix(in srgb, var(--se-bg) 85%, transparent);
         display: none;
         z-index: 1000;
       }
@@ -1006,7 +1024,7 @@
       .modal {
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 8px;
+        border-radius: 0;
         padding: 18px;
         width: min(900px, 90vw);
         height: min(700px, 85vh);
@@ -1017,6 +1035,9 @@
       .modal h2 {
         font-size: 14px;
         color: var(--text-bright);
+        font-family: "Fraunces", "IBM Plex Sans KR", Georgia, serif;
+        font-weight: 400;
+        letter-spacing: -0.02em;
       }
       .modal p {
         font-size: 11px;
@@ -1028,7 +1049,7 @@
         border: 1px solid var(--border);
         color: var(--text);
         padding: 10px;
-        border-radius: 4px;
+        border-radius: 0;
         font-family: "JetBrains Mono", monospace;
         font-size: 12px;
         line-height: 1.5;
@@ -1062,7 +1083,7 @@
         width: 100%;
         justify-content: flex-start;
         padding: 10px 12px;
-        border-radius: 7px;
+        border-radius: 0;
         text-align: left;
         color: var(--text);
         cursor: pointer;
@@ -1077,8 +1098,8 @@
         margin-top: 2px;
       }
       .frame-part-btn.active {
-        background: rgba(93, 184, 166, 0.1);
-        color: var(--accent);
+        background: color-mix(in srgb, var(--se-primary) 10%, transparent);
+        color: var(--se-primary-text);
       }
       #frame-editor-panel {
         display: flex;
@@ -1109,11 +1130,11 @@
         min-height: 0;
         width: 100%;
         resize: none;
-        background: #0b0b0b;
+        background: var(--se-bg);
         border: 1px solid var(--border);
         color: var(--text);
         padding: 12px;
-        border-radius: 6px;
+        border-radius: 0;
         font-family: "JetBrains Mono", monospace;
         font-size: 12px;
         line-height: 1.6;
@@ -1130,10 +1151,10 @@
         gap: 6px;
         background: var(--surface-2);
         border: 1px solid var(--border);
-        border-radius: 7px;
+        border-radius: 0;
         padding: 2px 10px;
         margin-right: 8px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        box-shadow: none;
       }
       .mode-section label {
         font-size: 11px;
@@ -1165,6 +1186,83 @@
       #toast.ok {
         border-color: var(--ok);
         color: var(--ok);
+      }
+      /* ── Mobile: stack canvas / slide list / notes vertically ── */
+      @media (max-width: 768px) {
+        body {
+          height: auto;
+          overflow: auto;
+        }
+        #app {
+          height: auto;
+          grid-template-columns: minmax(0, 1fr);
+        }
+        /* Toolbar becomes a horizontally scrollable strip instead of
+           widening the page. */
+        #toolbar {
+          min-width: 0;
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          overflow-y: hidden;
+          scrollbar-width: none;
+        }
+        #toolbar::-webkit-scrollbar {
+          display: none;
+        }
+        #toolbar > * {
+          flex-shrink: 0;
+        }
+        /* The scroll strip would clip dropdowns, so pin them to the viewport. */
+        #toolbar > .dropdown > .dropdown-menu {
+          position: fixed;
+          top: 52px;
+          right: 8px;
+          max-height: calc(100vh - 64px);
+          overflow-y: auto;
+        }
+        #toolbar .dropdown-menu .dropdown-menu {
+          position: static;
+        }
+        #body,
+        #body.portrait-mode,
+        #body.html-mode {
+          display: flex !important;
+          flex-direction: column;
+          height: auto !important;
+        }
+        #canvas-wrap,
+        #body.portrait-mode #canvas-wrap {
+          order: 1;
+          flex: none;
+          height: calc(56.25vw + 24px);
+          padding: 12px;
+        }
+        #body.portrait-mode #canvas-wrap {
+          height: 70vh;
+        }
+        #canvas-wrap.html-mode {
+          height: 65vh;
+        }
+        #slide-list,
+        #body.portrait-mode #slide-list {
+          order: 2;
+          max-height: 40vh;
+          border-right: 0;
+          border-bottom: 1px solid var(--border);
+        }
+        #props,
+        #body.portrait-mode #props {
+          order: 3;
+          width: 100% !important;
+          max-width: none;
+          min-height: 50vh;
+          border-left: 0;
+          border-top: 1px solid var(--border);
+        }
+        #slide-list-resizer,
+        #props-resizer {
+          display: none;
+        }
       }
     </style>
   </head>
@@ -1520,7 +1618,13 @@
     <!-- Highlight.js for HTML syntax highlighting -->
     <link
       rel="stylesheet"
+      href="./vendor/highlight.js/styles/github.min.css"
+      media="(prefers-color-scheme: light)"
+    />
+    <link
+      rel="stylesheet"
       href="./vendor/highlight.js/styles/github-dark.min.css"
+      media="(prefers-color-scheme: dark)"
     />
     <link rel="stylesheet" href="./vendor/codemirror/lib/codemirror.min.css" />
     <link rel="stylesheet" href="./vendor/codemirror/theme/monokai.min.css" />

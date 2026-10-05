@@ -4,9 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Notes</title>
+    <link rel="stylesheet" href="./css/theme.css" />
     <link rel="stylesheet" href="./vendor/fonts/fonts.css" />
     <link rel="stylesheet" href="./css/history-ui.css" />
     <link rel="stylesheet" href="./css/shortcuts-help.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&family=Space+Grotesk:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <style>
       *,
       *::before,
@@ -16,21 +23,22 @@
         padding: 0;
       }
       :root {
-        --accent: #5db8a6;
-        --bg: #0c0c0c;
-        --surface: #141414;
-        --surface-2: #1a1a1a;
-        --border: #1f1f1f;
-        --text: #c8c8c8;
-        --text-mid: #777;
-        --text-bright: #f0f0f0;
-        --danger: #ef4444;
-        --ok: #22c55e;
+        --accent: var(--se-primary);
+        --bg: var(--se-bg);
+        --surface: var(--se-bg);
+        --surface-2: var(--se-fill);
+        --border: var(--se-ink);
+        --text: var(--se-ink);
+        --text-mid: var(--se-muted);
+        --text-bright: var(--se-strong);
+        --danger: var(--se-bad);
+        --ok: var(--se-ok);
       }
       body {
+        accent-color: var(--se-ink);
         background: var(--bg);
         color: var(--text);
-        font-family: "IBM Plex Sans KR", sans-serif;
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         height: 100vh;
         overflow: hidden;
       }
@@ -58,6 +66,9 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         max-width: 240px;
+        font-family: "Fraunces", "IBM Plex Sans KR", Georgia, serif;
+        font-weight: 400;
+        letter-spacing: -0.02em;
       }
       #toolbar .spacer {
         flex: 1;
@@ -70,7 +81,7 @@
         border: 1px solid var(--border);
         color: var(--text-mid);
         padding: 5px 10px;
-        border-radius: 5px;
+        border-radius: 0;
         font-size: 12px;
         font-family: inherit;
         cursor: pointer;
@@ -81,22 +92,22 @@
           border-color 0.12s;
       }
       .btn:hover {
-        background: #1e1e1e;
+        background: var(--se-fill);
         color: var(--text);
-        border-color: #333;
+        border-color: var(--se-rule);
       }
       .btn.home {
         color: var(--text-bright);
       }
       .btn.active {
-        background: #1e2e1e;
-        color: var(--accent);
+        background: var(--se-fill-active);
+        color: var(--se-primary-text);
         border-color: var(--accent);
       }
 
       #status {
         font-size: 11px;
-        font-family: "JetBrains Mono", monospace;
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         color: var(--text-mid);
         min-width: 160px;
         text-align: right;
@@ -134,7 +145,7 @@
         gap: 6px;
         padding: 8px 10px;
         margin-bottom: 4px;
-        border-radius: 5px;
+        border-radius: 0;
         cursor: pointer;
         font-size: 13px;
         color: var(--text-mid);
@@ -146,14 +157,14 @@
         color: var(--text);
       }
       .edit-sec.active {
-        background: #1e2e1e;
+        background: var(--se-fill-active);
         color: var(--text-bright);
         border-color: var(--accent);
       }
       .edit-sec .o {
         font-size: 10px;
         color: var(--text-mid);
-        font-family: "JetBrains Mono", monospace;
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         min-width: 18px;
         text-align: right;
       }
@@ -175,7 +186,7 @@
       #edit-heading {
         font-size: 13px;
         padding: 12px 16px;
-        color: var(--accent);
+        color: var(--se-primary-text);
         border-bottom: 1px solid var(--border);
         font-weight: 600;
       }
@@ -188,7 +199,7 @@
         outline: 0;
         resize: none;
         padding: 16px;
-        font-family: "IBM Plex Sans KR", sans-serif;
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         font-size: 15px;
         line-height: 1.75;
         word-break: keep-all;
@@ -211,12 +222,21 @@
       #edit-preview h3 {
         color: var(--text-bright);
         margin: 1em 0 0.4em;
+        font-family: "Fraunces", "IBM Plex Sans KR", Georgia, serif;
+        font-weight: 400;
+        letter-spacing: -0.02em;
       }
       #edit-preview h1 {
         font-size: 1.5em;
+        font-family: "Fraunces", "IBM Plex Sans KR", Georgia, serif;
+        font-weight: 400;
+        letter-spacing: -0.02em;
       }
       #edit-preview h2 {
         font-size: 1.25em;
+        font-family: "Fraunces", "IBM Plex Sans KR", Georgia, serif;
+        font-weight: 400;
+        letter-spacing: -0.02em;
       }
       #edit-preview h3 {
         font-size: 1.1em;
@@ -242,13 +262,13 @@
         font-size: 0.9em;
         padding: 1px 5px;
         background: var(--surface-2);
-        color: var(--accent);
-        border-radius: 3px;
+        color: var(--se-primary-text);
+        border-radius: 0;
       }
       #edit-preview pre {
         background: var(--surface);
         padding: 12px 14px;
-        border-radius: 4px;
+        border-radius: 0;
         overflow-x: auto;
         font-family: "JetBrains Mono", monospace;
         font-size: 0.85em;
@@ -258,7 +278,7 @@
       }
       #edit-preview em {
         font-style: italic;
-        color: var(--accent);
+        color: var(--se-primary-text);
       }
       #edit-preview hr {
         border: 0;
@@ -309,6 +329,26 @@
           display: block;
         }
       }
+      @media (max-width: 768px) {
+        #app {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        /* Toolbar becomes a horizontally scrollable strip instead of
+           widening the page. */
+        #toolbar {
+          min-width: 0;
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          overflow-y: hidden;
+          scrollbar-width: none;
+        }
+        #toolbar::-webkit-scrollbar {
+          display: none;
+        }
+        #toolbar > * {
+          flex-shrink: 0;
+        }
+      }
     </style>
   </head>
   <body>
@@ -357,7 +397,7 @@
 
       if (!ensureAuthed()) {
         document.body.innerHTML =
-          '<p style="padding:2rem;color:#ef4444;font-family:monospace">' +
+          '<p style="padding:2rem;color:var(--se-bad, #b42318);font-family:monospace">' +
           "Edit access denied.</p>";
         throw new Error("auth");
       }
@@ -366,7 +406,7 @@
       const deckId = params.get("deck");
       if (!deckId) {
         document.body.innerHTML =
-          '<p style="padding:2rem;color:#ef4444">Missing ?deck=&lt;deck_id&gt;</p>';
+          '<p style="padding:2rem;color:var(--se-bad, #b42318)">Missing ?deck=&lt;deck_id&gt;</p>';
         throw new Error("no deck");
       }
 
@@ -385,7 +425,7 @@
         }));
         mountScriptEditView({ deck, deckId, sections });
       } catch (err) {
-        document.body.innerHTML = `<p style="padding:2rem;color:#ef4444">Load failed: ${err.message}</p>`;
+        document.body.innerHTML = `<p style="padding:2rem;color:var(--se-bad, #b42318)">Load failed: ${err.message}</p>`;
       }
     </script>
   </body>

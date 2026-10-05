@@ -11,7 +11,7 @@ const sectionId = params.get("section");
 const editMode = params.get("edit") === "1";
 
 function fatal(msg) {
-  document.body.innerHTML = `<pre style="color:#ef4444;padding:1rem;font:13px monospace;">${msg.replace(
+  document.body.innerHTML = `<pre style="color:var(--se-bad, #b42318);padding:1rem;font:13px monospace;">${msg.replace(
     /[&<>]/g,
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c],
   )}</pre>`;

@@ -360,7 +360,7 @@ export async function exportPptx(deckId) {
   const pptx = new PptxGenJS();
   pptx.layout = "LAYOUT_16x9";
   pptx.title = deck.title || "Presentation";
-  pptx.author = "slides-editor";
+  pptx.author = "Speakeasy";
 
   const frameHtml = deck.frame_html ?? "";
 
