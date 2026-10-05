@@ -4,8 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Pronunciation Training</title>
+    <link rel="stylesheet" href="./css/theme.css" />
     <link rel="stylesheet" href="./vendor/fonts/fonts.css" />
     <link rel="stylesheet" href="./css/training-panel.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&family=Space+Grotesk:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <style>
       *,
       *::before,
@@ -15,24 +22,25 @@
         padding: 0;
       }
       :root {
-        --accent: #5db8a6;
-        --bg: #0c0c0c;
-        --surface: #141414;
-        --surface-2: #1a1a1a;
-        --border: #1f1f1f;
-        --border-2: #2a2a2a;
-        --text: #c8c8c8;
-        --text-mid: #666;
-        --text-bright: #f0f0f0;
-        --green: #22c55e;
-        --yellow: #f59e0b;
-        --red: #ef4444;
-        --blue: #3b82f6;
+        --accent: var(--se-primary);
+        --bg: var(--se-bg);
+        --surface: var(--se-bg);
+        --surface-2: var(--se-fill);
+        --border: var(--se-ink);
+        --border-2: var(--se-rule);
+        --text: var(--se-ink);
+        --text-mid: var(--se-muted);
+        --text-bright: var(--se-strong);
+        --green: var(--se-ok);
+        --yellow: var(--se-warn);
+        --red: var(--se-bad);
+        --blue: var(--se-ink);
       }
       body {
+        accent-color: var(--se-ink);
         background: var(--bg);
         color: var(--text);
-        font-family: "IBM Plex Sans KR", "IBM Plex Sans", sans-serif;
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         height: 100vh;
         overflow: hidden;
       }
@@ -59,6 +67,9 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         max-width: 240px;
+        font-family: "Fraunces", "IBM Plex Sans KR", Georgia, serif;
+        font-weight: 400;
+        letter-spacing: -0.02em;
       }
       #toolbar .spacer {
         flex: 1;
@@ -71,7 +82,7 @@
         border: 1px solid var(--border);
         color: var(--text-mid);
         padding: 5px 10px;
-        border-radius: 5px;
+        border-radius: 0;
         font-size: 12px;
         font-family: inherit;
         cursor: pointer;
@@ -83,9 +94,9 @@
           border-color 0.12s;
       }
       .btn:hover {
-        background: #1e1e1e;
+        background: var(--se-fill);
         color: var(--text);
-        border-color: #333;
+        border-color: var(--se-rule);
       }
       .btn:disabled {
         opacity: 0.35;
@@ -100,14 +111,14 @@
         border-color: var(--blue);
       }
       .btn.primary:hover {
-        background: rgba(59, 130, 246, 0.12);
+        background: color-mix(in srgb, var(--se-ink) 12%, transparent);
       }
       .btn.ok {
         color: var(--green);
         border-color: var(--green);
       }
       .btn.ok:hover {
-        background: rgba(34, 197, 94, 0.12);
+        background: color-mix(in srgb, var(--se-ok) 12%, transparent);
       }
       .btn.warn {
         color: var(--yellow);
@@ -138,8 +149,7 @@
         align-items: center;
         gap: 5px;
         font:
-          11px "JetBrains Mono",
-          monospace;
+          11px "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         color: var(--text-mid);
       }
       .speed-wrap input[type="range"] {
@@ -155,11 +165,10 @@
       #tts-engine {
         background: var(--surface-2);
         border: 1px solid var(--border-2);
-        border-radius: 4px;
+        border-radius: 0;
         color: var(--text);
         font:
-          11px "JetBrains Mono",
-          monospace;
+          11px "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         padding: 2px 6px;
         cursor: pointer;
         height: 26px;
@@ -174,7 +183,7 @@
         width: 72px;
         height: 3px;
         background: var(--border);
-        border-radius: 2px;
+        border-radius: 0;
         overflow: hidden;
         display: none;
       }
@@ -186,8 +195,7 @@
       }
       #export-status {
         font:
-          11px "JetBrains Mono",
-          monospace;
+          11px "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         color: var(--text-mid);
         min-width: 80px;
       }
@@ -218,7 +226,7 @@
         gap: 6px;
         padding: 8px 10px;
         margin-bottom: 4px;
-        border-radius: 5px;
+        border-radius: 0;
         cursor: pointer;
         font-size: 12px;
         color: var(--text-mid);
@@ -233,14 +241,13 @@
         color: var(--text);
       }
       .sec-item.active {
-        background: #1e2e1e;
+        background: var(--se-fill-active);
         color: var(--text-bright);
         border-color: var(--accent);
       }
       .sec-item .num {
         font:
-          10px "JetBrains Mono",
-          monospace;
+          10px "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         color: var(--text-mid);
         min-width: 18px;
         text-align: right;
@@ -253,25 +260,24 @@
       }
       .sec-score {
         font:
-          10px "JetBrains Mono",
-          monospace;
+          10px "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         padding: 1px 5px;
-        border-radius: 8px;
+        border-radius: 0;
         display: none;
       }
       .sec-score.show {
         display: inline-block;
       }
       .sec-score.great {
-        background: rgba(34, 197, 94, 0.15);
+        background: color-mix(in srgb, var(--se-ok) 15%, transparent);
         color: var(--green);
       }
       .sec-score.ok {
-        background: rgba(245, 158, 11, 0.15);
+        background: color-mix(in srgb, var(--se-warn) 15%, transparent);
         color: var(--yellow);
       }
       .sec-score.poor {
-        background: rgba(239, 68, 68, 0.15);
+        background: color-mix(in srgb, var(--se-bad) 15%, transparent);
         color: var(--red);
       }
 
@@ -296,7 +302,7 @@
       #script-heading .slide-title {
         font-size: 13px;
         font-weight: 600;
-        color: var(--accent);
+        color: var(--se-primary-text);
         flex: 1;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -304,15 +310,14 @@
       }
       #script-heading .slide-num {
         font:
-          11px "JetBrains Mono",
-          monospace;
+          11px "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         color: var(--text-mid);
       }
 
       /* Slide preview: 16:9 */
       #slide-preview-wrap {
         flex: 0 0 auto;
-        background: #313131;
+        background: var(--se-rule);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -329,13 +334,13 @@
         max-height: 100%;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+        box-shadow: none;
       }
       #slide-stage iframe {
         width: 100%;
         height: 100%;
         border: 0;
-        background: #0c0c0c;
+        background: var(--se-bg);
         display: block;
         pointer-events: none;
       }
@@ -391,7 +396,7 @@
       }
       .col-resizer:hover::before,
       .col-resizer.dragging::before {
-        background: rgba(93, 184, 166, 0.15);
+        background: color-mix(in srgb, var(--se-primary) 15%, transparent);
       }
 
       /* loading */
@@ -402,6 +407,52 @@
         justify-content: center;
         color: var(--text-mid);
         font-size: 13px;
+      }
+      /* ── Mobile: stack section list / slide + script / training ── */
+      @media (max-width: 768px) {
+        body {
+          height: auto;
+          overflow: auto;
+        }
+        #app {
+          height: auto;
+          grid-template-columns: minmax(0, 1fr);
+        }
+        /* Toolbar becomes a horizontally scrollable strip instead of
+           widening the page. */
+        #toolbar {
+          min-width: 0;
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          overflow-y: hidden;
+          scrollbar-width: none;
+        }
+        #toolbar::-webkit-scrollbar {
+          display: none;
+        }
+        #toolbar > * {
+          flex-shrink: 0;
+        }
+        #main-grid {
+          display: flex;
+          flex-direction: column;
+          height: auto;
+          overflow: visible;
+        }
+        #section-list {
+          max-height: 30vh;
+          overflow-y: auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--border);
+        }
+        #training-panel {
+          min-height: 60vh;
+          border-left: 0;
+          border-top: 1px solid var(--border);
+        }
+        .col-resizer {
+          display: none;
+        }
       }
     </style>
   </head>

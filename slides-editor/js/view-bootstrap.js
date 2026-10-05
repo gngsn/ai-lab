@@ -19,7 +19,7 @@ const token = params.get("token");
 
 function fatal(msg) {
   document.body.innerHTML =
-    `<pre style="font:14px monospace;color:#ef4444;padding:2rem;max-width:520px;margin:8vh auto;">` +
+    `<pre style="font:14px monospace;color:var(--se-bad, #b42318);padding:2rem;max-width:520px;margin:8vh auto;">` +
     msg.replace(
       /[&<>]/g,
       (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c],

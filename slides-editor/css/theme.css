@@ -1,0 +1,44 @@
+/* Speakeasy color tokens — light "vellum & ink" palette with a dark variant
+   that follows the OS setting. Every page's CSS references these instead of
+   literal colors, so a theme change only happens here. */
+:root {
+  color-scheme: light;
+  --se-bg: #f2f2f2; /* page / panel background */
+  --se-ink: #292a2c; /* body text, rules, primary fills */
+  --se-strong: #000000; /* emphasized text */
+  --se-muted: #6b6c6e; /* secondary text */
+  --se-dim: #a3a3a3; /* disabled / hidden items */
+  --se-rule: #c4c4c4; /* light dividers */
+  --se-fill: #e6e6e6; /* hover / inset fill */
+  --se-fill-active: #e2e2e2; /* selected item fill */
+  --se-stage: #dcdcdc; /* area around the slide canvas */
+  --se-primary: #ff8d70; /* brand color: fills, borders, indicators */
+  --se-primary-text: #c4492a; /* primary as text — darker for contrast on light bg */
+  --se-on-primary: #1d1d1f; /* text on a primary fill */
+  --se-ok: #1f7a3f;
+  --se-bad: #b0153d;
+  --se-bad-bg: #f7dbe2;
+  --se-warn: #a15c07;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --se-bg: #19191a;
+    --se-ink: #e9e7e2;
+    --se-strong: #ffffff;
+    --se-muted: #9a9a9c;
+    --se-dim: #5c5d60;
+    --se-rule: #3b3b3e;
+    --se-fill: #252527;
+    --se-fill-active: #2d2d30;
+    --se-stage: #111112;
+    --se-primary: #ff8d70;
+    --se-primary-text: #ff8d70;
+    --se-on-primary: #1d1d1f;
+    --se-ok: #6cc28a;
+    --se-bad: #ff6b8b;
+    --se-bad-bg: #3d1a24;
+    --se-warn: #e3a65a;
+  }
+}

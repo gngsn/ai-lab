@@ -7,9 +7,13 @@
     <style>
       /* Pre-bootstrap loading state — replaced by deck frame_html via
          document.write inside present-bootstrap.js. */
-      body { margin: 0; background: #0c0c0c; color: #888;
+      body { margin: 0; background: #f2f2f2; color: #6b6c6e;
+        color-scheme: light dark;
              font: 14px ui-monospace, monospace;
              display: grid; place-items: center; height: 100vh; }
+      @media (prefers-color-scheme: dark) {
+        body { background: #19191a; color: #9a9a9c; }
+      }
     </style>
   </head>
   <body>

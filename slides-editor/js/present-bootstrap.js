@@ -21,7 +21,7 @@ import { isSlideHiddenContent } from "./slide-visibility.js";
 
 if (!(await ensureAuthed())) {
   document.body.innerHTML =
-    '<p style="padding:2rem;color:#ef4444;font-family:monospace">' +
+    '<p style="padding:2rem;color:var(--se-bad, #b42318);font-family:monospace">' +
     "Access denied — present is owner-only. Use view.html?token=… for sharing.</p>";
   throw new Error("auth");
 }
@@ -34,7 +34,7 @@ const startSectionId = params.get("section") || params.get("slide");
 
 function fatal(msg) {
   document.body.innerHTML =
-    `<pre style="font:14px monospace;color:#ef4444;padding:2rem;">` +
+    `<pre style="font:14px monospace;color:var(--se-bad, #b42318);padding:2rem;">` +
     msg.replace(
       /[&<>]/g,
       (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c],
@@ -203,7 +203,7 @@ const printStyle = `
 const overlay = isPrint
   ? ""
   : `
-<div id="__se_progress" style="position:fixed;top:0;left:0;height:2px;width:0;background:#5db8a6;z-index:9999;transition:width .3s ease;"></div>
+<div id="__se_progress" style="position:fixed;top:0;left:0;height:2px;width:0;background:#ff8d70;z-index:9999;transition:width .3s ease;"></div>
 <div id="__se_chrome" style="position:fixed;top:6px;right:10px;font:11px ui-monospace,monospace;color:#888;letter-spacing:.04em;z-index:9999;text-align:right;line-height:1.5;pointer-events:auto;">
   <div id="__se_counter">— / —</div>
   <div id="__se_sync" style="opacity:.7;cursor:pointer;display:none;"></div>
@@ -281,11 +281,11 @@ const interactiveBoot = `
     "#__se_navdots button:hover {\\n" +
     "  transform: scale(1.18);\\n" +
     "  opacity: 1;\\n" +
-    "  border-color: #5db8a6;\\n" +
+    "  border-color: #ff8d70;\\n" +
     "}\\n" +
     "#__se_navdots button.active {\\n" +
-    "  background: #5db8a6;\\n" +
-    "  border-color: #5db8a6;\\n" +
+    "  background: #ff8d70;\\n" +
+    "  border-color: #ff8d70;\\n" +
     "  opacity: 1;\\n" +
     "}";
   document.head.appendChild(dotStyle);

@@ -4,26 +4,34 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PDF Export</title>
+    <link rel="stylesheet" href="./css/theme.css" />
     <!-- jsPDF UMD — sets window.jspdf -->
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&family=Space+Grotesk:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
       :root {
-        --accent: #5db8a6;
-        --bg: #0c0c0c;
-        --surface: #141414;
-        --border: #1f1f1f;
-        --text: #c8c8c8;
-        --text-mid: #777;
-        --text-bright: #f0f0f0;
-        --ok: #22c55e;
-        --danger: #ef4444;
-        --warn: #e8a55a;
+        --accent: var(--se-primary);
+        --bg: var(--se-bg);
+        --surface: var(--se-bg);
+        --border: var(--se-ink);
+        --text: var(--se-ink);
+        --text-mid: var(--se-muted);
+        --text-bright: var(--se-strong);
+        --ok: var(--se-ok);
+        --danger: var(--se-bad);
+        --warn: var(--se-warn);
       }
       body {
+        accent-color: var(--se-ink);
         background: var(--bg);
         color: var(--text);
-        font-family: "IBM Plex Sans KR", "Noto Sans KR", sans-serif;
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         min-height: 100vh;
         display: flex;
         align-items: center;
@@ -33,7 +41,7 @@
       .card {
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 12px;
+        border-radius: 0;
         padding: 28px;
         width: min(460px, 100%);
         display: flex;
@@ -44,12 +52,18 @@
         font-size: 16px;
         font-weight: 600;
         color: var(--text-bright);
+        font-family: "Fraunces", "IBM Plex Sans KR", Georgia, serif;
+        font-weight: 400;
+        letter-spacing: -0.02em;
       }
       .deck-title {
         font-size: 13px;
         color: var(--text-mid);
         font-style: italic;
         min-height: 1.4em;
+        font-family: "Fraunces", "IBM Plex Sans KR", Georgia, serif;
+        font-weight: 400;
+        letter-spacing: -0.02em;
       }
       .options {
         display: flex;
@@ -85,9 +99,9 @@
       .btn-generate {
         background: var(--accent);
         border: none;
-        color: #000;
+        color: var(--se-on-primary);
         padding: 10px 20px;
-        border-radius: 6px;
+        border-radius: 0;
         font-size: 13px;
         font-family: inherit;
         font-weight: 600;
@@ -104,7 +118,7 @@
       .progress-bar-wrap {
         background: var(--bg);
         border: 1px solid var(--border);
-        border-radius: 4px;
+        border-radius: 0;
         height: 6px;
         overflow: hidden;
       }
@@ -117,7 +131,7 @@
       .progress-label {
         font-size: 12px;
         color: var(--text-mid);
-        font-family: "JetBrains Mono", monospace;
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
       }
 
       /* Result */
@@ -137,13 +151,13 @@
         border: 1px solid var(--border);
         color: var(--text-mid);
         padding: 7px 14px;
-        border-radius: 5px;
+        border-radius: 0;
         font-size: 12px;
         font-family: inherit;
         cursor: pointer;
         align-self: flex-start;
       }
-      .btn-again:hover { color: var(--text); border-color: #333; background: #1e1e1e; }
+      .btn-again:hover { color: var(--text); border-color: var(--se-rule); background: var(--se-fill); }
 
       /* Hidden iframe used for slide rendering */
       #render-frame {

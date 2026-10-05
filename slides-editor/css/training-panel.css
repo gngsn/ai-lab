@@ -25,10 +25,10 @@
   align-items: center;
   gap: 4px;
   background: transparent;
-  border: 1px solid var(--border);
+  border: none;
   color: var(--text-mid);
   padding: 5px 10px;
-  border-radius: 5px;
+  border-radius: 0;
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
@@ -40,9 +40,9 @@
     border-color 0.12s;
 }
 .training-panel .btn:hover {
-  background: #1e1e1e;
+  background: var(--se-fill);
   color: var(--text);
-  border-color: #333;
+  border-color: var(--se-rule);
 }
 .training-panel .btn:disabled {
   opacity: 0.35;
@@ -54,14 +54,14 @@
   border-color: var(--blue);
 }
 .training-panel .btn.primary:hover {
-  background: rgba(59, 130, 246, 0.12);
+  background: color-mix(in srgb, var(--se-ink) 12%, transparent);
 }
 .training-panel .btn.ok {
   color: var(--green);
   border-color: var(--green);
 }
 .training-panel .btn.ok:hover {
-  background: rgba(34, 197, 94, 0.12);
+  background: color-mix(in srgb, var(--se-ok) 12%, transparent);
 }
 .training-panel .btn.warn {
   color: var(--yellow);
@@ -88,11 +88,10 @@
   margin-top: 6px;
   background: var(--surface-2);
   border: 1px solid var(--border-2);
-  border-radius: 4px;
+  border-radius: 0;
   color: var(--text);
   font:
-    11px "JetBrains Mono",
-    monospace;
+    11px "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
   padding: 3px 6px;
   cursor: pointer;
   height: 24px;
@@ -131,8 +130,7 @@
 }
 .training-panel .rec-label {
   font:
-    10px "JetBrains Mono",
-    monospace;
+    10px "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
   color: var(--text-mid);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -160,8 +158,7 @@
 }
 .training-panel #stt-status {
   font:
-    11px "JetBrains Mono",
-    monospace;
+    11px "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
   color: var(--text-mid);
   flex: 1;
   min-width: 80px;
@@ -187,13 +184,12 @@
 .training-panel .fb-block {
   background: var(--surface-2);
   border: 1px solid var(--border-2);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 12px 14px;
 }
 .training-panel .fb-label {
   font:
-    10px "JetBrains Mono",
-    monospace;
+    10px "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
   color: var(--text-mid);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -218,7 +214,7 @@
   text-decoration: line-through;
 }
 .training-panel .diff-text .extra {
-  color: #444;
+  color: var(--se-dim);
   font-style: italic;
 }
 /* score */
@@ -229,8 +225,7 @@
 }
 .training-panel #score-big {
   font:
-    700 32px "JetBrains Mono",
-    monospace;
+    700 32px "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
   line-height: 1;
   color: var(--text-bright);
 }
@@ -269,7 +264,7 @@
   display: inline-block;
   background: var(--surface-2);
   border: 1px solid var(--border-2);
-  border-radius: 4px;
+  border-radius: 0;
   padding: 1px 7px;
   font:
     11px "JetBrains Mono",

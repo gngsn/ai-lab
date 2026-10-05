@@ -4,11 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Notes</title>
+    <link rel="stylesheet" href="./css/theme.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&family=Space+Grotesk:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <style>
       body {
-        background: #0c0c0c;
-        color: #c8c8c8;
-        font-family: -apple-system, "IBM Plex Sans KR", sans-serif;
+        accent-color: var(--se-ink);
+        background: var(--se-bg);
+        color: var(--se-ink);
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         margin: 0;
         padding: 0;
       }
@@ -16,8 +24,8 @@
         position: sticky;
         top: 0;
         z-index: 10;
-        background: #141414;
-        border-bottom: 1px solid #1f1f1f;
+        background: var(--se-bg);
+        border-bottom: 1px solid var(--se-ink);
         padding: 10px 14px;
         display: flex;
         align-items: center;
@@ -26,25 +34,26 @@
       .title {
         font-size: 14px;
         font-weight: 500;
-        color: #f0f0f0;
+        color: var(--se-strong);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
         max-width: 320px;
+        font-family: "Fraunces", "IBM Plex Sans KR", Georgia, serif;
+        font-weight: 400;
+        letter-spacing: -0.02em;
       }
       .spacer {
         flex: 1;
       }
       .btn {
         background: transparent;
-        border: 1px solid #1f1f1f;
-        color: #777;
+        border: 1px solid var(--se-ink);
+        color: var(--se-muted);
         padding: 5px 10px;
-        border-radius: 5px;
+        border-radius: 0;
         font:
-          12px "JetBrains Mono",
-          ui-monospace,
-          monospace;
+          12px "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         cursor: pointer;
         text-decoration: none;
         transition:
@@ -53,20 +62,20 @@
           border-color 0.12s;
       }
       .btn:hover {
-        background: #1e1e1e;
-        color: #c8c8c8;
-        border-color: #333;
+        background: var(--se-fill);
+        color: var(--se-ink);
+        border-color: var(--se-rule);
       }
       .btn.home {
-        color: #f0f0f0;
+        color: var(--se-strong);
       }
       .btn.ok {
-        color: #22c55e;
-        border-color: #22c55e;
+        color: var(--se-ok);
+        border-color: var(--se-ok);
       }
       .btn.warn {
-        color: #f59e0b;
-        border-color: #f59e0b;
+        color: var(--se-warn);
+        border-color: var(--se-warn);
       }
       main {
         max-width: 920px;
@@ -74,17 +83,17 @@
         padding: 24px 20px 80px;
       }
       .hint {
-        color: #777;
+        color: var(--se-muted);
         font-size: 11px;
         margin: 12px 0 8px;
-        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
         line-height: 1.6;
       }
       .hint code {
-        color: #5db8a6;
-        background: #141414;
+        color: var(--se-ink);
+        background: var(--se-bg);
         padding: 1px 5px;
-        border-radius: 3px;
+        border-radius: 0;
       }
       pre {
         white-space: pre-wrap;
@@ -92,17 +101,37 @@
         font-family: "JetBrains Mono", ui-monospace, monospace;
         font-size: 12px;
         line-height: 1.7;
-        color: #c8c8c8;
-        background: #141414;
-        border: 1px solid #1f1f1f;
-        border-radius: 6px;
+        color: var(--se-ink);
+        background: var(--se-bg);
+        border: 1px solid var(--se-ink);
+        border-radius: 0;
         padding: 16px 18px;
         margin: 0;
       }
       .err {
-        color: #ef4444;
+        color: var(--se-bad);
         padding: 2rem;
         font-family: monospace;
+      }
+      @media (max-width: 768px) {
+        /* Toolbar becomes a horizontally scrollable strip instead of
+           widening the page. */
+        header {
+          min-width: 0;
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          overflow-y: hidden;
+          scrollbar-width: none;
+        }
+        header::-webkit-scrollbar {
+          display: none;
+        }
+        header > * {
+          flex-shrink: 0;
+        }
+        .title {
+          max-width: 40vw;
+        }
       }
     </style>
   </head>

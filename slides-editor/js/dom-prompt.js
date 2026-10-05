@@ -19,15 +19,15 @@ function ensureContainer() {
   layer = document.createElement("div");
   layer.id = "__se_prompt_layer";
   layer.style.cssText =
-    "position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.72);display:grid;place-items:center;padding:16px;";
+    "position:fixed;inset:0;z-index:10000;background:color-mix(in srgb, var(--se-bg, var(--se-bg, #f2f2f2)) 85%, transparent);display:grid;place-items:center;padding:16px;";
   layer.innerHTML = `
-    <div style="width:min(420px,100%);background:#141414;border:1px solid #2a2a2a;border-radius:12px;padding:18px 18px 16px;color:#f0f0f0;font-family:inherit;box-shadow:0 18px 60px rgba(0,0,0,.45)">
+    <div style="width:min(420px,100%);background:var(--se-bg, #f2f2f2);border:1px solid var(--se-ink, #292a2c);border-radius:0;padding:24px;color:var(--se-ink, #292a2c);font-family:inherit">
       <div id="__se_prompt_title" style="font-size:14px;font-weight:600;margin-bottom:8px"></div>
-      <div id="__se_prompt_message" style="font-size:12px;line-height:1.6;color:#a8a8a8;white-space:pre-wrap;margin-bottom:12px"></div>
-      <input id="__se_prompt_input" type="text" spellcheck="false" style="width:100%;box-sizing:border-box;background:#0c0c0c;border:1px solid #333;color:#f0f0f0;border-radius:8px;padding:10px 12px;font:13px 'JetBrains Mono', ui-monospace, monospace;outline:none;" />
+      <div id="__se_prompt_message" style="font-size:12px;line-height:1.6;color:var(--se-muted, #6b6c6e);white-space:pre-wrap;margin-bottom:12px"></div>
+      <input id="__se_prompt_input" type="text" spellcheck="false" style="width:100%;box-sizing:border-box;background:transparent;border:none;border-bottom:1px solid var(--se-ink, #292a2c);color:var(--se-ink, #292a2c);border-radius:0;padding:8px 0;font:14px 'Space Grotesk', 'IBM Plex Sans KR', sans-serif;outline:none;" />
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
-        <button id="__se_prompt_cancel" type="button" style="background:transparent;border:1px solid #333;color:#a8a8a8;border-radius:8px;padding:8px 12px;cursor:pointer">Cancel</button>
-        <button id="__se_prompt_ok" type="button" style="background:#5db8a6;border:1px solid #5db8a6;color:#0c0c0c;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:600">OK</button>
+        <button id="__se_prompt_cancel" type="button" style="background:transparent;border:1px solid var(--se-ink, #292a2c);color:var(--se-ink, #292a2c);border-radius:0;padding:8px 14px;cursor:pointer">Cancel</button>
+        <button id="__se_prompt_ok" type="button" style="background:var(--se-primary, #ff8d70);border:1px solid var(--se-primary, #ff8d70);color:var(--se-on-primary, #1d1d1f);border-radius:0;padding:8px 14px;cursor:pointer;font-weight:500">OK</button>
       </div>
     </div>`;
   document.body.appendChild(layer);

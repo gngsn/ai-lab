@@ -19,7 +19,7 @@ import {
 // ── Auth ──────────────────────────────────────────────────────────
 if (!ensureAuthed()) {
   document.body.innerHTML =
-    '<p style="color:#ef4444;padding:2rem;font-family:monospace">Access denied.</p>';
+    '<p style="color:var(--se-bad, #b42318);padding:2rem;font-family:monospace">Access denied.</p>';
   throw new Error("auth");
 }
 
@@ -27,7 +27,7 @@ const params = new URLSearchParams(location.search);
 const deckId = params.get("deck");
 if (!deckId) {
   document.body.innerHTML =
-    '<p style="color:#ef4444;padding:2rem;font-family:monospace">Missing ?deck=</p>';
+    '<p style="color:var(--se-bad, #b42318);padding:2rem;font-family:monospace">Missing ?deck=</p>';
   throw new Error("no deck");
 }
 
@@ -319,7 +319,7 @@ async function init() {
     notesMap = new Map(result.notes.map((n) => [n.section_id, n.content]));
   } catch (err) {
     $("main-grid").innerHTML =
-      `<p style="color:#ef4444;padding:2rem;font-family:monospace">${escapeHtml(err.message)}</p>`;
+      `<p style="color:var(--se-bad, #b42318);padding:2rem;font-family:monospace">${escapeHtml(err.message)}</p>`;
     return;
   }
 

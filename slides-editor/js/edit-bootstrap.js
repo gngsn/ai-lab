@@ -39,7 +39,7 @@ bindShortcutsHelp("Edit", [
 // ── auth gate ──────────────────────────────────────────────────────
 if (!(await ensureAuthed())) {
   document.body.innerHTML =
-    '<p style="padding:2rem;color:#ef4444;font-family:monospace">' +
+    '<p style="padding:2rem;color:var(--se-bad, #b42318);font-family:monospace">' +
     "Edit access denied.</p>";
   throw new Error("auth failed");
 }
@@ -48,7 +48,7 @@ const params = new URLSearchParams(location.search);
 const deckId = params.get("deck");
 if (!deckId) {
   document.body.innerHTML =
-    '<p style="padding:2rem;color:#ef4444">Missing ?deck=&lt;deck_id&gt;</p>';
+    '<p style="padding:2rem;color:var(--se-bad, #b42318)">Missing ?deck=&lt;deck_id&gt;</p>';
   throw new Error("no deck");
 }
 
@@ -935,7 +935,7 @@ async function refreshImagesGrid() {
       };
     });
   } catch (err) {
-    grid.innerHTML = `<div style="color:#ef4444;font-size:12px;padding:1em;grid-column:1/-1">${escapeHtml(err.message)}</div>`;
+    grid.innerHTML = `<div style="color:var(--se-bad, #b42318);font-size:12px;padding:1em;grid-column:1/-1">${escapeHtml(err.message)}</div>`;
   }
 }
 
@@ -1545,13 +1545,20 @@ function queueHtmlChange(content) {
   updateHtmlHighlight();
 }
 
+// CodeMirror themes are class-based, so follow the OS color scheme in JS.
+const darkScheme = window.matchMedia("(prefers-color-scheme: dark)");
+const codeMirrorTheme = () => (darkScheme.matches ? "monokai" : "default");
+darkScheme.addEventListener("change", () =>
+  htmlCodeMirror?.setOption("theme", codeMirrorTheme()),
+);
+
 function ensureHtmlCodeMirror() {
   if (htmlCodeMirror || !window.CodeMirror) return htmlCodeMirror;
   const ta = $("html-editor");
   if (!ta) return null;
   htmlCodeMirror = window.CodeMirror.fromTextArea(ta, {
     mode: "xml",
-    theme: "monokai",
+    theme: codeMirrorTheme(),
     lineNumbers: true,
     lineWrapping: true,
     tabSize: 2,
