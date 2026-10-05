@@ -47,6 +47,31 @@ export async function upsertDeck(row) {
   if (error) throw error;
 }
 
+// RPC defined in migrations/007_delete_deck.sql. Removes the deck plus its
+// slides, notes and history rows in one transaction, then best-effort clears
+// the deck's storage folders (a failure there leaves orphans, not a broken deck).
+export async function deleteDeck(deckId) {
+  const { error } = await supabase.rpc("delete_deck", { p_deck_id: deckId });
+  if (error) throw error;
+  for (const bucket of ["slides-images", "slides-audio"]) {
+    try {
+      const { data, error: listError } = await supabase.storage
+        .from(bucket)
+        .list(deckId, { limit: 1000 });
+      if (listError) throw listError;
+      const paths = (data || []).map((o) => `${deckId}/${o.name}`);
+      if (paths.length) {
+        const { error: rmError } = await supabase.storage
+          .from(bucket)
+          .remove(paths);
+        if (rmError) throw rmError;
+      }
+    } catch (err) {
+      console.warn(`[deleteDeck] ${bucket} cleanup:`, err);
+    }
+  }
+}
+
 /**
  * Set or clear the deck's share_token. Pass null to revoke sharing.
  * Token uniqueness is enforced by the table-level UNIQUE constraint.

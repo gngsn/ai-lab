@@ -25,7 +25,7 @@
         line-height: 1.65;
       }
       .wrap {
-        max-width: 720px;
+        max-width: 1200px;
         margin: 4rem auto;
         padding: 0 1.5rem;
       }
@@ -147,7 +147,7 @@
         align-items: center;
         justify-content: center;
         font-family: inherit;
-        font-size: 0.55rem;
+        font-size: 0.7rem;
         font-weight: 500;
         border: none;
         border-radius: 4px;
@@ -187,6 +187,51 @@
         color: var(--accent);
         box-shadow: none;
         padding: 0.05rem 0.25rem;
+      }
+      .md-btn.md-danger {
+        background: none;
+        color: var(--bad);
+        border: 1.5px solid var(--bad);
+      }
+      .md-btn.md-danger:hover {
+        background: rgba(239, 68, 68, 0.12);
+      }
+      #deck-list {
+        list-style: none;
+        padding: 0;
+      }
+      .deck-item {
+        display: grid;
+        gap: 0.7rem;
+        padding: 0.7rem 0.9rem;
+        margin-bottom: 0.5rem;
+        background: var(--surface);
+        border: 1px solid #242424;
+        border-radius: 8px;
+      }
+      .deck-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+      .deck-title {
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .deck-time {
+        flex-shrink: 0;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .deck-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.8rem;
       }
       .md-btn:disabled {
         opacity: 0.5;
@@ -280,7 +325,6 @@
     <script src="./js/config.local.js"></script>
     <script type="module">
       import { ensureAuthed } from "./js/auth.js";
-      import { supabase } from "./js/supabase.js";
       import {
         parseImportedHtmlDeck,
         parseNotesMd,
@@ -451,38 +495,96 @@
         }
       });
 
-      try {
-        const { data, error } = await supabase
-          .from("decks")
-          .select("deck_id,title,updated_at,share_token")
-          .order("updated_at", { ascending: false });
-        if (error) throw error;
-        status.innerHTML = `<span class="ok">✓ connected</span> — ${data.length} deck(s)`;
-        list.innerHTML = data.length
-          ? data
-              .map((d) => {
-                const id = encodeURIComponent(d.deck_id);
-                const room = `r${d.deck_id.slice(0, 6)}`;
-                const viewLink = d.share_token
-                  ? ` · <a href="./view.html?deck=${id}&token=${encodeURIComponent(d.share_token)}" target="_blank">🔗 View (shared)</a>`
-                  : "";
-                return (
-                  `<li><code>${d.deck_id}</code> — ${d.title}` +
-                  ` · <a class="md-btn md-primary" href="./edit.html?deck=${id}">✎ Edit</a>` +
-                  ` · <a class="md-btn md-secondary" href="./pronunciation.html?deck=${id}">✏ Notes</a>` +
-                  ` · <a class="md-btn md-secondary" href="./present.html?deck=${id}&sync=${room}">▶ Present</a>` +
-                  ` · <a class="md-btn md-secondary" href="./script.html?deck=${id}&sync=${room}">⌨ Script</a>` +
-                  viewLink +
-                  `</li>`
-                );
-              })
-              .join("")
-          : "<li>(none — run <code>migrations/seed.sql</code> for a sample deck)</li>";
-      } catch (err) {
-        status.innerHTML = `<span class="bad">✗ ${err.message}</span>`;
-        list.innerHTML = "<li>—</li>";
-        console.error(err);
+      const escapeHtml = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const formatEditTime = (iso) =>
+        iso
+          ? new Date(iso).toLocaleString("ko-KR", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "—";
+
+      function renderDeck(d) {
+        const id = encodeURIComponent(d.deck_id);
+        const room = `r${d.deck_id.slice(0, 6)}`;
+        const viewLink = d.share_token
+          ? `<a href="./view.html?deck=${id}&token=${encodeURIComponent(d.share_token)}" target="_blank">🔗 View (shared)</a>`
+          : "";
+        return (
+          `<li class="deck-item">` +
+          `<div class="deck-row">` +
+          `<span class="deck-title" title="${escapeHtml(d.deck_id)}">${escapeHtml(d.title)}</span>` +
+          `<time class="deck-time" datetime="${escapeHtml(d.updated_at)}">${formatEditTime(d.updated_at)}</time>` +
+          `</div>` +
+          `<div class="deck-row">` +
+          `<div class="deck-actions">` +
+          `<a class="md-btn md-secondary" href="./edit.html?deck=${id}">✎ Edit</a>` +
+          `<a class="md-btn md-secondary" href="./pronunciation.html?deck=${id}">✏ Practice</a>` +
+          `<a class="md-btn md-secondary" href="./present.html?deck=${id}&sync=${room}">▶ Present</a>` +
+          `<a class="md-btn md-secondary" href="./script.html?deck=${id}&sync=${room}">⌨ Script</a>` +
+          viewLink +
+          `</div>` +
+          `<button class="md-btn md-danger" type="button" data-delete-deck="${escapeHtml(d.deck_id)}">🗑 Delete</button>` +
+          `</div>` +
+          `</li>`
+        );
       }
+
+      async function loadDecks() {
+        try {
+          const data = await deckRepo.listDecks();
+          status.innerHTML = `<span class="ok">✓ connected</span> — ${data.length} deck(s)`;
+          list.innerHTML = data.length
+            ? data.map(renderDeck).join("")
+            : "<li>(none — run <code>migrations/seed.sql</code> for a sample deck)</li>";
+        } catch (err) {
+          status.innerHTML = `<span class="bad">✗ ${escapeHtml(err.message)}</span>`;
+          list.innerHTML = "<li>—</li>";
+          console.error(err);
+        }
+      }
+
+      list.addEventListener("click", async (e) => {
+        const btn = e.target.closest("[data-delete-deck]");
+        if (!btn) return;
+        const deckId = btn.dataset.deleteDeck;
+        const title =
+          btn.closest(".deck-item")?.querySelector(".deck-title")
+            ?.textContent || deckId;
+        if (
+          !confirm(
+            `"${title}" 덱을 삭제할까요?\n슬라이드, 노트, 히스토리, 이미지가 모두 삭제되며 되돌릴 수 없습니다.`,
+          )
+        )
+          return;
+        btn.disabled = true;
+        btn.textContent = "Deleting…";
+        try {
+          await deckRepo.deleteDeck(deckId);
+          await loadDecks();
+        } catch (err) {
+          console.error(err);
+          alert(`삭제 실패: ${err.message}`);
+          btn.disabled = false;
+          btn.textContent = "🗑 Delete";
+        }
+      });
+
+      await loadDecks();
     </script>
   </body>
 </html>
