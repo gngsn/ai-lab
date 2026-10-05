@@ -338,6 +338,15 @@ async function refresh({ keepIframe = false } = {}) {
   if (!keepIframe) showSlide(currentSectionId);
 }
 
+// On mobile the slide list is a horizontal strip; keep the active slide's
+// chip visible. No-op on desktop, where the list doesn't scroll sideways.
+function centerActiveSlideChip(items) {
+  const active = items.querySelector(".slide-item.active");
+  if (!active || items.scrollWidth <= items.clientWidth) return;
+  items.scrollLeft =
+    active.offsetLeft - (items.clientWidth - active.offsetWidth) / 2;
+}
+
 function renderSlideList() {
   const list = $("slide-list");
   const items = $("slide-list-items") || list;
@@ -365,6 +374,7 @@ function renderSlideList() {
     </div>`,
       )
       .join("") + '<button id="add-slide">+ New slide</button>';
+  centerActiveSlideChip(items);
 
   items.querySelectorAll(".slide-item").forEach((el) => {
     // Only switch slide if not clicking on an action button (edit/delete)

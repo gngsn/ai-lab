@@ -1187,7 +1187,7 @@
         border-color: var(--ok);
         color: var(--ok);
       }
-      /* ── Mobile: stack canvas / slide list / notes vertically ── */
+      /* ── Mobile: toolbar + slide strip pinned on top, then canvas / notes ── */
       @media (max-width: 768px) {
         body {
           height: auto;
@@ -1200,6 +1200,10 @@
         /* Toolbar becomes a horizontally scrollable strip instead of
            widening the page. */
         #toolbar {
+          position: sticky;
+          top: 0;
+          z-index: 30;
+          height: 48px;
           min-width: 0;
           flex-wrap: nowrap;
           overflow-x: auto;
@@ -1243,12 +1247,70 @@
         #canvas-wrap.html-mode {
           height: 65vh;
         }
+        /* Slide list → a second menu bar under the toolbar: title input
+           on top, slides as a horizontally scrolling row of chips. */
         #slide-list,
         #body.portrait-mode #slide-list {
-          order: 2;
-          max-height: 40vh;
+          order: 0;
+          position: sticky;
+          top: 48px;
+          z-index: 20;
+          padding: 6px 10px 8px;
+          overflow: visible;
           border-right: 0;
           border-bottom: 1px solid var(--border);
+        }
+        #slide-list-scroll {
+          gap: 6px;
+          overflow: visible;
+        }
+        .slide-list-meta {
+          position: static;
+          padding: 0;
+        }
+        .slide-list-meta-top,
+        .slide-list-info {
+          display: none;
+        }
+        .slide-list-title-label {
+          font-size: 0; /* hide the "Title" label text, keep the input */
+        }
+        .slide-list-title-input {
+          font-size: 13px;
+        }
+        .slide-list-items {
+          position: relative; /* offsetParent for scrolling the active chip into view */
+          flex-direction: row;
+          align-items: center;
+          gap: 6px;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+        .slide-list-items::-webkit-scrollbar {
+          display: none;
+        }
+        .slide-item {
+          flex: 0 0 auto;
+          max-width: 60vw;
+          padding: 5px 4px 5px 10px;
+          border-color: var(--se-rule);
+        }
+        /* Escape the scroll strip's clipping, like the toolbar dropdowns:
+           open just below the pinned toolbar + slide strip. !important
+           overrides the inline right/left set in renderSlideList(). */
+        .slide-item .dropdown-menu {
+          position: fixed;
+          top: 140px;
+          right: 10px !important;
+          left: auto !important;
+          z-index: 40;
+        }
+        #add-slide {
+          flex: 0 0 auto;
+          width: auto;
+          margin-top: 0;
+          padding: 7px 12px;
+          white-space: nowrap;
         }
         #props,
         #body.portrait-mode #props {
