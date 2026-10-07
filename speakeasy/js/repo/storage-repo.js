@@ -48,6 +48,46 @@ export async function uploadImage(deckId, file) {
   };
 }
 
+const MEDIA_TYPES = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  avif: "image/avif",
+  svg: "image/svg+xml",
+  ico: "image/x-icon",
+  mp4: "video/mp4",
+  webm: "video/webm",
+  mov: "video/quicktime",
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  ogg: "audio/ogg",
+  m4a: "audio/mp4",
+  woff: "font/woff",
+  woff2: "font/woff2",
+  ttf: "font/ttf",
+  otf: "font/otf",
+};
+
+/**
+ * Store a file copied from an imported deck's source (e.g. its GitHub repo)
+ * under `{deck_id}/imported/{sourcePath}`, overwriting a previous import.
+ * Returns the public URL — a plain https URL rather than supabase://, so it
+ * renders in every view without resolving.
+ */
+export async function uploadImportedAsset(deckId, sourcePath, blob) {
+  const path = `${deckId}/imported/${sourcePath.replace(/^\/+/, "")}`;
+  const ext = sourcePath.split(".").pop()?.toLowerCase() || "";
+  const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {
+    upsert: true,
+    cacheControl: "3600",
+    contentType: MEDIA_TYPES[ext] || blob.type || "application/octet-stream",
+  });
+  if (error) throw error;
+  return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
 export async function listImages(deckId) {
   const { data, error } = await supabase.storage.from(BUCKET).list(deckId, {
     limit: 500,

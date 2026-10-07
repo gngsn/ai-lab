@@ -4,6 +4,14 @@ window.SUPABASE_URL      = "https://YOUR-PROJECT-REF.supabase.co";
 window.SUPABASE_ANON_KEY = "YOUR-ANON-KEY";
 window.OWNER_PASSPHRASE  = "set-me"; // M6 인증에서 사용
 
+// ── Import HTML deck from a private GitHub repo (index.html) ──────
+// Fine-grained token with read-only "Contents" access to the repo(s).
+// ⚠ Everything in this file is readable by anyone who can load the site —
+// on a public deployment, this token is public too. Prefer a token scoped
+// to just the repos you import from, or keep it empty on Vercel and paste
+// it into the import dialog instead (stored only in that browser).
+window.GITHUB_TOKEN        = "";
+
 // ── Pronunciation training (pronunciation.html) ───────────────────
 // TTS engine: "kokoro" (local Kokoro-82M, default) | "openai" | "elevenlabs"
 window.PRONUNCIATION_TTS   = "kokoro";

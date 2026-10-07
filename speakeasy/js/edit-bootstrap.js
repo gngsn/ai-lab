@@ -23,6 +23,8 @@ import {
   isSlideHiddenContent,
   setSlideHiddenContent,
 } from "./slide-visibility.js";
+import { sha1Hex } from "./sha1.js";
+import { fitSlideFrame } from "./slide-fit.js";
 import { createTrainingPanel } from "./training-panel.js";
 
 bindShortcutsHelp("Edit", [
@@ -701,13 +703,7 @@ let _notesAudioCache = null; // { key, url }
 
 async function _notesCacheKey(text) {
   const voiceId = window.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM";
-  const buf = await crypto.subtle.digest(
-    "SHA-1",
-    new TextEncoder().encode(text),
-  );
-  const hash = Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  const hash = await sha1Hex(text);
   return `edit-notes/${voiceId}/${hash}`;
 }
 
@@ -2075,9 +2071,13 @@ function initModeSelect() {
   const body = $("body");
   const wrap = $("canvas-wrap");
   if (!sel || !wrap || !body) return;
+  // Slides render at a fixed 1280×720 and scale as a whole, except in
+  // "stretch", which deliberately fills the canvas.
+  const canvasFit = fitSlideFrame($("canvas"), $("canvas-stage"));
 
   async function apply() {
     const m = sel.value;
+    canvasFit.setEnabled(m !== "stretch");
     // Pending HTML edits should land before we leave html mode.
     if (htmlMode && m !== "html") await flushHtmlSave();
     body.classList.remove("portrait-mode");

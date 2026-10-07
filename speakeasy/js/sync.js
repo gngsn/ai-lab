@@ -1,6 +1,6 @@
 // Port of personal-log/Kprintf2026/v5/sync.js.
 // Differences:
-//   - channel name prefix: "slides-editor-sync-"
+//   - channel name prefix: "speakeasy-sync-"
 //   - payload: { section_id, index } — section_id is preferred; index is fallback
 //     so reordering a deck doesn't desync the script viewer.
 // Standalone: creates its own Supabase client so it works inside the rewritten
@@ -18,7 +18,7 @@ export function createSlideSync(syncId, onSlideChange, onStatusChange) {
   }
 
   const supabase = createClient(url, key);
-  const channel = supabase.channel(`slides-editor-sync-${syncId}`, {
+  const channel = supabase.channel(`speakeasy-sync-${syncId}`, {
     config: { broadcast: { self: false } },
   });
 

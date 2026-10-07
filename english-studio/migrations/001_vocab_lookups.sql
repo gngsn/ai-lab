@@ -14,7 +14,7 @@ create table if not exists vocab_lookups (
 
 create index if not exists vocab_lookups_word_idx on vocab_lookups (word_lower);
 
--- Dev RLS posture (matches slides-editor's 003_dev_rls.sql): RLS enabled as
+-- Dev RLS posture (matches speakeasy's 003_dev_rls.sql): RLS enabled as
 -- defense in depth, permissive anon policy for single-user personal use.
 alter table vocab_lookups enable row level security;
 

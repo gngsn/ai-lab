@@ -1,5 +1,5 @@
 /*
- * Edit page styles — faithful to slides-editor/edit.html.
+ * Edit page styles — faithful to speakeasy/edit.html.
  * Uses the alias tokens (--accent, --bg, --surface, …) defined in tokens.css,
  * so the layout matches the original while staying theme-driven.
  */

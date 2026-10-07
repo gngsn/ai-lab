@@ -1,7 +1,7 @@
 # Slideflow — Current Feature Status
 
 > Snapshot of what is built and verified today. Companion to `PLAN.md` (the build plan)
-> and `../slides-editor/SPEC.md` (the feature contract).
+> and `../speakeasy/SPEC.md` (the feature contract).
 >
 > **Stack:** TypeScript + Vite (vanilla), Ports & Adapters (Hexagonal).
 > **Backends:** `memory` (no infra), `local` (vendor-neutral Docker), `supabase` (cloud) — chosen by one env var.
@@ -72,7 +72,7 @@ Local stack: `npm run stack:up` → `npm run db:migrate` → `npm run db:seed`, 
 Owner-scoped deck list with links. Import modal → `import-html` (section extraction, id dedup, frame build, notes-by-index) → deck/slides/notes write → redirect to edit. Verified end-to-end under RLS.
 
 ### 4.3 Edit (Phase 3 + UI parity)
-Layout matches the original `slides-editor/edit.html`. Toolbar (home, deck title, mode 16:9/html/stretch, Present, ⋮ More, status, account). Resizable slide list (count + title, items with hover actions, drag reorder, add). Canvas iframe with inline contenteditable (autosave 800ms) or raw HTML mode (tag-validated). Notes textarea (debounced 800ms) with font-size −/+. Panel widths + notes font + last section persisted to localStorage. `DeckSession` is the single editor model (unit-tested). Portrait mode, notes preview, and slide-info grid were removed per request.
+Layout matches the original `speakeasy/edit.html`. Toolbar (home, deck title, mode 16:9/html/stretch, Present, ⋮ More, status, account). Resizable slide list (count + title, items with hover actions, drag reorder, add). Canvas iframe with inline contenteditable (autosave 800ms) or raw HTML mode (tag-validated). Notes textarea (debounced 800ms) with font-size −/+. Panel widths + notes font + last section persisted to localStorage. `DeckSession` is the single editor model (unit-tested). Portrait mode, notes preview, and slide-info grid were removed per request.
 
 ### 4.4 Present + Sync + View + Share (Phase 4)
 - **`SlidePresentation`** runtime: keyboard/wheel/touch nav, fragment reveal, IntersectionObserver visibility, `slidechange` events.

@@ -5,13 +5,13 @@
 insert into decks (deck_id, title, frame_html)
 values (
   'seed-hello',
-  'Hello slides-editor',
+  'Hello Speakeasy',
   $$<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Hello slides-editor</title>
+  <title>Hello Speakeasy</title>
   <style>
     html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
     body { margin: 0; background: #0c0c0c; color: #f0f0f0;
@@ -43,7 +43,7 @@ on conflict (deck_id) do update
 
 insert into slides (deck_id, section_id, "order", title, content) values
   ('seed-hello', 'intro',  0, 'Intro',
-   '<section class="slide" data-title="Intro"><div><h1>Hello, slides-editor.</h1><p>M0 + M1 검증용 시드 덱입니다.</p></div></section>'),
+   '<section class="slide" data-title="Intro"><div><h1>Hello, Speakeasy.</h1><p>M0 + M1 검증용 시드 덱입니다.</p></div></section>'),
   ('seed-hello', 'second', 1, 'Second',
    '<section class="slide" data-title="Second"><div><h1>Second slide</h1><p>↓ 키로 fragment 하나씩 노출 →</p><ul><li class="fragment">first</li><li class="fragment">second</li><li class="fragment">third</li></ul></div></section>'),
   ('seed-hello', 'third',  2, 'Third',

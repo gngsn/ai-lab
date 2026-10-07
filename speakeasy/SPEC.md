@@ -1,6 +1,6 @@
-# slides-editor Rebuild SPEC
+# Speakeasy Rebuild SPEC
 
-> Purpose: rebuild the current `slides-editor/` as closely as possible, including features, data, screens, URLs, save rules, runtime behavior, and known quirks.
+> Purpose: rebuild the current `speakeasy/` (formerly `slides-editor/`) as closely as possible, including features, data, screens, URLs, save rules, runtime behavior, and known quirks.
 >
 > This is not a future roadmap. It is an **implementation reproduction contract** for the app that exists now.
 
@@ -8,7 +8,7 @@
 
 ## 1. Product Summary
 
-`slides-editor` is a static browser app for one presenter to create HTML slide decks, edit speaker notes, present slides, sync a teleprompter view in realtime, export the deck, and practice pronunciation.
+`speakeasy` is a static browser app for one presenter to create HTML slide decks, edit speaker notes, present slides, sync a teleprompter view in realtime, export the deck, and practice pronunciation.
 
 Core rules:
 
@@ -111,7 +111,7 @@ Pronunciation globals:
 The public filenames are part of the app contract.
 
 ```text
-slides-editor/
+speakeasy/
   index.html
   login.html
   edit.html
@@ -871,12 +871,12 @@ Behavior:
 - Render each note as `.sec` with `data-idx` and `data-section-id`.
 - Current section is `.active`; adjacent sections are `.adj`; others are dimmed.
 - Empty body shows `(빈 노트)`.
-- Font key is `slides-editor:notes:fontsize`, default `1.15` rem, range 0.7 to 2.5 rem.
+- Font key is `speakeasy:notes:fontsize` (migrated from `slides-editor:notes:fontsize`), default `1.15` rem, range 0.7 to 2.5 rem.
 - `HL` toggles `#script.no-hl` and button `.btn-on`.
 - Prev/next buttons and section clicks set manual mode.
 - Keyboard next: Down, Right, PageDown, `j`.
 - Keyboard prev: Up, Left, PageUp, `k`.
-- If `sync` exists, subscribe to `slides-editor-sync-<room>`. `section_id` wins, `index` is fallback. Manual mode ignores incoming sync.
+- If `sync` exists, subscribe to `speakeasy-sync-<room>`. `section_id` wins, `index` is fallback. Manual mode ignores incoming sync.
 - Attempts screen wake lock best-effort.
 
 ### 9.7 `script-edit.html?deck=<deck_id>`
@@ -1020,7 +1020,7 @@ Deprecated exports:
 
 - Remote mode creates a Supabase client from global config.
 - Local mode uses the local broadcast adapter.
-- Channel: `slides-editor-sync-<syncId>`.
+- Channel: `speakeasy-sync-<syncId>`.
 - Broadcast config: `{ self: false }` in Supabase mode.
 - Event: `slide`.
 - Payload: `{ section_id, index }`.

@@ -4,7 +4,7 @@
 >
 > Stack: **TypeScript + Vite (vanilla, no UI framework)**, structured as **Ports & Adapters (Hexagonal)**. Backend is a pluggable adapter — **Supabase** (cloud) or a **vendor-neutral Dockerized local stack** — selected by one env var, never by code.
 >
-> This document is the *build plan*, not the feature contract. The feature contract is `slides-editor/SPEC.md`; every acceptance item there must hold for Slideflow. All source, identifiers, comments, and default content are **English-only**.
+> This document is the *build plan*, not the feature contract. The feature contract is `speakeasy/SPEC.md`; every acceptance item there must hold for Slideflow. All source, identifiers, comments, and default content are **English-only**.
 
 ---
 
