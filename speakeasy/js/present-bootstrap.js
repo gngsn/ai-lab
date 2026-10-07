@@ -15,9 +15,16 @@
 
 import { ensureAuthed } from "./auth.js";
 import { getDeck } from "./repo/deck-repo.js";
+import {
+  applyAssetMap,
+  collectAssetUrls,
+  formatBytes,
+  preloadAssets,
+} from "./preload-assets.js";
 import { listByDeck } from "./repo/slide-repo.js";
 import { tagSection } from "./slide-render.js";
 import { isSlideHiddenContent } from "./slide-visibility.js";
+import { resolveStorageSourcesInHtml } from "./storage-src.js";
 
 if (!(await ensureAuthed())) {
   document.body.innerHTML =
@@ -109,6 +116,8 @@ if (html.includes("<!-- slides -->")) {
   console.warn("[present] frame_html missing <!-- slides --> placeholder");
   html = html.replace(/<\/body>/i, `${slidesHtml}</body>`);
 }
+// Older assets were inserted as supabase://… links; show them as public URLs.
+html = resolveStorageSourcesInHtml(html);
 
 const RUNTIME_URL = new URL("./js/slide-runtime.js", location.href).href;
 const SYNC_URL = new URL("./js/sync.js", location.href).href;
@@ -370,6 +379,23 @@ html = html.replace(
 
 if (deck.title && /<title>[^<]*<\/title>/i.test(html)) {
   html = html.replace(/<title>[^<]*<\/title>/i, `<title>${deck.title}</title>`);
+}
+
+// Download every image/video/audio the deck uses before showing it, and
+// point the deck at the local copies — no network needed between slides.
+{
+  const assetUrls = collectAssetUrls(html);
+  if (assetUrls.length) {
+    const label = document.querySelector("body > p");
+    const map = await preloadAssets(assetUrls, {
+      onProgress: ({ done, total, bytes }) => {
+        if (label) {
+          label.textContent = `loading assets ${done}/${total} · ${formatBytes(bytes)}`;
+        }
+      },
+    });
+    html = applyAssetMap(html, map);
+  }
 }
 
 document.open();

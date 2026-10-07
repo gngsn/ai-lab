@@ -9,6 +9,7 @@
 
 import { ensureAuthed } from "./auth.js";
 import { buildNotesMd } from "./export.js";
+import { formatBytes, warmDeckAssets } from "./preload-assets.js";
 import { fitSlideFrame } from "./slide-fit.js";
 import {
   cleanForSpeech,
@@ -36,6 +37,17 @@ if (!deckId) {
 let currentSpeed = 1.0;
 let currentIndex = 0;
 let slides = [];
+let deck = null;
+
+// The slide preview (edit-frame.html) asks for its deck + slide; answer from
+// memory so switching slides doesn't refetch them from Supabase.
+window.addEventListener("message", (e) => {
+  const m = e.data;
+  if (m?.type !== "edit-frame:request-data" || !deck) return;
+  const slide = slides.find((s) => s.section_id === m.sectionId);
+  if (!slide) return;
+  e.source?.postMessage({ type: "edit-frame:data", id: m.id, deck, slide }, "*");
+});
 let notesMap = new Map();
 let panel = null; // shared training-panel instance
 
@@ -314,7 +326,6 @@ function initResizers() {
 async function init() {
   $("notes-link").href = `./notes.html?deck=${encodeURIComponent(deckId)}`;
 
-  let deck;
   try {
     const result = await buildNotesMd(deckId);
     deck = result.deck;
@@ -333,6 +344,16 @@ async function init() {
   initResizers();
   renderSectionList();
   selectSection(0);
+
+  // Pull every slide's images/video/audio into the browser cache now, so
+  // later slides show without waiting on the network.
+  const title = document.title;
+  warmDeckAssets(deck, slides, {
+    onProgress: ({ done, total, bytes }) => {
+      document.title =
+        done < total ? `(${done}/${total} · ${formatBytes(bytes)}) ${title}` : title;
+    },
+  }).catch(() => {});
 }
 
 init().catch(console.error);

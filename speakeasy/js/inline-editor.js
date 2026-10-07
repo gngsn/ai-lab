@@ -70,6 +70,8 @@ export class InlineEditor {
 
     // Cross-frame IPC from the parent (edit.html):
     //   edit:insert-image  — insert <img src=...> at current caret
+    //   edit:insert-asset  — insert an asset by kind: <img>, <video>,
+    //                        <audio>, or a download link for other files
     //   edit:flush         — commit any pending debounced save immediately
     //                        (used when parent toggles HTML mode, on Save now,
     //                        and on switchSlide / beforeunload)
@@ -78,6 +80,8 @@ export class InlineEditor {
     window.addEventListener("message", (e) => {
       if (e.data?.type === "edit:insert-image" && this.section) {
         this.insertImage(e.data.url, e.data.alt || "");
+      } else if (e.data?.type === "edit:insert-asset" && this.section) {
+        this.insertAsset(e.data);
       } else if (e.data?.type === "edit:insert-svg" && this.section) {
         this.insertSvg(e.data.html);
       } else if (e.data?.type === "edit:flush") {
@@ -105,18 +109,48 @@ export class InlineEditor {
     img.src = url;
     if (alt) img.alt = alt;
     img.style.maxWidth = "100%";
+    this.placeNode(img);
+  }
 
-    // Try to place at the current selection if it's inside our section.
+  // Insert an uploaded asset in the form that fits its kind.
+  insertAsset({ url, name = "", kind = "file" }) {
+    if (!url) return;
+    let node;
+    if (kind === "image") {
+      this.insertImage(url, name);
+      return;
+    } else if (kind === "video" || kind === "audio") {
+      node = document.createElement(kind);
+      node.src = url;
+      node.controls = true;
+      node.preload = "metadata";
+      if (kind === "video") {
+        node.playsInline = true;
+        node.style.maxWidth = "100%";
+      }
+    } else {
+      node = document.createElement("a");
+      node.href = url;
+      node.target = "_blank";
+      node.rel = "noopener";
+      node.textContent = name || url.split("/").pop();
+    }
+    this.placeNode(node);
+  }
+
+  // Place a node at the caret if it's inside our section, else append it
+  // to the largest editable container; then schedule a save.
+  placeNode(node) {
     const sel = document.getSelection();
     let placed = false;
     if (sel?.rangeCount) {
       const range = sel.getRangeAt(0);
       if (this.section.contains(range.commonAncestorContainer)) {
         range.deleteContents();
-        range.insertNode(img);
-        // Move caret after the inserted image
-        range.setStartAfter(img);
-        range.setEndAfter(img);
+        range.insertNode(node);
+        // Move caret after the inserted node
+        range.setStartAfter(node);
+        range.setEndAfter(node);
         sel.removeAllRanges();
         sel.addRange(range);
         placed = true;
@@ -128,7 +162,7 @@ export class InlineEditor {
         this.editables.find((el) => /^(DIV|P|UL|OL)$/.test(el.tagName)) ||
         this.section.querySelector("div") ||
         this.section;
-      target.appendChild(img);
+      target.appendChild(node);
     }
     this.scheduleSave();
   }

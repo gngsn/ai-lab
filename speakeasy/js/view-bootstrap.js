@@ -9,6 +9,12 @@
 
 import DOMPurify from "../vendor/modules/dompurify.mjs";
 import { getDeck } from "./repo/deck-repo.js";
+import {
+  applyAssetMap,
+  collectAssetUrls,
+  formatBytes,
+  preloadAssets,
+} from "./preload-assets.js";
 import { listByDeck } from "./repo/slide-repo.js";
 import { tagSection } from "./slide-render.js";
 import { resolveStorageSourcesInHtml } from "./storage-src.js";
@@ -162,6 +168,23 @@ html = html.replace(/<\/body>/i, `${overlay}${bootScript}</body>`);
 
 if (deck.title && /<title>[^<]*<\/title>/i.test(html)) {
   html = html.replace(/<title>[^<]*<\/title>/i, `<title>${deck.title}</title>`);
+}
+
+// Download every image/video/audio the deck uses before showing it, and
+// point the deck at the local copies — no network needed between slides.
+{
+  const assetUrls = collectAssetUrls(html);
+  if (assetUrls.length) {
+    const label = document.querySelector("body > p");
+    const map = await preloadAssets(assetUrls, {
+      onProgress: ({ done, total, bytes }) => {
+        if (label) {
+          label.textContent = `loading assets ${done}/${total} · ${formatBytes(bytes)}`;
+        }
+      },
+    });
+    html = applyAssetMap(html, map);
+  }
 }
 
 document.open();
