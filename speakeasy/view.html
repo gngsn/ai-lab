@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>loading…</title>
     <style>
-      /* Pre-bootstrap loading state — replaced by deck frame_html via
-         document.write inside present-bootstrap.js. */
-      body { margin: 0; background: #f2f2f2; color: #6b6c6e;
+      body {
+        margin: 0; background: #f2f2f2; color: #6b6c6e;
         color-scheme: light dark;
-             font: 14px ui-monospace, monospace;
-             display: grid; place-items: center; height: 100vh; }
+        font: 14px ui-monospace, monospace;
+        display: grid; place-items: center; height: 100vh;
+      }
       @media (prefers-color-scheme: dark) {
         body { background: #19191a; color: #9a9a9c; }
       }
@@ -19,6 +19,6 @@
   <body>
     <p>loading deck…</p>
     <script src="./js/config.local.js"></script>
-    <script type="module" src="./js/present-bootstrap.js"></script>
+    <script src="./js/letterbox.js" data-boot="./js/view-bootstrap.js"></script>
   </body>
 </html>

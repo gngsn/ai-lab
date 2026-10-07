@@ -14,6 +14,7 @@
  */
 
 import * as audioRepo from "./repo/audio-repo.js";
+import { sha1Hex } from "./sha1.js";
 
 // ── Config ────────────────────────────────────────────────────────
 const EL_API_KEY = window.ELEVENLABS_API_KEY || "";
@@ -75,15 +76,6 @@ async function dbPut(key, val, store = "audio") {
   });
 }
 
-async function sha1(text) {
-  const buf = await crypto.subtle.digest(
-    "SHA-1",
-    new TextEncoder().encode(text),
-  );
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
 
 // ── Text helpers (pure, module-level) ─────────────────────────────
 export function cleanForSpeech(text) {
@@ -533,7 +525,7 @@ export function createTrainingPanel(
   // Reuse the latest matching take when text + engine are unchanged;
   // otherwise synthesize once and store it as the new latest take.
   async function getOrCreateVersion(sectionId, cleanText, { forceNew } = {}) {
-    const textHash = await sha1(cleanText);
+    const textHash = await sha1Hex(cleanText);
     const hist = await getHistory(sectionId);
     if (!forceNew) {
       // Reuse a same-engine take, or any take that came from Supabase
@@ -677,7 +669,7 @@ export function createTrainingPanel(
   async function saveRecordingToDisk(sectionId, version, { interactive } = {}) {
     const root2 = await getRecRoot({ interactive });
     if (!root2) return false;
-    const dir = await getSubDir(root2, ["slides-editor", deckId, sectionId]);
+    const dir = await getSubDir(root2, ["speakeasy", deckId, sectionId]);
     const ext = (version.mime || "").includes("wav") ? "wav" : "webm";
     const name = `${fileStamp(version.ts)}.${ext}`;
     const blob = new Blob([version.buf], {
@@ -1135,7 +1127,7 @@ export function createTrainingPanel(
       ts: Date.now(),
       engine: "supabase",
       voice: "",
-      textHash: await sha1(cleanForSpeech(section.text || "")),
+      textHash: await sha1Hex(cleanForSpeech(section.text || "")),
       mime: blob.type || "audio/mpeg",
       buf,
       remotePath: remote.path,

@@ -7,7 +7,20 @@
 
 import { askText } from "./dom-prompt.js";
 
-const TOKEN_KEY = "slides-editor:auth:token";
+const TOKEN_KEY = "speakeasy:auth:token";
+const LEGACY_TOKEN_KEY = "slides-editor:auth:token"; // pre-rename name
+
+// Carry a passphrase accepted under the old name over, so the rename
+// doesn't log anyone out.
+try {
+  const legacy = localStorage.getItem(LEGACY_TOKEN_KEY);
+  if (legacy !== null) {
+    if (localStorage.getItem(TOKEN_KEY) === null) {
+      localStorage.setItem(TOKEN_KEY, legacy);
+    }
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+  }
+} catch {}
 
 export function isAuthed() {
   const want = window.OWNER_PASSPHRASE;

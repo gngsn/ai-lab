@@ -155,6 +155,11 @@
         padding: 0.5rem 0;
         font: inherit;
       }
+      .field-hint {
+        font-size: 13px;
+        color: var(--muted);
+        min-height: 1em;
+      }
       .field input:focus {
         outline: none;
         border-bottom-width: 2px;
@@ -290,12 +295,20 @@
       >
         <h2 id="import-modal-title">Import HTML deck</h2>
         <p>
-          Select an HTML presentation file. It should contain top-level
-          <code>&lt;section&gt;</code> slides.
+          Choose an HTML presentation file or paste its URL (GitHub links
+          work). It should contain top-level <code>&lt;section&gt;</code>
+          slides.
         </p>
         <div class="field">
           <label for="import-file">HTML file</label>
           <input id="import-file" type="file" accept=".html,.htm,text/html" />
+          <input
+            id="import-url"
+            type="url"
+            placeholder="or URL — https://github.com/…/deck.html"
+            autocomplete="off"
+          />
+          <span class="field-hint" id="import-url-hint"></span>
         </div>
         <div class="field">
           <label for="import-deck-id">Deck ID</label>
@@ -320,6 +333,30 @@
             type="file"
             accept=".md,.markdown,text/markdown"
           />
+          <input
+            id="import-notes-url"
+            type="url"
+            placeholder="or URL — https://github.com/…/script.md"
+            autocomplete="off"
+          />
+          <span class="field-hint" id="import-notes-url-hint"></span>
+        </div>
+        <div class="field">
+          <label for="import-github-token">
+            GitHub token (optional, for private repositories)
+          </label>
+          <input
+            id="import-github-token"
+            type="password"
+            placeholder="github_pat_…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <span class="field-hint">
+            Read-only "Contents" access is enough. Leave empty to use
+            <code>GITHUB_TOKEN</code> from <code>config.local.js</code>; a token
+            typed here is kept only in this browser.
+          </span>
         </div>
         <p id="import-error" class="bad" style="display: none"></p>
         <div class="actions">
@@ -345,9 +382,18 @@
         parseNotesMd,
         slugify,
       } from "./js/import-html.js";
+      import {
+        fetchRemoteBlob,
+        fetchRemoteText,
+        findRepoMedia,
+        makeSelfContained,
+        nameFromUrl,
+        remoteFileExists,
+      } from "./js/remote-source.js";
       import * as deckRepo from "./js/repo/deck-repo.js";
       import * as notesRepo from "./js/repo/notes-repo.js";
       import * as slideRepo from "./js/repo/slide-repo.js";
+      import * as storageRepo from "./js/repo/storage-repo.js";
 
       if (!ensureAuthed()) {
         document.body.innerHTML =
@@ -365,10 +411,34 @@
       const importDeckIdInput = document.getElementById("import-deck-id");
       const importTitleInput = document.getElementById("import-title");
       const importNotesInput = document.getElementById("import-notes-file");
+      const importUrlInput = document.getElementById("import-url");
+      const importUrlHint = document.getElementById("import-url-hint");
+      const importNotesUrlInput = document.getElementById("import-notes-url");
+      const importNotesUrlHint = document.getElementById(
+        "import-notes-url-hint",
+      );
+      const importTokenInput = document.getElementById("import-github-token");
+      const TOKEN_KEY = "speakeasy:github-token";
+      try {
+        importTokenInput.value = localStorage.getItem(TOKEN_KEY) || "";
+      } catch {}
+      // A token typed here wins; otherwise use window.GITHUB_TOKEN from
+      // js/config.local.js (or the GITHUB_TOKEN env var on Vercel).
+      const githubToken = () =>
+        importTokenInput.value.trim() || window.GITHUB_TOKEN || "";
+      if (window.GITHUB_TOKEN) {
+        importTokenInput.placeholder = "using GITHUB_TOKEN from config";
+      }
       const importError = document.getElementById("import-error");
 
-      let selectedFile = null;
-      let selectedNotesFile = null;
+      // Each source is { name, load: () => Promise<string> }, from a local
+      // file or a fetched URL — whichever the user picked last.
+      let htmlSource = null;
+      let notesSource = null;
+      // In-flight URL fetches; Import waits for them (clicking Import blurs
+      // the URL field, which starts its fetch).
+      let htmlUrlPending = null;
+      let notesUrlPending = null;
 
       function setImportError(message = "") {
         if (!message) {
@@ -385,11 +455,15 @@
         importDeckIdInput.value = "";
         importTitleInput.value = "";
         importNotesInput.value = "";
+        importUrlInput.value = "";
+        importNotesUrlInput.value = "";
+        importUrlHint.textContent = "";
+        importNotesUrlHint.textContent = "";
         importModalBg.classList.add("show");
         importModalBg.setAttribute("aria-hidden", "false");
         importFileInput.value = "";
-        selectedFile = null;
-        selectedNotesFile = null;
+        htmlSource = null;
+        notesSource = null;
       }
 
       function closeImportModal() {
@@ -398,11 +472,10 @@
         setImportError("");
       }
 
-      async function handleImportFile(file) {
-        selectedFile = file;
-        const html = await file.text();
-        const parsed = parseImportedHtmlDeck(html, {
-          deckId: slugify(file.name.replace(/\.[^.]+$/, "")),
+      async function useHtmlSource(source) {
+        htmlSource = source;
+        const parsed = parseImportedHtmlDeck(await source.load(), {
+          deckId: slugify(source.name),
         });
         if (!importDeckIdInput.value) {
           importDeckIdInput.value = parsed.deckId;
@@ -410,32 +483,86 @@
         if (!importTitleInput.value) {
           importTitleInput.value = parsed.title;
         }
+        return parsed;
+      }
+
+      async function handleImportFile(file) {
+        importUrlInput.value = "";
+        importUrlHint.textContent = "";
+        await useHtmlSource({
+          name: file.name.replace(/\.[^.]+$/, ""),
+          load: () => file.text(),
+        });
+      }
+
+      async function handleImportUrl(value) {
+        importFileInput.value = "";
+        importUrlHint.textContent = "Fetching…";
+        const token = githubToken();
+        const { text, url } = await fetchRemoteText(value, { token });
+        const html = await makeSelfContained(text, url, { token });
+        // Files the deck links to in its repo get copied to storage on import;
+        // list missing ones now so broken paths show up before importing.
+        const media = findRepoMedia(html, url);
+        const exists = await Promise.all(
+          media.map((m) => remoteFileExists(m.url, { token })),
+        );
+        const found = media.filter((_, i) => exists[i]);
+        const missing = media.filter((_, i) => !exists[i]);
+        const parsed = await useHtmlSource({
+          name: nameFromUrl(url),
+          load: async () => html,
+          media: found,
+        });
+        importUrlHint.textContent = [
+          `✓ ${parsed.slides.length} slide(s) found`,
+          found.length && `${found.length} linked file(s) will be copied`,
+          missing.length &&
+            `⚠ ${missing.length} linked file(s) not in the repo: ` +
+              missing
+                .slice(0, 3)
+                .map((m) => m.path.split("/").slice(-2).join("/"))
+                .join(", ") +
+              (missing.length > 3 ? `, +${missing.length - 3} more` : ""),
+        ]
+          .filter(Boolean)
+          .join(" · ");
       }
 
       async function handleImportNotesFile(file) {
-        selectedNotesFile = file;
+        importNotesUrlInput.value = "";
+        importNotesUrlHint.textContent = "";
+        notesSource = { name: file.name, load: () => file.text() };
+      }
+
+      async function handleImportNotesUrl(value) {
+        importNotesInput.value = "";
+        importNotesUrlHint.textContent = "Fetching…";
+        const { text, url } = await fetchRemoteText(value, {
+          token: githubToken(),
+        });
+        notesSource = { name: nameFromUrl(url), load: async () => text };
+        importNotesUrlHint.textContent = `✓ ${parseNotesMd(text).length} note(s) found`;
       }
 
       async function runImport() {
-        if (!selectedFile) {
-          throw new Error("Choose an HTML file first.");
+        await Promise.all([htmlUrlPending, notesUrlPending]);
+        if (!htmlSource) {
+          throw new Error("Choose an HTML file or enter its URL first.");
         }
-        const html = await selectedFile.text();
+        let html = await htmlSource.load();
         const deckId =
-          importDeckIdInput.value.trim() ||
-          slugify(selectedFile.name.replace(/\.[^.]+$/, ""));
+          importDeckIdInput.value.trim() || slugify(htmlSource.name);
         if (!deckId) {
           throw new Error("Deck ID is required.");
         }
-        const parsed = parseImportedHtmlDeck(html, {
-          deckId,
-          title: importTitleInput.value.trim() || undefined,
-        });
+        const title = importTitleInput.value.trim() || undefined;
+        let parsed = parseImportedHtmlDeck(html, { deckId, title });
         if (parsed.slides.length === 0) {
           throw new Error("No <section> slides found in the selected HTML.");
         }
-        const notes = selectedNotesFile
-          ? parseNotesMd(await selectedNotesFile.text())
+        const notes = notesSource
+          ? parseNotesMd(await notesSource.load())
           : null;
         if (notes && notes.length !== parsed.slides.length) {
           console.warn(
@@ -446,6 +573,25 @@
         importRunBtn.disabled = true;
         importRunBtn.textContent = "Importing…";
         try {
+          // Copy the deck's repo images/video into storage and point the
+          // deck at the copies, so it no longer depends on GitHub access.
+          const media = htmlSource.media || [];
+          for (const [i, file] of media.entries()) {
+            importRunBtn.textContent = `Copying files ${i + 1}/${media.length}…`;
+            const blob = await fetchRemoteBlob(file.url, {
+              token: githubToken(),
+            });
+            const publicUrl = await storageRepo.uploadImportedAsset(
+              parsed.deckId,
+              file.path,
+              blob,
+            );
+            html = html.split(file.url).join(publicUrl);
+          }
+          if (media.length) {
+            parsed = parseImportedHtmlDeck(html, { deckId, title });
+          }
+          importRunBtn.textContent = "Importing…";
           await deckRepo.upsertDeck({
             deck_id: parsed.deckId,
             title: parsed.title,
@@ -501,6 +647,43 @@
           setImportError(err.message);
         }
       });
+      importTokenInput.addEventListener("change", () => {
+        try {
+          const token = githubToken();
+          if (token) localStorage.setItem(TOKEN_KEY, token);
+          else localStorage.removeItem(TOKEN_KEY);
+        } catch {}
+        // Re-fetch any URL that may have failed for lack of a token.
+        for (const input of [importUrlInput, importNotesUrlInput]) {
+          if (input.value.trim()) input.dispatchEvent(new Event("change"));
+        }
+      });
+      function bindUrlInput(input, hint, handle, setPending) {
+        input.addEventListener("change", () => {
+          const value = input.value.trim();
+          if (!value) {
+            hint.textContent = "";
+            return;
+          }
+          setImportError("");
+          const pending = handle(value).catch((err) => {
+            hint.textContent = "";
+            setImportError(err.message);
+          });
+          setPending(pending);
+        });
+      }
+      bindUrlInput(importUrlInput, importUrlHint, handleImportUrl, (p) => {
+        htmlUrlPending = p;
+      });
+      bindUrlInput(
+        importNotesUrlInput,
+        importNotesUrlHint,
+        handleImportNotesUrl,
+        (p) => {
+          notesUrlPending = p;
+        },
+      );
       importRunBtn.addEventListener("click", async () => {
         try {
           setImportError("");

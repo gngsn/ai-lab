@@ -6,7 +6,19 @@
 //   - Manual mode toggles via sync-badge click, like v5.
 import { createSlideSync } from "./sync.js";
 
-const FONT_KEY = "slides-editor:notes:fontsize";
+const FONT_KEY = "speakeasy:notes:fontsize";
+const LEGACY_FONT_KEY = "slides-editor:notes:fontsize"; // pre-rename name
+
+// Keep the reader's font size across the rename.
+try {
+  const legacy = localStorage.getItem(LEGACY_FONT_KEY);
+  if (legacy !== null) {
+    if (localStorage.getItem(FONT_KEY) === null) {
+      localStorage.setItem(FONT_KEY, legacy);
+    }
+    localStorage.removeItem(LEGACY_FONT_KEY);
+  }
+} catch {}
 
 const escapeHtml = (s) =>
   String(s).replace(

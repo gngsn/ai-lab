@@ -9,6 +9,7 @@
 
 import { ensureAuthed } from "./auth.js";
 import { buildNotesMd } from "./export.js";
+import { fitSlideFrame } from "./slide-fit.js";
 import {
   cleanForSpeech,
   createTrainingPanel,
@@ -206,6 +207,8 @@ function buildDOM() {
   scriptTitleEl = $("script-title");
   scriptNumEl = $("script-num");
   slideIframeEl = $("slide-iframe");
+  // Render the preview at the fixed slide size and scale it as a whole.
+  fitSlideFrame(slideIframeEl, $("slide-stage"));
 
   // Mount the shared training panel.
   panel = createTrainingPanel($("training-mount"), {
