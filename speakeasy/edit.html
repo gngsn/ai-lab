@@ -74,6 +74,22 @@
         font-weight: 400;
         letter-spacing: -0.02em;
       }
+      /* Deck title is click-to-rename (see initDeckTitleEditing). */
+      #deck-title[contenteditable] {
+        cursor: text;
+        max-width: 40vw;
+        overflow: hidden;
+        white-space: nowrap;
+        padding: 2px 2px 1px;
+        border-bottom: 1px dashed transparent;
+        outline: none;
+      }
+      #deck-title[contenteditable]:hover {
+        border-bottom-color: var(--se-rule);
+      }
+      #deck-title[contenteditable]:focus {
+        border-bottom: 1px solid var(--accent);
+      }
       #toolbar .spacer {
         flex: 1;
       }
@@ -203,6 +219,7 @@
       }
       .image-grid {
         display: grid;
+        align-content: start; /* don't stretch rows when there are few cards */
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
         gap: 8px;
         overflow-y: auto;
@@ -225,13 +242,64 @@
         place-items: center;
         overflow: hidden;
       }
-      .img-card .thumb img {
+      .img-card .thumb img,
+      .img-card .thumb video {
         max-width: 100%;
         max-height: 100%;
         object-fit: contain;
       }
+      .img-card .asset-icon {
+        display: grid;
+        place-items: center;
+        gap: 4px;
+        font-size: 32px;
+        line-height: 1;
+      }
+      .img-card .asset-icon small {
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        color: var(--text-mid);
+        font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
+      }
+      /* Touch screens can't hover: keep the card actions visible. */
+      @media (hover: none) {
+        .image-grid .img-card .actions {
+          display: flex;
+        }
+      }
       .img-card .meta {
         font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 2px 8px;
+        padding: 6px 8px;
+        font-size: 11px;
+      }
+      .img-card .meta .nm {
+        grid-column: 1 / -1;
+      }
+      .img-card .meta .src {
+        text-align: right;
+      }
+      /* .img-card sets display:flex, which would beat the hidden attribute. */
+      .img-card[hidden] {
+        display: none;
+      }
+      .img-card .meta .src {
+        color: var(--text-mid);
+        font-size: 10px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #images-filter {
+        width: min(220px, 40vw);
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 4px 8px;
+        font: inherit;
+        font-size: 12px;
       }
       .img-card .meta .nm {
         overflow: hidden;
@@ -1409,7 +1477,7 @@
             <button id="frame-edit" type="button">Frame…</button>
             <button id="share-btn" type="button">🔗 Share</button>
             <button id="svg-btn" type="button">✦ SVG</button>
-            <button id="images-btn" type="button">🖼 Images</button>
+            <button id="images-btn" type="button">🖼 Assets</button>
           </div>
         </details>
         <span id="status">—</span>
@@ -1550,16 +1618,21 @@
         style="width: min(820px, 92vw); height: min(640px, 88vh)"
       >
         <header style="display: flex; align-items: center; gap: 8px">
-          <h2>Images</h2>
+          <h2>Assets</h2>
           <span style="font-size: 11px; color: var(--text-mid)"
-            >deck: <code id="images-deck-id">—</code></span
+            >shared across all decks</span
           >
           <span style="flex: 1"></span>
+          <input
+            id="images-filter"
+            type="search"
+            placeholder="Filter by name or deck"
+            autocomplete="off"
+          />
           <button class="btn" id="images-upload-btn">+ Upload</button>
           <input
             type="file"
             id="images-upload-input"
-            accept="image/*"
             multiple
             hidden
           />

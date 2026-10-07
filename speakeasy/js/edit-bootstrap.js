@@ -23,6 +23,7 @@ import {
   isSlideHiddenContent,
   setSlideHiddenContent,
 } from "./slide-visibility.js";
+import { formatBytes, warmDeckAssets } from "./preload-assets.js";
 import { sha1Hex } from "./sha1.js";
 import { fitSlideFrame } from "./slide-fit.js";
 import { createTrainingPanel } from "./training-panel.js";
@@ -31,7 +32,7 @@ bindShortcutsHelp("Edit", [
   { keys: ["E"], desc: "Toggle edit mode (canvas)" },
   { keys: ["M"], desc: "Toggle raw HTML mode" },
   { keys: ["H"], desc: "Toggle history drawer" },
-  { keys: ["I"], desc: "Open image library" },
+  { keys: ["I"], desc: "Open asset library (images, video, audio, files)" },
   { keys: ["⌘S", "Ctrl+S"], desc: "Save version (manual snapshot)" },
   { keys: ["?"], desc: "This help" },
   { keys: ["Click"], desc: "Select slide in list" },
@@ -872,38 +873,68 @@ for (const id of ["prop-title", "slide-list-title"]) {
   el.addEventListener("blur", () => flushTitleSave());
 }
 
-// ── image library ──────────────────────────────────────────────────
+// ── asset library (images, video, audio, any file) ─────────────────
+// One library shared by every deck: uploads go to a shared folder, and the
+// list also includes files uploaded from any deck before that. Assets are
+// inserted/copied by their public https URL, so they show in every view.
+const ASSET_ICONS = { video: "🎬", audio: "🎵", file: "📄" };
+
+function assetThumb(asset) {
+  const url = escapeHtml(asset.url);
+  if (asset.kind === "image") {
+    return `<img src="${url}" alt="" loading="lazy" />`;
+  }
+  if (asset.kind === "video") {
+    // #t=0.1 makes browsers paint the first frame as a preview.
+    return `<video src="${url}#t=0.1" muted preload="metadata" playsinline></video>`;
+  }
+  const ext = escapeHtml(asset.name.split(".").pop()?.toUpperCase() || "");
+  return `<div class="asset-icon"><span>${ASSET_ICONS[asset.kind]}</span><small>${ext}</small></div>`;
+}
+
+function formatSize(bytes) {
+  if (bytes == null) return "";
+  if (bytes < 1024 * 1024) return Math.max(1, Math.round(bytes / 1024)) + "KB";
+  return (bytes / 1024 / 1024).toFixed(1) + "MB";
+}
+
 async function refreshImagesGrid() {
   const grid = $("images-grid");
   grid.innerHTML =
     '<div style="opacity:.5;font-size:12px;padding:1em;grid-column:1/-1">loading…</div>';
   try {
-    const images = await storageRepo.listImages(deckId);
-    if (images.length === 0) {
+    const assets = await storageRepo.listAllAssets();
+    if (assets.length === 0) {
       grid.innerHTML =
-        '<div style="opacity:.5;font-size:12px;padding:1em;grid-column:1/-1">No images yet — drop files or click <b>+ Upload</b>.</div>';
+        '<div style="opacity:.5;font-size:12px;padding:1em;grid-column:1/-1">No assets yet — drop files here or click <b>+ Upload</b>. Images, video, audio and other files are all fine.</div>';
       return;
     }
-    grid.innerHTML = images
+    grid.innerHTML = assets
       .map(
-        (img) => `
-      <div class="img-card" data-path="${escapeHtml(img.path)}" data-url="${escapeHtml(img.url)}">
-        <div class="thumb"><img src="${escapeHtml(img.url)}" alt="" loading="lazy" /></div>
+        (asset) => `
+      <div class="img-card" data-path="${escapeHtml(asset.path)}" data-url="${escapeHtml(asset.url)}" data-kind="${asset.kind}" data-name="${escapeHtml(asset.name)}">
+        <div class="thumb">${assetThumb(asset)}</div>
         <div class="actions">
           <button class="act-copy" title="Copy URL">📋</button>
           <button class="act-insert" title="Insert into current slide">↩</button>
           <button class="act-del" title="Delete">🗑</button>
         </div>
         <div class="meta">
-          <span class="nm">${escapeHtml(img.name)}</span>
-          <span>${img.size != null ? Math.round(img.size / 1024) + "KB" : ""}</span>
+          <span class="nm" title="${escapeHtml(asset.name)}">${escapeHtml(asset.name)}</span>
+          <span>${formatSize(asset.size)}</span>
+          <span class="src" title="Uploaded in">${
+            asset.deckId == null
+              ? "shared"
+              : asset.deckId === deckId
+                ? "this deck"
+                : escapeHtml(asset.deckId)
+          }</span>
         </div>
       </div>`,
       )
       .join("");
     grid.querySelectorAll(".img-card").forEach((card) => {
-      const url = card.dataset.url;
-      const path = card.dataset.path;
+      const { url, path, kind, name } = card.dataset;
       card.querySelector(".act-copy").onclick = async () => {
         try {
           await navigator.clipboard.writeText(url);
@@ -914,11 +945,7 @@ async function refreshImagesGrid() {
       };
       card.querySelector(".act-insert").onclick = () => {
         $("canvas").contentWindow?.postMessage(
-          {
-            type: "edit:insert-image",
-            url,
-            alt: card.querySelector(".nm")?.textContent || "",
-          },
+          { type: "edit:insert-asset", url, name, kind },
           "*",
         );
         $("images-modal-bg").classList.remove("show");
@@ -927,12 +954,13 @@ async function refreshImagesGrid() {
       card.querySelector(".act-del").onclick = async () => {
         if (
           !confirm(
-            `Delete '${card.querySelector(".nm")?.textContent}'? This cannot be undone.`,
+            `Delete '${name}' from the shared library?\n` +
+              "Any deck using it will show it as missing. This cannot be undone.",
           )
         )
           return;
         try {
-          await storageRepo.deleteImage(path);
+          await storageRepo.deleteAsset(path);
           toast("Deleted", "ok");
           await refreshImagesGrid();
         } catch (err) {
@@ -940,34 +968,43 @@ async function refreshImagesGrid() {
         }
       };
     });
+    filterAssetCards();
   } catch (err) {
     grid.innerHTML = `<div style="color:var(--se-bad, #b42318);font-size:12px;padding:1em;grid-column:1/-1">${escapeHtml(err.message)}</div>`;
   }
 }
 
+// Narrow the library by file name or source deck.
+function filterAssetCards() {
+  const q = ($("images-filter")?.value || "").trim().toLowerCase();
+  for (const card of $("images-grid").querySelectorAll(".img-card")) {
+    const hay = `${card.dataset.name} ${card.querySelector(".src")?.textContent}`;
+    card.hidden = Boolean(q) && !hay.toLowerCase().includes(q);
+  }
+}
+$("images-filter")?.addEventListener("input", filterAssetCards);
+
 async function uploadFiles(files) {
-  const list = Array.from(files || []).filter((f) =>
-    f.type.startsWith("image/"),
-  );
+  const list = Array.from(files || []);
   if (list.length === 0) return;
-  setStatus(`uploading ${list.length} image(s)…`);
-  let ok = 0,
-    fail = 0;
-  for (const file of list) {
+  let ok = 0;
+  const failed = [];
+  for (const [i, file] of list.entries()) {
+    setStatus(`uploading ${i + 1}/${list.length}: ${file.name}…`);
     try {
-      await storageRepo.uploadImage(deckId, file);
+      await storageRepo.uploadAsset(file);
       ok++;
     } catch (err) {
-      console.warn("[image upload]", file.name, err);
-      fail++;
+      console.warn("[asset upload]", file.name, err);
+      failed.push(`${file.name} (${err.message})`);
     }
   }
-  if (fail === 0) {
+  if (failed.length === 0) {
     setStatus(`uploaded ${ok}`, "ok");
-    toast(`Uploaded ${ok} image(s)`, "ok");
+    toast(`Uploaded ${ok} file(s)`, "ok");
   } else {
-    setStatus(`uploaded ${ok}, failed ${fail}`, "err");
-    toast(`${fail} upload(s) failed`, "err");
+    setStatus(`uploaded ${ok}, failed ${failed.length}`, "err");
+    toast(`Upload failed: ${failed.join(", ")}`, "err");
   }
   await refreshImagesGrid();
 }
@@ -1989,11 +2026,34 @@ document.querySelectorAll("[data-export]").forEach((btn) => {
     }
   });
 });
-// Close the dropdown when clicking elsewhere.
-document.addEventListener("click", (e) => {
-  const drop = $("export-dropdown");
-  if (drop && drop.open && !drop.contains(e.target)) drop.open = false;
+// Close open dropdown menus (More, Export, per-slide "…") when clicking
+// anywhere outside them. A menu containing the click stays open, so nested
+// menus (Export inside More) keep working and opening one closes the rest.
+function closeDropdowns(except = null) {
+  for (const drop of document.querySelectorAll("details.dropdown[open]")) {
+    if (!except || !drop.contains(except)) drop.open = false;
+  }
+}
+// Capture-phase pointerdown runs before any handler can stop propagation.
+document.addEventListener("pointerdown", (e) => closeDropdowns(e.target), true);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeDropdowns();
 });
+// Presses inside the slide iframe never reach this document. It's
+// same-origin, so listen inside it directly (re-attached per slide load);
+// window blur covers anything else that takes focus away.
+$("canvas").addEventListener("load", () => {
+  try {
+    $("canvas").contentDocument?.addEventListener(
+      "pointerdown",
+      () => closeDropdowns(),
+      true,
+    );
+  } catch {
+    /* not same-origin (about:blank during switches) — ignore */
+  }
+});
+window.addEventListener("blur", () => closeDropdowns());
 
 $("save-version").addEventListener("click", async () => {
   try {
@@ -2258,6 +2318,20 @@ function initSlideListResizer() {
 
 // ── init ───────────────────────────────────────────────────────────
 await refresh();
+// Pull every slide's images/video/audio into the browser cache now, so
+// switching slides doesn't wait on the network. (Cache only: the editor
+// saves slide HTML, so URLs must stay the real public ones.)
+if (deck) {
+  warmDeckAssets(deck, slides, {
+    onProgress: ({ done, total, bytes }) => {
+      if (done < total) {
+        setStatus(`preloading assets ${done}/${total} · ${formatBytes(bytes)}`);
+      } else {
+        setStatus(`assets ready · ${formatBytes(bytes)}`, "ok");
+      }
+    },
+  }).catch(() => {});
+}
 
 // Shared pronunciation training panel (bottom of the props column).
 const trainingMount = $("training-mount");
@@ -2270,6 +2344,63 @@ if (trainingMount) {
   syncTrainingPanel();
 }
 
+// ── deck title (click to rename) ──────────────────────────────────
+// The toolbar title is editable in place: Enter or blur saves, Escape
+// reverts. An empty title is rejected and the previous one restored.
+function initDeckTitleEditing() {
+  const el = $("deck-title");
+  if (!el) return;
+  el.contentEditable = "plaintext-only";
+  el.spellcheck = false;
+  el.title = "Click to rename this deck";
+  el.setAttribute("role", "textbox");
+  el.setAttribute("aria-label", "Deck title");
+
+  let saving = false;
+  el.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      el.blur();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      el.textContent = deck?.title || deckId;
+      el.blur();
+    }
+    // Keep editor shortcuts (E, ?, arrows…) from firing while typing.
+    e.stopPropagation();
+  });
+  el.addEventListener("blur", async () => {
+    const next = el.textContent.replace(/\s+/g, " ").trim();
+    const prev = deck?.title || deckId;
+    if (!deck || saving || next === prev) {
+      el.textContent = prev;
+      return;
+    }
+    if (!next) {
+      el.textContent = prev;
+      toast("Deck title can't be empty", "err");
+      return;
+    }
+    saving = true;
+    setStatus("saving title…");
+    try {
+      await deckRepo.updateTitle(deckId, next);
+      deck.title = next;
+      el.textContent = next;
+      document.title = `Edit · ${next}`;
+      setStatus("saved", "ok");
+      toast("Deck renamed", "ok");
+    } catch (err) {
+      el.textContent = prev;
+      setStatus("rename failed", "err");
+      toast("Rename failed: " + err.message, "err");
+    } finally {
+      saving = false;
+    }
+  });
+}
+
+initDeckTitleEditing();
 initModeSelect();
 initSlideListResizer();
 initPropsResizer();

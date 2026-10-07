@@ -4,6 +4,7 @@
 import { getDeck } from "./repo/deck-repo.js";
 import { getOne } from "./repo/slide-repo.js";
 import { tagSection } from "./slide-render.js";
+import { resolveStorageSourcesInHtml } from "./storage-src.js";
 
 const params = new URLSearchParams(location.search);
 const deckId = params.get("deck");
@@ -71,9 +72,12 @@ try {
   }
 }
 
-const slideHtml = tagSection(slide.content, slide.section_id);
+// Older assets were inserted as supabase://… links; show them as public URLs.
+const slideHtml = resolveStorageSourcesInHtml(
+  tagSection(slide.content, slide.section_id),
+);
 
-let html = deck.frame_html;
+let html = resolveStorageSourcesInHtml(deck.frame_html);
 if (html.includes("<!-- slides -->")) {
   html = html.replace("<!-- slides -->", slideHtml);
 } else {
