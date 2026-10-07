@@ -97,6 +97,10 @@
         font-size: 0.75rem;
         margin-left: 0.4rem;
       }
+      .import-label {
+        font-size: 15px;
+        color: var(--muted);
+      }
       .import-panel {
         display: flex;
         gap: 1.5rem;
@@ -154,6 +158,20 @@
         border-radius: 0;
         padding: 0.5rem 0;
         font: inherit;
+      }
+      /* .md-btn sets display, which would beat the hidden attribute. */
+      .md-btn[hidden] {
+        display: none;
+      }
+      /* One dialog, two modes: show only the fields for the chosen import. */
+      .modal[data-mode="file"] [data-only="url"],
+      .modal[data-mode="url"] [data-only="file"],
+      .modal[data-mode="reimport"]:not([data-github]) [data-only="url"] {
+        display: none;
+      }
+      .field input[readonly] {
+        color: var(--muted);
+        border-bottom-style: dashed;
       }
       .field-hint {
         font-size: 13px;
@@ -274,8 +292,23 @@
           <p id="status">checking Supabase connection…</p>
         </div>
         <div class="import-panel">
-          <button class="md-btn md-primary" id="import-html-btn" type="button">
-            Import HTML
+          <span class="import-label">Import</span>
+          <button
+            class="md-btn md-primary"
+            id="import-html-btn"
+            type="button"
+            title="Import an HTML deck file from your computer"
+          >
+            File
+          </button>
+          <button
+            class="md-btn md-primary"
+            id="import-url-btn"
+            type="button"
+            title="Import an HTML deck from a GitHub link"
+            hidden
+          >
+            GitHub
           </button>
         </div>
       </div>
@@ -294,18 +327,17 @@
         aria-labelledby="import-modal-title"
       >
         <h2 id="import-modal-title">Import HTML deck</h2>
-        <p>
-          Choose an HTML presentation file or paste its URL (GitHub links
-          work). It should contain top-level <code>&lt;section&gt;</code>
-          slides.
-        </p>
-        <div class="field">
+        <p id="import-intro"></p>
+        <div class="field" data-only="file">
           <label for="import-file">HTML file</label>
           <input id="import-file" type="file" accept=".html,.htm,text/html" />
+        </div>
+        <div class="field" data-only="url">
+          <label for="import-url">HTML URL</label>
           <input
             id="import-url"
             type="url"
-            placeholder="or URL — https://github.com/…/deck.html"
+            placeholder="https://github.com/…/deck.html"
             autocomplete="off"
           />
           <span class="field-hint" id="import-url-hint"></span>
@@ -326,22 +358,25 @@
             placeholder="auto from &lt;title&gt;"
           />
         </div>
-        <div class="field">
+        <div class="field" data-only="file">
           <label for="import-notes-file">Notes Markdown (optional)</label>
           <input
             id="import-notes-file"
             type="file"
             accept=".md,.markdown,text/markdown"
           />
+        </div>
+        <div class="field" data-only="url">
+          <label for="import-notes-url">Notes Markdown URL (optional)</label>
           <input
             id="import-notes-url"
             type="url"
-            placeholder="or URL — https://github.com/…/script.md"
+            placeholder="https://github.com/…/script.md"
             autocomplete="off"
           />
           <span class="field-hint" id="import-notes-url-hint"></span>
         </div>
-        <div class="field">
+        <div class="field" data-only="url">
           <label for="import-github-token">
             GitHub token (optional, for private repositories)
           </label>
@@ -392,6 +427,7 @@
         remoteFileExists,
       } from "./js/remote-source.js";
       import * as deckRepo from "./js/repo/deck-repo.js";
+      import * as historyRepo from "./js/repo/history-repo.js";
       import * as notesRepo from "./js/repo/notes-repo.js";
       import * as slideRepo from "./js/repo/slide-repo.js";
       import * as storageRepo from "./js/repo/storage-repo.js";
@@ -406,6 +442,9 @@
       const list = document.getElementById("deck-list");
       const importModalBg = document.getElementById("import-modal-bg");
       const importBtn = document.getElementById("import-html-btn");
+      const importUrlBtn = document.getElementById("import-url-btn");
+      const importModal = importModalBg.querySelector(".modal");
+      const importModalTitle = document.getElementById("import-modal-title");
       const importCancelBtn = document.getElementById("import-cancel-btn");
       const importRunBtn = document.getElementById("import-run-btn");
       const importFileInput = document.getElementById("import-file");
@@ -451,7 +490,54 @@
         importError.style.display = "block";
       }
 
-      function openImportModal() {
+      const IMPORT_INTRO = {
+        file:
+          "Choose an HTML presentation file from your computer. It should " +
+          "contain top-level <section> slides.",
+        url:
+          "Paste the URL of an HTML presentation — GitHub file links, raw " +
+          "links, gists and GitHub Pages work. Linked images and video in " +
+          "the same repo are copied into your storage.",
+        reimport:
+          "Replace this deck's slides and/or script from a whole new file. " +
+          "Leave a part empty to keep it. Whatever is replaced is saved " +
+          "to History first as \"Before re-import\".",
+      };
+      let importMode = "file";
+      let reimportDeck = null; // { id, title } while re-importing
+
+      // mode: "file" (local HTML + notes files), "url" (GitHub/remote links)
+      // or "reimport" (replace an existing deck's slides and/or script).
+      function openImportModal(mode = "file", deck = null) {
+        importMode = mode;
+        reimportDeck = mode === "reimport" ? deck : null;
+        importModal.dataset.mode = mode;
+        if (mode === "reimport" && githubToken()) {
+          importModal.dataset.github = "";
+        } else {
+          delete importModal.dataset.github;
+        }
+        importModalTitle.textContent =
+          mode === "url"
+            ? "Import from GitHub"
+            : mode === "reimport"
+              ? `Re-import · ${deck.title}`
+              : "Import HTML deck";
+        document.getElementById("import-intro").textContent =
+          IMPORT_INTRO[mode];
+        const re = mode === "reimport";
+        for (const [id, normal, reimport] of [
+          ["import-file", "HTML file", "New slides — HTML file (optional)"],
+          ["import-url", "HTML URL", "New slides — HTML URL (optional)"],
+          ["import-notes-file", "Notes Markdown (optional)", "New script — Markdown file (optional)"],
+          ["import-notes-url", "Notes Markdown URL (optional)", "New script — Markdown URL (optional)"],
+        ]) {
+          document.querySelector(`label[for="${id}"]`).textContent = re
+            ? reimport
+            : normal;
+        }
+        importRunBtn.dataset.label = re ? "Re-import" : "Import";
+        importRunBtn.textContent = importRunBtn.dataset.label;
         setImportError("");
         importDeckIdInput.value = "";
         importTitleInput.value = "";
@@ -465,6 +551,11 @@
         importFileInput.value = "";
         htmlSource = null;
         notesSource = null;
+        importDeckIdInput.readOnly = mode === "reimport";
+        if (reimportDeck) {
+          importDeckIdInput.value = reimportDeck.id;
+          importTitleInput.value = reimportDeck.title;
+        }
       }
 
       function closeImportModal() {
@@ -546,8 +637,28 @@
         importNotesUrlHint.textContent = `✓ ${parseNotesMd(text).length} note(s) found`;
       }
 
+      // Copy a GitHub deck's repo images/video into storage and point the
+      // HTML at the copies, so it no longer depends on GitHub access.
+      async function copyRepoMedia(html, deckId) {
+        const media = htmlSource?.media || [];
+        for (const [i, file] of media.entries()) {
+          importRunBtn.textContent = `Copying files ${i + 1}/${media.length}…`;
+          const blob = await fetchRemoteBlob(file.url, {
+            token: githubToken(),
+          });
+          const publicUrl = await storageRepo.uploadImportedAsset(
+            deckId,
+            file.path,
+            blob,
+          );
+          html = html.split(file.url).join(publicUrl);
+        }
+        return html;
+      }
+
       async function runImport() {
         await Promise.all([htmlUrlPending, notesUrlPending]);
+        if (importMode === "reimport") return runReimport();
         if (!htmlSource) {
           throw new Error("Choose an HTML file or enter its URL first.");
         }
@@ -574,22 +685,8 @@
         importRunBtn.disabled = true;
         importRunBtn.textContent = "Importing…";
         try {
-          // Copy the deck's repo images/video into storage and point the
-          // deck at the copies, so it no longer depends on GitHub access.
-          const media = htmlSource.media || [];
-          for (const [i, file] of media.entries()) {
-            importRunBtn.textContent = `Copying files ${i + 1}/${media.length}…`;
-            const blob = await fetchRemoteBlob(file.url, {
-              token: githubToken(),
-            });
-            const publicUrl = await storageRepo.uploadImportedAsset(
-              parsed.deckId,
-              file.path,
-              blob,
-            );
-            html = html.split(file.url).join(publicUrl);
-          }
-          if (media.length) {
+          if (htmlSource.media?.length) {
+            html = await copyRepoMedia(html, parsed.deckId);
             parsed = parseImportedHtmlDeck(html, { deckId, title });
           }
           importRunBtn.textContent = "Importing…";
@@ -619,11 +716,109 @@
           location.href = `./edit.html?deck=${encodeURIComponent(parsed.deckId)}`;
         } finally {
           importRunBtn.disabled = false;
-          importRunBtn.textContent = "Import";
+          importRunBtn.textContent = importRunBtn.dataset.label || "Import";
         }
       }
 
-      importBtn.addEventListener("click", openImportModal);
+      // Replace an existing deck's slides (frame + all slides) and/or its
+      // script (all notes) from new whole files. The deck ID stays, so links
+      // keep working; the current state is saved to History first.
+      async function runReimport() {
+        const deckId = reimportDeck.id;
+        if (!htmlSource && !notesSource) {
+          throw new Error(
+            "Choose new slides (HTML) and/or a new script (Markdown) first.",
+          );
+        }
+        const title =
+          importTitleInput.value.trim() || reimportDeck.title || deckId;
+
+        // Parse and validate everything before touching the database.
+        let html = htmlSource ? await htmlSource.load() : null;
+        let parsed = html ? parseImportedHtmlDeck(html, { deckId, title }) : null;
+        if (parsed && parsed.slides.length === 0) {
+          throw new Error("No <section> slides found in the new HTML.");
+        }
+        const newNotes = notesSource
+          ? parseNotesMd(await notesSource.load())
+          : null;
+        if (newNotes && newNotes.length === 0) {
+          throw new Error("No notes found in the new Markdown.");
+        }
+
+        importRunBtn.disabled = true;
+        try {
+          importRunBtn.textContent = "Saving current version…";
+          const [deck, slides, notes] = await Promise.all([
+            deckRepo.getDeck(deckId),
+            slideRepo.listByDeck(deckId),
+            notesRepo.listByDeck(deckId),
+          ]);
+          // Snapshot only what this re-import replaces: slides + frame for
+          // new slides, notes for a new script.
+          await historyRepo.appendManualBatch(
+            deckId,
+            "Before re-import",
+            parsed ? slides : [],
+            newNotes ? notes : [],
+            parsed ? deck.frame_html : undefined,
+          );
+
+          let finalSlides = slides;
+          if (parsed) {
+            if (htmlSource.media?.length) {
+              html = await copyRepoMedia(html, deckId);
+              parsed = parseImportedHtmlDeck(html, { deckId, title });
+            }
+            importRunBtn.textContent = "Replacing slides…";
+            await deckRepo.upsertDeck({
+              deck_id: deckId,
+              title,
+              frame_html: parsed.frameHtml,
+            });
+            await slideRepo.deleteByDeck(deckId);
+            await slideRepo.insertSlides(
+              parsed.slides.map((slide) => ({ ...slide, deck_id: deckId })),
+            );
+            finalSlides = parsed.slides;
+          } else if (title !== deck.title) {
+            await deckRepo.updateTitle(deckId, title);
+          }
+
+          if (newNotes) {
+            // Whole-script replace, in slide order: slides past the end of
+            // the script get empty notes.
+            importRunBtn.textContent = "Replacing script…";
+            const ordered = [...finalSlides].sort((a, b) => a.order - b.order);
+            for (const [i, slide] of ordered.entries()) {
+              await notesRepo.upsert(
+                deckId,
+                slide.section_id,
+                newNotes[i]?.body ?? "",
+              );
+            }
+          }
+
+          closeImportModal();
+          const parts = [
+            parsed && `${parsed.slides.length} slide(s)`,
+            newNotes && `script (${newNotes.length} note(s))`,
+          ].filter(Boolean);
+          await loadDecks();
+          status.innerHTML +=
+            ` · <span class="ok">re-imported ${escapeHtml(deckId)}: ` +
+            `${escapeHtml(parts.join(" + "))}</span>`;
+        } finally {
+          importRunBtn.disabled = false;
+          importRunBtn.textContent = importRunBtn.dataset.label || "Re-import";
+        }
+      }
+
+      importBtn.addEventListener("click", () => openImportModal("file"));
+      importUrlBtn.addEventListener("click", () => openImportModal("url"));
+      // GitHub import needs a token: show it only when one is configured
+      // (GITHUB_TOKEN in config.local.js / Vercel env) or saved in this browser.
+      importUrlBtn.hidden = !githubToken();
       importCancelBtn.addEventListener("click", closeImportModal);
       importModalBg.addEventListener("click", (e) => {
         if (e.target === importModalBg) closeImportModal();
@@ -654,6 +849,7 @@
           if (token) localStorage.setItem(TOKEN_KEY, token);
           else localStorage.removeItem(TOKEN_KEY);
         } catch {}
+        importUrlBtn.hidden = !githubToken();
         // Re-fetch any URL that may have failed for lack of a token.
         for (const input of [importUrlInput, importNotesUrlInput]) {
           if (input.value.trim()) input.dispatchEvent(new Event("change"));
@@ -737,6 +933,7 @@
           `<a class="md-btn md-secondary" href="./script.html?deck=${id}&sync=${room}">Script</a>` +
           viewLink +
           `<button class="md-btn md-secondary" type="button" data-rename-deck="${escapeHtml(d.deck_id)}">Rename</button>` +
+          `<button class="md-btn md-secondary" type="button" data-reimport-deck="${escapeHtml(d.deck_id)}">Re-import</button>` +
           `</div>` +
           `<button class="md-btn md-danger" type="button" data-delete-deck="${escapeHtml(d.deck_id)}">Delete</button>` +
           `</div>` +
@@ -757,6 +954,15 @@
           console.error(err);
         }
       }
+
+      list.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-reimport-deck]");
+        if (!btn) return;
+        const title =
+          btn.closest(".deck-item")?.querySelector(".deck-title")
+            ?.textContent || btn.dataset.reimportDeck;
+        openImportModal("reimport", { id: btn.dataset.reimportDeck, title });
+      });
 
       list.addEventListener("click", async (e) => {
         const btn = e.target.closest("[data-rename-deck]");
