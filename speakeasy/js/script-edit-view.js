@@ -5,6 +5,7 @@ import { HistoryUI, saveVersionPrompt } from "./history-ui.js";
 import { markdownToHtml } from "./markdown-lite.js";
 import * as notesRepo from "./repo/notes-repo.js";
 import { bindShortcutsHelp } from "./shortcuts-help.js";
+import { syncRoomFor } from "./sync-room.js";
 
 const SAVE_DEBOUNCE_MS = 800;
 
@@ -102,7 +103,9 @@ export function mountScriptEditView({ deck, deckId, sections }) {
   document.title = deck?.title ? `Notes · ${deck.title}` : "Notes";
   $("deck-title").textContent = deck?.title || deckId;
   $("read-link").href = `./script.html?deck=${encodeURIComponent(deckId)}`;
-  $("present-link").href = `./present.html?deck=${encodeURIComponent(deckId)}`;
+  $("present-link").href =
+    `./present.html?deck=${encodeURIComponent(deckId)}` +
+    `&sync=${encodeURIComponent(syncRoomFor(deckId))}`;
   $("slides-link").href = `./edit.html?deck=${encodeURIComponent(deckId)}`;
 
   $("preview-toggle").addEventListener("click", () => {

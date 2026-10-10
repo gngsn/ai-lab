@@ -3,7 +3,11 @@
 // InlineEditor / SpeakerNotes will land in M3 / M4 as separate modules.
 
 export class SlidePresentation {
-  constructor({ onSlideChange } = {}) {
+  // captureInput: take keyboard / wheel / touch navigation exclusively
+  // (window, capture phase) so a deck's own slide controller — kept running
+  // in present.html for its effects — never also reacts to the same input.
+  constructor({ onSlideChange, captureInput = false } = {}) {
+    this.captureInput = captureInput;
     this.slides = Array.from(document.querySelectorAll("section.slide"));
     this.currentSlide = 0;
     this.mainEl = document.querySelector("main");
@@ -155,12 +159,33 @@ export class SlidePresentation {
     );
   }
 
+  // Where navigation listeners go: document normally; window in the capture
+  // phase with captureInput, so they run before any deck handler.
+  listen(type, handler, options = {}) {
+    if (this.captureInput) {
+      window.addEventListener(type, handler, { ...options, capture: true });
+    } else {
+      document.addEventListener(type, handler, options);
+    }
+  }
+
+  // With captureInput, keep handled navigation events from reaching the
+  // deck's own controller.
+  claim(e) {
+    if (this.captureInput) e.stopImmediatePropagation();
+  }
+
   setupKeyboardNav() {
-    document.addEventListener("keydown", (e) => {
-      // Ignore OS autorepeat — holding ↓ otherwise skips through slides.
-      if (e.repeat) return;
+    const NAV_KEYS = [
+      "ArrowDown", "ArrowRight", "PageDown", " ",
+      "ArrowUp", "ArrowLeft", "PageUp", "Home", "End",
+    ];
+    this.listen("keydown", (e) => {
       // Skip when editing text inline (M3+).
       if (e.target?.getAttribute?.("contenteditable") === "true") return;
+      if (NAV_KEYS.includes(e.key)) this.claim(e);
+      // Ignore OS autorepeat — holding ↓ otherwise skips through slides.
+      if (e.repeat) return;
       switch (e.key) {
         case "ArrowDown":
         case "ArrowRight":
@@ -188,16 +213,18 @@ export class SlidePresentation {
   }
 
   setupTouchNav() {
-    document.addEventListener(
+    this.listen(
       "touchstart",
       (e) => {
+        this.claim(e);
         this.touchStartY = e.touches[0].clientY;
       },
       { passive: true },
     );
-    document.addEventListener(
+    this.listen(
       "touchend",
       (e) => {
+        this.claim(e);
         if (this.touchStartY === null) return;
         const dy = e.changedTouches[0].clientY - this.touchStartY;
         if (Math.abs(dy) > 50) dy < 0 ? this.next() : this.prev();
@@ -223,9 +250,10 @@ export class SlidePresentation {
       }
     };
 
-    document.addEventListener(
+    this.listen(
       "wheel",
       (e) => {
+        this.claim(e);
         const now = Date.now();
         if (this.wheelLock) {
           // Inertia continuation — keep extending the settle window so we
@@ -278,9 +306,13 @@ export class SlidePresentation {
       } else {
         pending.classList.add("show");
       }
+      this.emitSlideChange(); // step change: lets followers mirror it
       return;
     }
-    if (this.stepStepper(slide, 1)) return;
+    if (this.stepStepper(slide, 1)) {
+      this.emitSlideChange();
+      return;
+    }
     if (this.currentSlide < this.slides.length - 1) {
       this.goTo(this.currentSlide + 1);
     }
@@ -300,10 +332,45 @@ export class SlidePresentation {
       } else {
         last.classList.remove("show");
       }
+      this.emitSlideChange();
       return;
     }
-    if (this.stepStepper(slide, -1)) return;
+    if (this.stepStepper(slide, -1)) {
+      this.emitSlideChange();
+      return;
+    }
     if (this.currentSlide > 0) this.goTo(this.currentSlide - 1);
+  }
+
+  // In-slide progress: which .fragment elements are shown (by position) and
+  // which stepper item is active. Sent with every slide change so followers
+  // (share.html) can mirror step-by-step reveals, not just the slide.
+  getStepState(slide = this.slides[this.currentSlide]) {
+    const fragments = [...(slide?.querySelectorAll(".fragment") || [])]
+      .map((el, i) => (el.classList.contains("show") ? i : -1))
+      .filter((i) => i >= 0);
+    return { fragments, stepper: this.getActiveStepperIndex(slide) };
+  }
+
+  applyStepState({ fragments = [], stepper = -1 } = {}) {
+    const slide = this.slides[this.currentSlide];
+    if (!slide) return;
+    slide.classList.add("visible");
+    const shown = new Set(fragments);
+    slide
+      .querySelectorAll(".fragment")
+      .forEach((el, i) => el.classList.toggle("show", shown.has(i)));
+    const config = this.getStepperConfig(slide);
+    if (config && stepper >= 0) {
+      const items = this.getStepperItems(slide);
+      items.forEach((item, i) =>
+        this.getStepperTarget(item).classList.toggle(
+          config.activeClass,
+          i === stepper,
+        ),
+      );
+      this._activeStepperSlide = slide;
+    }
   }
 
   emitSlideChange() {
@@ -313,6 +380,7 @@ export class SlidePresentation {
       index: this.currentSlide,
       section_id: slide?.dataset?.sectionId || null,
       total: this.slides.length,
+      ...this.getStepState(slide),
     };
     document.dispatchEvent(new CustomEvent("slidechange", { detail }));
     this.onSlideChange?.(detail);

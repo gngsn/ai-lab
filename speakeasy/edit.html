@@ -93,6 +93,86 @@
       #toolbar .spacer {
         flex: 1;
       }
+
+      /* Collapsible side panels (slide list left, notes right). Collapsed,
+         a panel becomes a thin rail with just its expand button. Desktop
+         only: on phones the panels are a top bar and a stacked section. */
+      .aside-toggle {
+        position: absolute;
+        top: 6px;
+        z-index: 6;
+        width: 22px;
+        height: 22px;
+        display: grid;
+        place-items: center;
+        padding: 0;
+        background: var(--surface);
+        border: 1px solid var(--se-rule);
+        color: var(--text-mid);
+        font: 14px/1 "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
+        cursor: pointer;
+      }
+      .aside-toggle:hover {
+        color: var(--se-primary-text);
+        border-color: var(--accent);
+      }
+      /* The slide-list toggle sits in the "Slides" header, after the count. */
+      .slide-list-meta-right {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      #slide-list .aside-toggle {
+        position: static;
+        flex: none;
+      }
+      #props > .aside-toggle {
+        left: 6px;
+      }
+      @media (min-width: 769px) {
+        #body.slide-list-collapsed {
+          --slide-list-width: 34px;
+        }
+        #body.props-collapsed {
+          --props-width: 34px;
+        }
+        #body.portrait-mode.props-collapsed {
+          grid-template-rows: minmax(0, 1fr) 34px !important;
+        }
+        /* Collapsed slide list: hide everything but the path down to its
+           toggle (scroll > meta > meta-top > meta-right > button). */
+        #body.slide-list-collapsed #slide-list > :not(#slide-list-scroll),
+        #body.slide-list-collapsed #slide-list-scroll > :not(.slide-list-meta),
+        #body.slide-list-collapsed .slide-list-meta > :not(.slide-list-meta-top),
+        #body.slide-list-collapsed .slide-list-meta-top > :not(.slide-list-meta-right),
+        #body.slide-list-collapsed .slide-list-meta-right > :not(.aside-toggle),
+        #body.props-collapsed #props > :not(.aside-toggle) {
+          display: none !important;
+        }
+        #body.slide-list-collapsed .slide-list-meta,
+        #body.slide-list-collapsed .slide-list-meta-top {
+          padding: 6px 0;
+          justify-content: center;
+          align-items: center;
+        }
+        #body.slide-list-collapsed #slide-list,
+        #body.props-collapsed #props {
+          min-width: 0;
+          min-height: 0;
+          padding: 0;
+          overflow: hidden;
+        }
+        #body.props-collapsed #props > .aside-toggle {
+          left: 50%;
+          right: auto;
+          transform: translateX(-50%);
+        }
+      }
+      @media (max-width: 768px) {
+        .aside-toggle {
+          display: none;
+        }
+      }
       #status {
         font-size: 11px;
         font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
@@ -1489,7 +1569,19 @@
             <div class="slide-list-meta">
               <div class="slide-list-meta-top">
                 <h3>Slides</h3>
-                <span class="slide-list-count" id="slide-list-count">0</span>
+                <span class="slide-list-meta-right">
+                  <span class="slide-list-count" id="slide-list-count">0</span>
+                  <button
+                    class="aside-toggle"
+                    type="button"
+                    data-aside="slide-list"
+                    aria-controls="slide-list"
+                    aria-expanded="true"
+                    title="Collapse slide list ([)"
+                  >
+                    ‹
+                  </button>
+                </span>
               </div>
               <label class="slide-list-title-label">
                 Title
@@ -1518,6 +1610,16 @@
           ></textarea>
         </div>
         <aside id="props">
+          <button
+            class="aside-toggle"
+            type="button"
+            data-aside="props"
+            aria-controls="props"
+            aria-expanded="true"
+            title="Collapse notes panel (])"
+          >
+            ›
+          </button>
           <div id="props-resizer" aria-hidden="true"></div>
           <div class="notes-header">
             <h3>Notes</h3>
@@ -1725,8 +1827,9 @@
       >
         <h2>Share link</h2>
         <p>
-          Anyone with this link can <strong>read-only</strong> view the slides.
-          Notes are hidden. Rotating invalidates previous links.
+          Anyone with this link can <strong>read-only</strong> view the slides
+          and follows along live while you present (▶ Present). Notes are
+          hidden. Rotating invalidates previous links.
         </p>
         <div class="field">
           <label>Share URL</label>

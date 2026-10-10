@@ -24,7 +24,9 @@ import {
   setSlideHiddenContent,
 } from "./slide-visibility.js";
 import { formatBytes, warmDeckAssets } from "./preload-assets.js";
+import { copyText } from "./clipboard.js";
 import { sha1Hex } from "./sha1.js";
+import { syncRoomFor } from "./sync-room.js";
 import { fitSlideFrame } from "./slide-fit.js";
 import { createTrainingPanel } from "./training-panel.js";
 
@@ -33,6 +35,8 @@ bindShortcutsHelp("Edit", [
   { keys: ["M"], desc: "Toggle raw HTML mode" },
   { keys: ["H"], desc: "Toggle history drawer" },
   { keys: ["I"], desc: "Open asset library (images, video, audio, files)" },
+  { keys: ["["], desc: "Collapse / expand slide list" },
+  { keys: ["]"], desc: "Collapse / expand notes panel" },
   { keys: ["⌘S", "Ctrl+S"], desc: "Save version (manual snapshot)" },
   { keys: ["?"], desc: "This help" },
   { keys: ["Click"], desc: "Select slide in list" },
@@ -240,6 +244,8 @@ function updateNavLinks() {
   const presentLink = $("present-link");
   const presentUrl = new URL("./present.html", location.href);
   presentUrl.searchParams.set("deck", deckId);
+  // Broadcast on the deck's room so the Share link's audience follows along.
+  presentUrl.searchParams.set("sync", syncRoomFor(deckId));
   if (currentSectionId) {
     presentUrl.searchParams.set("section", currentSectionId);
   }
@@ -318,7 +324,9 @@ async function refresh({ keepIframe = false } = {}) {
   $("deck-title").textContent = deck.title || deckId;
   updateNavLinks();
   if ($("script-link")) {
-    $("script-link").href = `./script.html?deck=${encodeURIComponent(deckId)}`;
+    $("script-link").href =
+      `./script.html?deck=${encodeURIComponent(deckId)}` +
+      `&sync=${encodeURIComponent(syncRoomFor(deckId))}`;
   }
   if ($("notes-fullscreen-link")) {
     $("notes-fullscreen-link").href =
@@ -915,7 +923,7 @@ async function refreshImagesGrid() {
       <div class="img-card" data-path="${escapeHtml(asset.path)}" data-url="${escapeHtml(asset.url)}" data-kind="${asset.kind}" data-name="${escapeHtml(asset.name)}">
         <div class="thumb">${assetThumb(asset)}</div>
         <div class="actions">
-          <button class="act-copy" title="Copy URL">📋</button>
+          <button class="act-copy" title="Copy this asset's URL">Copy URL</button>
           <button class="act-insert" title="Insert into current slide">↩</button>
           <button class="act-del" title="Delete">🗑</button>
         </div>
@@ -936,11 +944,11 @@ async function refreshImagesGrid() {
     grid.querySelectorAll(".img-card").forEach((card) => {
       const { url, path, kind, name } = card.dataset;
       card.querySelector(".act-copy").onclick = async () => {
-        try {
-          await navigator.clipboard.writeText(url);
-          toast("URL copied", "ok");
-        } catch (err) {
-          toast("Copy failed: " + err.message, "err");
+        if (await copyText(url)) {
+          toast(`Copied URL: …/${url.split("/").pop()}`, "ok");
+        } else {
+          // Last resort: show it so it can be copied by hand.
+          prompt("Copy this asset URL:", url);
         }
       };
       card.querySelector(".act-insert").onclick = () => {
@@ -1296,12 +1304,15 @@ if (dropZone) {
 }
 
 // ── share modal ────────────────────────────────────────────────────
+// Audience link: share.html follows the presenter live on the deck's sync
+// room (present from this editor or the deck list broadcasts on it).
 function shareUrlFor(token) {
-  const base = location.href.replace(/[^/]*$/, "");
-  return (
-    `${base}view.html?deck=${encodeURIComponent(deckId)}` +
-    `&token=${encodeURIComponent(token)}`
-  );
+  const url = new URL("./share.html", location.href);
+  url.search = "";
+  url.searchParams.set("deck", deckId);
+  url.searchParams.set("token", token);
+  url.searchParams.set("sync", syncRoomFor(deckId));
+  return url.toString();
 }
 
 async function rotateShareToken({ silent = false } = {}) {
@@ -1334,7 +1345,7 @@ $("share-btn").addEventListener("click", async () => {
 
 $("share-copy").addEventListener("click", async () => {
   try {
-    await navigator.clipboard.writeText($("share-url").value);
+    if (!(await copyText($("share-url").value))) throw new Error("not allowed");
     toast("Copied", "ok");
   } catch (err) {
     toast("Copy failed: " + err.message, "err");
@@ -1890,6 +1901,51 @@ window.addEventListener("beforeunload", () => {
   if (htmlPending) flushHtmlSave();
 });
 
+// ── collapsible side panels ────────────────────────────────────────
+// #body gets "<panel>-collapsed"; the CSS turns that panel into a thin rail.
+// The canvas re-fits on its own (slide-fit watches the stage size).
+const asideKey = (id) => `speakeasy:edit:collapsed:${id}`;
+
+function setAsideCollapsed(id, collapsed) {
+  $("body").classList.toggle(`${id}-collapsed`, collapsed);
+  const btn = document.querySelector(`.aside-toggle[data-aside="${id}"]`);
+  const left = id === "slide-list";
+  if (btn) {
+    // Arrow points the way the panel will move: left panel ‹ collapses,
+    // › expands; the right panel mirrors that.
+    btn.textContent = collapsed === left ? "›" : "‹";
+    btn.setAttribute("aria-expanded", String(!collapsed));
+    btn.title =
+      `${collapsed ? "Expand" : "Collapse"} ` +
+      `${left ? "slide list ([)" : "notes panel (])"}`;
+  }
+  try {
+    if (collapsed) localStorage.setItem(asideKey(id), "1");
+    else localStorage.removeItem(asideKey(id));
+  } catch {}
+}
+
+function toggleAside(id) {
+  setAsideCollapsed(id, !$("body").classList.contains(`${id}-collapsed`));
+}
+
+for (const btn of document.querySelectorAll(".aside-toggle")) {
+  const id = btn.dataset.aside;
+  let saved = false;
+  try {
+    saved = localStorage.getItem(asideKey(id)) === "1";
+  } catch {}
+  setAsideCollapsed(id, saved);
+}
+// Delegated, so it keeps working whatever re-renders around the buttons.
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest?.(".aside-toggle");
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  toggleAside(btn.dataset.aside);
+});
+
 // ── keyboard shortcuts ─────────────────────────────────────────────
 document.addEventListener("keydown", (e) => {
   const htmlEditorFocused =
@@ -1916,6 +1972,9 @@ document.addEventListener("keydown", (e) => {
   } else if (e.key === "i" || e.key === "I") {
     e.preventDefault();
     $("images-btn")?.click();
+  } else if (e.key === "[" || e.key === "]") {
+    e.preventDefault();
+    toggleAside(e.key === "[" ? "slide-list" : "props");
   } else if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
     e.preventDefault();
     $("save-version")?.click();
