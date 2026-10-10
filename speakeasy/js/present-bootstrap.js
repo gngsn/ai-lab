@@ -38,6 +38,7 @@ const pathMatch = location.pathname.match(/\/present\/([^/?]+)/);
 const deckId = params.get("deck") || pathMatch?.[1];
 const isPrint = params.get("print") === "1";
 const startSectionId = params.get("section") || params.get("slide");
+const liveSyncId = params.get("sync");
 
 function fatal(msg) {
   document.body.innerHTML =
@@ -108,8 +109,23 @@ function resolveStartIndex() {
 
 const startIndex = resolveStartIndex();
 
+// share.html link for the audience (see the overlay's "copy audience link").
+let audienceUrl = null;
+if (deck.share_token && liveSyncId) {
+  const u = new URL("./share.html", location.href);
+  u.search = "";
+  u.searchParams.set("deck", deckId);
+  u.searchParams.set("token", deck.share_token);
+  u.searchParams.set("sync", liveSyncId);
+  audienceUrl = u.href;
+}
+
 let html = deck.frame_html;
-html = cleanFrame(html);
+// present.html is owner-only, so the deck's own scripts run as written.
+// A deck with its own controller is shown exactly like its plain HTML; plain
+// decks get Speakeasy's runtime instead (js/deck-host.js decides).
+// Print mode still strips scripts so nothing interferes with printing.
+if (isPrint) html = cleanFrame(html);
 if (html.includes("<!-- slides -->")) {
   html = html.replace("<!-- slides -->", slidesHtml);
 } else {
@@ -119,7 +135,7 @@ if (html.includes("<!-- slides -->")) {
 // Older assets were inserted as supabase://… links; show them as public URLs.
 html = resolveStorageSourcesInHtml(html);
 
-const RUNTIME_URL = new URL("./js/slide-runtime.js", location.href).href;
+const DECK_HOST_URL = new URL("./js/deck-host.js", location.href).href;
 const SYNC_URL = new URL("./js/sync.js", location.href).href;
 const HELP_URL = new URL("./js/shortcuts-help.js", location.href).href;
 const HELP_CSS = new URL("./css/shortcuts-help.css", location.href).href;
@@ -138,7 +154,8 @@ const noFallback = params.get("nofallback") === "1";
 const fallbackStyle = noFallback
   ? ""
   : `
-<style id="__se_fallback">
+<style id="__se_fallback" media="not all">
+  /* Disabled until js/deck-host.js picks "speakeasy" mode (plain decks). */
   @media screen {
     /* Make <main> the scroll container. Imported v5-style decks expect
        a controller that calls main.style.transform=translateY(-idx*100vh).
@@ -209,15 +226,20 @@ const printStyle = `
 `;
 
 // Chrome overlay (progress bar + sync indicator) is suppressed in print mode.
+// Starts hidden: only shown for plain decks ("speakeasy" mode, deck-host.js),
+// so decks with their own controller look exactly like their plain HTML.
 const overlay = isPrint
   ? ""
   : `
+<div id="__se_overlay" hidden>
 <div id="__se_progress" style="position:fixed;top:0;left:0;height:2px;width:0;background:#ff8d70;z-index:9999;transition:width .3s ease;"></div>
 <div id="__se_chrome" style="position:fixed;top:6px;right:10px;font:11px ui-monospace,monospace;color:#888;letter-spacing:.04em;z-index:9999;text-align:right;line-height:1.5;pointer-events:auto;">
   <div id="__se_counter">— / —</div>
   <div id="__se_sync" style="opacity:.7;cursor:pointer;display:none;"></div>
+  <div id="__se_audience" title="Copy a link your audience can open to follow along live" style="opacity:.7;cursor:pointer;display:none;"></div>
 </div>
 <div id="__se_navdots" aria-label="Slide navigation" style="position:fixed;right:14px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:7px;align-items:center;justify-content:center;z-index:9999;pointer-events:none;opacity:0;transition:opacity .18s ease, transform .18s ease;max-height:min(80vh, 720px);overflow:auto;"></div>
+</div>
 `;
 
 // Two different boot scripts: print or interactive.
@@ -234,139 +256,122 @@ const printBoot = `
 
 const interactiveBoot = `
 <script type="module">
-  import { SlidePresentation } from "${RUNTIME_URL}";
+  import { hostDeck } from "${DECK_HOST_URL}";
   import { createSlideSync } from "${SYNC_URL}";
   import { bindShortcutsHelp } from "${HELP_URL}";
 
-  const helpCss = document.createElement("link");
-  helpCss.rel = "stylesheet";
-  helpCss.href = "${HELP_CSS}";
-  document.head.appendChild(helpCss);
-
-  bindShortcutsHelp("Present", [
-    { keys: ["↓", "→", "PgDn", "Space"], desc: "Next slide / advance fragment" },
-    { keys: ["↑", "←", "PgUp"], desc: "Previous slide / hide last fragment" },
-    { keys: ["Home"], desc: "Jump to first slide" },
-    { keys: ["End"], desc: "Jump to last slide" },
-    { keys: ["?"], desc: "This help" },
-  ]);
-
   const syncId = new URLSearchParams(location.search).get("sync");
-  const counter = document.getElementById("__se_counter");
-  const syncBadge = document.getElementById("__se_sync");
-  const progress = document.getElementById("__se_progress");
-  const navDots = document.getElementById("__se_navdots");
   const initialIndex = ${startIndex};
+  const audienceUrl = ${JSON.stringify(audienceUrl)};
 
-  const setNavDotsVisible = (visible) => {
-    if (!navDots) return;
-    navDots.style.opacity = visible ? "1" : "0";
-    navDots.style.pointerEvents = visible ? "auto" : "none";
-    navDots.style.transform = visible ? "translateY(-50%) translateX(0)" : "translateY(-50%) translateX(8px)";
-  };
+  // "deck" mode: the deck runs its own controller and is shown exactly as
+  // its plain HTML; Speakeasy only listens. "speakeasy" mode: plain decks
+  // get Speakeasy's runtime plus the overlay below. See js/deck-host.js.
+  const host = await hostDeck();
 
-  document.addEventListener("mousemove", (e) => {
-    setNavDotsVisible(e.clientX > window.innerWidth * 0.62);
-  });
-  document.addEventListener("pointerdown", (e) => {
-    setNavDotsVisible(e.clientX > window.innerWidth * 0.62);
-  });
-  setNavDotsVisible(false);
-
-  const dotStyle = document.createElement("style");
-  dotStyle.textContent =
-    "#__se_navdots button {\\n" +
-    "  width: 11px;\\n" +
-    "  height: 11px;\\n" +
-    "  border-radius: 999px;\\n" +
-    "  border: 1px solid rgba(255,255,255,.28);\\n" +
-    "  background: rgba(255,255,255,.18);\\n" +
-    "  padding: 0;\\n" +
-    "  margin: 0;\\n" +
-    "  cursor: pointer;\\n" +
-    "  transition: transform .15s ease, background .15s ease, border-color .15s ease, opacity .15s ease;\\n" +
-    "  opacity: .8;\\n" +
-    "}\\n" +
-    "#__se_navdots button:hover {\\n" +
-    "  transform: scale(1.18);\\n" +
-    "  opacity: 1;\\n" +
-    "  border-color: #ff8d70;\\n" +
-    "}\\n" +
-    "#__se_navdots button.active {\\n" +
-    "  background: #ff8d70;\\n" +
-    "  border-color: #ff8d70;\\n" +
-    "  opacity: 1;\\n" +
-    "}";
-  document.head.appendChild(dotStyle);
-
+  // Live sync (script.html / share.html follow this), in both modes. The
+  // last state is re-sent when a follower joins mid-talk and says hello.
+  let lastPayload = null;
   let sync = null;
   if (syncId) {
-    sync = createSlideSync(syncId);
-    if (syncBadge) {
+    sync = createSlideSync(syncId, null, null, {
+      onHello: () => lastPayload && sync.broadcast(lastPayload),
+    });
+  }
+  host.onChange(({ index, section_id, fragments, stepper }) => {
+    lastPayload = { section_id, index, fragments, stepper };
+    if (sync) sync.broadcast(lastPayload);
+  });
+
+  if (host.mode === "speakeasy") {
+    const helpCss = document.createElement("link");
+    helpCss.rel = "stylesheet";
+    helpCss.href = "${HELP_CSS}";
+    document.head.appendChild(helpCss);
+    bindShortcutsHelp("Present", [
+      { keys: ["↓", "→", "PgDn", "Space"], desc: "Next slide / advance fragment" },
+      { keys: ["↑", "←", "PgUp"], desc: "Previous slide / hide last fragment" },
+      { keys: ["Home"], desc: "Jump to first slide" },
+      { keys: ["End"], desc: "Jump to last slide" },
+      { keys: ["?"], desc: "This help" },
+    ]);
+
+    document.getElementById("__se_overlay").hidden = false;
+    const counter = document.getElementById("__se_counter");
+    const syncBadge = document.getElementById("__se_sync");
+    const progress = document.getElementById("__se_progress");
+    const navDots = document.getElementById("__se_navdots");
+
+    const setNavDotsVisible = (visible) => {
+      navDots.style.opacity = visible ? "1" : "0";
+      navDots.style.pointerEvents = visible ? "auto" : "none";
+      navDots.style.transform = visible ? "translateY(-50%) translateX(0)" : "translateY(-50%) translateX(8px)";
+    };
+    document.addEventListener("mousemove", (e) => {
+      setNavDotsVisible(e.clientX > window.innerWidth * 0.62);
+    });
+    document.addEventListener("pointerdown", (e) => {
+      setNavDotsVisible(e.clientX > window.innerWidth * 0.62);
+    });
+    setNavDotsVisible(false);
+
+    const dotStyle = document.createElement("style");
+    dotStyle.textContent =
+      "#__se_navdots button { width: 11px; height: 11px; border-radius: 999px;" +
+      " border: 1px solid rgba(255,255,255,.28); background: rgba(255,255,255,.18);" +
+      " padding: 0; margin: 0; cursor: pointer; opacity: .8;" +
+      " transition: transform .15s ease, background .15s ease, border-color .15s ease, opacity .15s ease; }" +
+      "#__se_navdots button:hover { transform: scale(1.18); opacity: 1; border-color: #ff8d70; }" +
+      "#__se_navdots button.active { background: #ff8d70; border-color: #ff8d70; opacity: 1; }";
+    document.head.appendChild(dotStyle);
+
+    host.slides.forEach((slide, index) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.setAttribute("aria-label", "Slide " + (index + 1) + ": " + (slide.dataset.title || ""));
+      btn.title = slide.dataset.title || "Slide " + (index + 1);
+      btn.addEventListener("click", () => host.goTo(index));
+      navDots.appendChild(btn);
+    });
+
+    if (syncId && syncBadge) {
       syncBadge.style.display = "block";
       syncBadge.textContent = "● sync: " + syncId;
       syncBadge.onclick = () => navigator.clipboard?.writeText(syncId);
     }
-  }
-
-  const runtime = new SlidePresentation({
-    onSlideChange: ({ index, section_id, total }) => {
-      if (counter) counter.textContent = (index + 1) + " / " + total;
-      if (progress) progress.style.width = ((index + 1) / Math.max(1, total)) * 100 + "%";
-      if (navDots) {
-        Array.from(navDots.children).forEach((btn, i) => {
-          btn.classList.toggle("active", i === index);
-          btn.setAttribute("aria-current", i === index ? "true" : "false");
-        });
-      }
-      if (sync) sync.broadcast({ section_id, index });
-    },
-  });
-
-  document.querySelectorAll(".slide").forEach((slide) => {
-    const hl = slide.dataset.hl;
-    const hr = slide.dataset.hr;
-    const pg = slide.dataset.page;
-
-    if (hl || hr) {
-      const header = document.createElement("div");
-      header.className = "slide-header reveal";
-      header.innerHTML =
-        '<div class="left"><span class="spike"></span>' +
-        (hl || "") +
-        '</div><div>' +
-        (hr || "") +
-        "</div>";
-      slide.prepend(header);
+    // Audience link: share.html follows this presentation live. Needs the
+    // deck's share token (enable sharing in the editor) and a sync room.
+    const audienceEl = document.getElementById("__se_audience");
+    if (audienceUrl && audienceEl) {
+      audienceEl.style.display = "block";
+      audienceEl.textContent = "🔗 copy audience link";
+      audienceEl.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(audienceUrl);
+          audienceEl.textContent = "✓ audience link copied";
+        } catch {
+          prompt("Audience link", audienceUrl);
+        }
+        setTimeout(() => (audienceEl.textContent = "🔗 copy audience link"), 2000);
+      };
     }
-    if (pg) {
-      const footer = document.createElement("div");
-      footer.className = "slide-footer";
-      footer.innerHTML =
-        '<span class="slide-page">' + pg.replace("/", " / ") + "</span>";
-      slide.append(footer);
-    }
-  });
 
-  if (navDots) {
-    navDots.innerHTML = "";
-    runtime.slides.forEach((slide, index) => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.setAttribute(
-        "aria-label",
-        "Slide " + (index + 1) + ": " + (slide.dataset.title || ""),
-      );
-      btn.title = slide.dataset.title || "Slide " + (index + 1);
-      btn.addEventListener("click", () => runtime.goTo(index));
-      navDots.appendChild(btn);
-    });
-    Array.from(navDots.children).forEach((btn, i) => {
-      btn.classList.toggle("active", i === initialIndex);
-      btn.setAttribute("aria-current", i === initialIndex ? "true" : "false");
+    host.onChange(({ index, total }) => {
+      counter.textContent = (index + 1) + " / " + total;
+      progress.style.width = ((index + 1) / Math.max(1, total)) * 100 + "%";
+      Array.from(navDots.children).forEach((btn, i) => {
+        btn.classList.toggle("active", i === index);
+        btn.setAttribute("aria-current", i === index ? "true" : "false");
+      });
     });
   }
-  if (initialIndex > 0) runtime.goTo(initialIndex);
+
+  if (initialIndex > 0) host.goTo(initialIndex);
+  lastPayload ||= {
+    section_id: host.slides[host.index()]?.dataset.sectionId || null,
+    index: host.index(),
+    ...host.getStepState(),
+  };
 <\/script>
 `;
 

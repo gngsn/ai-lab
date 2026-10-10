@@ -171,6 +171,7 @@ node scripts/import.mjs --deck=my-talk \
 **Tier 1 (current):**
 - Client-side passphrase (`OWNER_PASSPHRASE`) for owner pages
 - Public share via `view.html?deck=X&token=Y` (DOMPurify sanitized)
+- Live audience page `share.html?deck=X&token=Y&sync=ROOM`: the shared view, following the presenter's slide in real time (link via present mode's "copy audience link")
 - Suitable for local/trusted use only
 
 **Tier 2 (future):**
@@ -195,6 +196,7 @@ speakeasy/
 ├─ script-edit.html        # Fullscreen notes editor (markdown + preview)
 ├─ notes.html              # Marp(.md) read-only view (Copy/Download)
 ├─ view.html               # Public viewer (?token=, slides only)
+├─ share.html              # Live audience view (?token=&sync=, follows present)
 ├─ migrations/             # Supabase SQL migrations
 ├─ js/                     # Frontend logic
 │  ├─ supabase.js          # Shared client

@@ -412,7 +412,7 @@
     <script src="./js/config.local.js"></script>
     <script type="module">
       import { ensureAuthed } from "./js/auth.js";
-      import { askText } from "./js/dom-prompt.js";
+      import { syncRoomFor } from "./js/sync-room.js";
       import {
         parseImportedHtmlDeck,
         parseNotesMd,
@@ -915,7 +915,7 @@
 
       function renderDeck(d) {
         const id = encodeURIComponent(d.deck_id);
-        const room = `r${d.deck_id.slice(0, 6)}`;
+        const room = encodeURIComponent(syncRoomFor(d.deck_id));
         const viewLink = d.share_token
           ? `<a href="./view.html?deck=${id}&token=${encodeURIComponent(d.share_token)}" target="_blank" class="md-btn">Shared view ↗</a>`
           : "";
@@ -932,7 +932,6 @@
           `<a class="md-btn md-secondary" href="./present.html?deck=${id}&sync=${room}">Present</a>` +
           `<a class="md-btn md-secondary" href="./script.html?deck=${id}&sync=${room}">Script</a>` +
           viewLink +
-          `<button class="md-btn md-secondary" type="button" data-rename-deck="${escapeHtml(d.deck_id)}">Rename</button>` +
           `<button class="md-btn md-secondary" type="button" data-reimport-deck="${escapeHtml(d.deck_id)}">Re-import</button>` +
           `</div>` +
           `<button class="md-btn md-danger" type="button" data-delete-deck="${escapeHtml(d.deck_id)}">Delete</button>` +
@@ -962,34 +961,6 @@
           btn.closest(".deck-item")?.querySelector(".deck-title")
             ?.textContent || btn.dataset.reimportDeck;
         openImportModal("reimport", { id: btn.dataset.reimportDeck, title });
-      });
-
-      list.addEventListener("click", async (e) => {
-        const btn = e.target.closest("[data-rename-deck]");
-        if (!btn) return;
-        const deckId = btn.dataset.renameDeck;
-        const current =
-          btn.closest(".deck-item")?.querySelector(".deck-title")
-            ?.textContent || "";
-        const next = (
-          await askText({
-            title: "Rename deck",
-            message: `Deck ID stays "${deckId}".`,
-            defaultValue: current,
-          })
-        )
-          ?.replace(/\s+/g, " ")
-          .trim();
-        if (!next || next === current) return;
-        btn.disabled = true;
-        try {
-          await deckRepo.updateTitle(deckId, next);
-          await loadDecks();
-        } catch (err) {
-          console.error(err);
-          alert(`이름 변경 실패: ${err.message}`);
-          btn.disabled = false;
-        }
       });
 
       list.addEventListener("click", async (e) => {
