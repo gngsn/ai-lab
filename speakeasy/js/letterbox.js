@@ -37,6 +37,23 @@
       background: #000;
       transform-origin: 0 0;
     }
+    /* < > step buttons for touch screens (no arrow keys there). */
+    #__se_stepnav {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      bottom: max(14px, env(safe-area-inset-bottom)); z-index: 10;
+      display: none; gap: 10px;
+    }
+    @media (hover: none) and (pointer: coarse) {
+      #__se_stepnav { display: flex; }
+    }
+    #__se_stepnav button {
+      width: 52px; height: 44px; border-radius: 999px; cursor: pointer;
+      border: 1px solid rgba(255,255,255,.18); background: rgba(20,20,20,.8);
+      color: #f0f0f0; font: 20px ui-monospace, monospace; line-height: 1;
+      touch-action: manipulation; /* no double-tap zoom on quick taps */
+      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    }
+    #__se_stepnav button:active { background: rgba(255,255,255,.2); }
   `;
   document.head.appendChild(style);
 
@@ -55,8 +72,26 @@
   };
   window.addEventListener("resize", fit);
 
+  // Step like the arrow keys: the deck (its own controller or Speakeasy's
+  // runtime) already handles them.
+  const press = (key) => {
+    frame.contentDocument?.dispatchEvent(
+      new KeyboardEvent("keydown", { key, code: key, bubbles: true, cancelable: true }),
+    );
+    frame.contentWindow?.focus();
+  };
+  const stepNav = document.createElement("div");
+  stepNav.id = "__se_stepnav";
+  const ko = /^ko(-|$)/i.test(navigator.languages?.[0] || navigator.language || "");
+  stepNav.innerHTML =
+    `<button type="button" aria-label="${ko ? "이전" : "Previous"}">&lt;</button>` +
+    `<button type="button" aria-label="${ko ? "다음" : "Next"}">&gt;</button>`;
+  const [prevBtn, nextBtn] = stepNav.querySelectorAll("button");
+  prevBtn.addEventListener("click", () => press("ArrowLeft"));
+  nextBtn.addEventListener("click", () => press("ArrowRight"));
+
   const start = () => {
-    document.body.replaceChildren(frame);
+    document.body.replaceChildren(frame, stepNav);
     fit();
     frame.addEventListener("load", () => {
       frame.contentWindow.focus();

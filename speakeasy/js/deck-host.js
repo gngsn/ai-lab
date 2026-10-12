@@ -56,6 +56,34 @@ function applyFragments(slide, fragments = []) {
     .forEach((el, i) => el.classList.toggle("show", shown.has(i)));
 }
 
+// Phones can't hold what these decks ask the GPU for: <main> (every slide
+// stacked, ~30000px tall) is a will-change layer that slides on a 0.6s
+// transition, and flipping quickly kills the tab (iOS Safari: "A problem
+// repeatedly occurred"). On touch screens: move <main> without a transition
+// and only render the current slide and its neighbours. Neighbours stay
+// rendered so a slide's reveal transitions still play when it arrives.
+const PHONE = "(hover: none) and (pointer: coarse)";
+function lightenForPhones(slides, index) {
+  if (!window.matchMedia?.(PHONE).matches) return;
+  const style = document.createElement("style");
+  style.id = "__se_phone";
+  style.textContent = `
+    main { transition: none !important; will-change: auto !important; }
+    .slide:not([data-se-near]) {
+      content-visibility: hidden !important;
+      visibility: hidden !important;
+    }`;
+  document.head.appendChild(style);
+  const mark = () => {
+    const i = index();
+    slides.forEach((slide, k) =>
+      slide.toggleAttribute("data-se-near", Math.abs(k - i) <= 1),
+    );
+  };
+  mark();
+  document.addEventListener("slidechange", mark);
+}
+
 // Host over the deck's own controller: it owns input and rendering.
 function deckHost(ctl) {
   const slides = Array.isArray(ctl.slides)
@@ -82,6 +110,7 @@ function deckHost(ctl) {
     });
   };
   document.addEventListener("slidechange", emit);
+  lightenForPhones(slides, index);
   // Fragment reveals don't fire slidechange; watch their class changes.
   const watcher = new MutationObserver(emit);
   slides.forEach((slide) =>

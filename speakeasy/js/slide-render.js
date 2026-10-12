@@ -8,7 +8,30 @@ function escAttr(s) {
   return String(s).replace(/"/g, "&quot;");
 }
 
+// Playback state a page adds at runtime: `visible` on a slide (starts its
+// reveal transitions) and `show` on a fragment. Older editor saves wrote
+// them into the slide HTML, so those slides started fully revealed and their
+// animations never played — strip them before a deck is shown.
+function stripPlaybackState(content) {
+  return content.replace(
+    /(<[a-z][^>]*?\sclass\s*=\s*)(["'])([^"']*)\2/gi,
+    (match, head, quote, classes) => {
+      const list = classes.split(/\s+/).filter(Boolean);
+      const isSection = /^<section\b/i.test(head);
+      const kept = list.filter(
+        (c) =>
+          !(c === "visible" && isSection) &&
+          !(c === "show" && list.includes("fragment")),
+      );
+      return kept.length === list.length
+        ? match
+        : `${head}${quote}${kept.join(" ")}${quote}`;
+    },
+  );
+}
+
 export function tagSection(content, sectionId) {
+  content = stripPlaybackState(content);
   return content.replace(/<section\b([^>]*)>/i, (_, attrs) => {
     // Inject data-section-id first so it wins over any pre-existing one
     // (HTML parsers take the first occurrence of a duplicated attribute).

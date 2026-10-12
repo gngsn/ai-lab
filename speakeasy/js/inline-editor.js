@@ -237,6 +237,12 @@ export class InlineEditor {
     clone
       .querySelectorAll('[contenteditable="true"]')
       .forEach((el) => el.removeAttribute("contenteditable"));
+    // Don't save the canvas's playback state (see stripPlaybackState in
+    // js/slide-render.js): the slide must start unrevealed when presented.
+    clone.classList.remove("visible");
+    clone
+      .querySelectorAll(".fragment.show")
+      .forEach((el) => el.classList.remove("show"));
     return clone.outerHTML;
   }
 

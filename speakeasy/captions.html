@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Live captions</title>
+    <link rel="stylesheet" href="./css/theme.css" />
+    <!-- Live captions (ko → en) console — self-contained feature, see
+         js/captions/README.md. Open on the presenter's laptop (desktop
+         Chrome) next to present.html: ?deck=<id>[&sync=<room>] -->
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; background: var(--se-bg); color: var(--se-ink);
+        font: 14px/1.5 system-ui, "IBM Plex Sans KR", sans-serif;
+      }
+      header {
+        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+        padding: 12px 20px; border-bottom: 1px solid var(--se-rule);
+      }
+      header h1 { margin: 0; font-size: 15px; }
+      header .muted { color: var(--se-muted); font-size: 12px; }
+      .dot { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--se-muted); }
+      .dot::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--se-dim); }
+      .dot[data-state="ok"]::before { background: var(--se-ok); }
+      .dot[data-state="bad"]::before { background: var(--se-bad); }
+      main {
+        display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 20px; padding: 20px; max-width: 1280px; margin: 0 auto;
+      }
+      @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+      section {
+        border: 1px solid var(--se-rule); border-radius: 10px; padding: 14px 16px;
+        min-width: 0;
+      }
+      h2 {
+        margin: 0 0 10px; font-size: 11px; letter-spacing: .08em;
+        text-transform: uppercase; color: var(--se-muted);
+      }
+      .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+      .status { font-size: 12px; color: var(--se-muted); margin-top: 8px; }
+      button, .file-btn {
+        font: inherit; cursor: pointer; border-radius: 8px; padding: 8px 14px;
+        border: 1px solid var(--se-rule); background: var(--se-fill); color: var(--se-ink);
+      }
+      #mic { font-weight: 600; }
+      #mic.live { background: var(--se-bad); color: #fff; border-color: transparent; }
+      .file-btn input { display: none; }
+      #heard {
+        min-height: 3em; padding: 10px 12px; border-radius: 8px;
+        background: var(--se-fill); color: var(--se-muted);
+      }
+      #heard.final { color: var(--se-ink); }
+      #sent { min-height: 3.5em; margin-top: 10px; }
+      #sent .en { font-size: 18px; font-weight: 500; color: var(--se-strong); }
+      #sent .en.mt, #log .mt { font-style: italic; }
+      #sent .meta { font-size: 12px; color: var(--se-muted); margin-top: 4px; }
+      #slide-title { font-weight: 600; margin-bottom: 8px; }
+      #lines { list-style: none; margin: 0; padding: 0; max-height: 60vh; overflow: auto; }
+      #lines li {
+        display: grid; gap: 2px; padding: 8px 10px; border-radius: 8px; cursor: pointer;
+        border: 1px solid transparent;
+      }
+      #lines li:hover { border-color: var(--se-rule); }
+      #lines li.sent { background: var(--se-fill-active); }
+      #lines li.empty { cursor: default; color: var(--se-muted); }
+      #lines .ko { color: var(--se-muted); font-size: 13px; }
+      #lines .en.missing { color: var(--se-warn); font-style: italic; }
+      #log { list-style: none; margin: 0; padding: 0; font-size: 12px; color: var(--se-muted); max-height: 30vh; overflow: auto; }
+      .hint { font-size: 12px; color: var(--se-muted); }
+      code { font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Live captions <span class="muted">ko → en</span></h1>
+      <span class="muted" id="deck-title"></span>
+      <span class="muted">room <code id="room"></code></span>
+      <span class="dot" id="sync-dot">slide sync</span>
+      <span class="dot" id="channel-dot">caption channel</span>
+    </header>
+    <main>
+      <div style="display: grid; gap: 20px; align-content: start">
+        <section>
+          <h2>1 · Bilingual script</h2>
+          <div class="row">
+            <label class="file-btn"
+              >Load .md<input id="script-file" type="file" accept=".md,.markdown,text/markdown"
+            /></label>
+            <span class="hint">Script lines, each followed by <code>&gt; English</code>. Saved in this browser.</span>
+          </div>
+          <div class="status" id="script-status">No script loaded.</div>
+        </section>
+        <section>
+          <h2>2 · Captions</h2>
+          <div class="row">
+            <button id="mic" type="button">🎤 Start captions</button>
+            <span class="status" id="mic-status" style="margin: 0"></span>
+          </div>
+          <div class="status" id="mt-status"></div>
+          <h2 style="margin-top: 16px">Heard</h2>
+          <div id="heard"></div>
+          <h2 style="margin-top: 16px">Sent to audience</h2>
+          <div id="sent"></div>
+          <ul id="log"></ul>
+        </section>
+      </div>
+      <section>
+        <h2>Current slide · click a line to send it</h2>
+        <div id="slide-title">—</div>
+        <ul id="lines"></ul>
+      </section>
+    </main>
+
+    <script src="./js/config.local.js"></script>
+    <script type="module">
+      import { ensureAuthed } from "./js/auth.js";
+      import { getDeck } from "./js/repo/deck-repo.js";
+      import { listByDeck } from "./js/repo/slide-repo.js";
+      import { syncRoomFor } from "./js/sync-room.js";
+      import { mountCaptionConsole } from "./js/captions/console.js";
+
+      const fail = (msg) => {
+        document.querySelector("main").innerHTML =
+          `<p style="color:var(--se-bad);font-family:monospace">${msg}</p>`;
+        throw new Error(msg);
+      };
+      if (!(await ensureAuthed())) fail("Access denied — the caption console is owner-only.");
+      const params = new URLSearchParams(location.search);
+      const deckId = params.get("deck");
+      if (!deckId) fail("Missing ?deck=<deck_id>");
+      const [deck, slides] = await Promise.all([getDeck(deckId), listByDeck(deckId)]).catch(
+        (err) => fail(`Cannot load deck: ${err.message}`),
+      );
+      mountCaptionConsole({ deck, slides, room: params.get("sync") || syncRoomFor(deckId) });
+    </script>
+  </body>
+</html>
