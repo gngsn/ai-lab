@@ -108,14 +108,13 @@ vercel link
 vercel env add SUPABASE_URL       production
 vercel env add SUPABASE_ANON_KEY  production
 vercel env add OWNER_PASSPHRASE   production
-vercel env add GITHUB_TOKEN       production   # optional: import from private repos
 
 # Deploy
 vercel --prod
 ```
 The build step (`node scripts/build-config.mjs`) generates `js/config.local.js` from env vars at build time. Any committed `js/config.local.js` is overwritten on Vercel.
 
-> ⚠ `GITHUB_TOKEN` is written into the public `js/config.local.js` like the other values, so anyone who can load the site can read it. Use a fine-grained token with read-only **Contents** access to only the repos you import from, or leave it unset and paste a token into the import dialog (kept in that browser only).
+> ⚠ `js/config.local.js` is served publicly, so the build never writes a GitHub token into it (a `GITHUB_TOKEN` env var is ignored). To import from private repos, paste a fine-grained token with read-only **Contents** access into the import dialog — it is kept only in that browser.
 
 > ⚠ **Before public deployment, review [Security Posture](#security-posture).**
 > The default `dev_anon_all` RLS policy allows anyone to access the DB. Harden for production.

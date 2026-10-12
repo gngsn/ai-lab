@@ -384,7 +384,6 @@
             id="import-url-btn"
             type="button"
             title="Import an HTML deck from a GitHub link"
-            hidden
           >
             GitHub
           </button>
@@ -484,9 +483,8 @@
             spellcheck="false"
           />
           <span class="field-hint">
-            Read-only "Contents" access is enough. Leave empty to use
-            <code>GITHUB_TOKEN</code> from <code>config.local.js</code>; a token
-            typed here is kept only in this browser.
+            Read-only "Contents" access is enough. The token is kept only
+            in this browser.
           </span>
         </div>
         <p id="import-error" class="bad" style="display: none"></p>
@@ -645,8 +643,8 @@
       try {
         importTokenInput.value = localStorage.getItem(TOKEN_KEY) || "";
       } catch {}
-      // A token typed here wins; otherwise use window.GITHUB_TOKEN from
-      // js/config.local.js (or the GITHUB_TOKEN env var on Vercel).
+      // A token typed here wins; otherwise window.GITHUB_TOKEN from a local
+      // js/config.local.js (local dev only — deployments never set it).
       const githubToken = () =>
         importTokenInput.value.trim() || window.GITHUB_TOKEN || "";
       if (window.GITHUB_TOKEN) {
@@ -1059,9 +1057,7 @@
         reimportDeck = deck;
         reimportTitle.textContent = deck.title;
         // GitHub URLs only when a token is configured, like the import buttons.
-        const github = Boolean(githubToken());
         for (const part of Object.values(reimportParts)) {
-          part.url.hidden = !github;
           resetPart(part);
         }
         setReimportError("");
@@ -1196,9 +1192,6 @@
 
       importBtn.addEventListener("click", () => openImportModal("file"));
       importUrlBtn.addEventListener("click", () => openImportModal("url"));
-      // GitHub import needs a token: show it only when one is configured
-      // (GITHUB_TOKEN in config.local.js / Vercel env) or saved in this browser.
-      importUrlBtn.hidden = !githubToken();
       importCancelBtn.addEventListener("click", closeImportModal);
       importModalBg.addEventListener("click", (e) => {
         if (e.target === importModalBg) closeImportModal();
@@ -1239,7 +1232,6 @@
           if (token) localStorage.setItem(TOKEN_KEY, token);
           else localStorage.removeItem(TOKEN_KEY);
         } catch {}
-        importUrlBtn.hidden = !githubToken();
         // Re-fetch any URL that may have failed for lack of a token.
         for (const input of [importUrlInput, importNotesUrlInput, importKmUrlInput]) {
           if (input.value.trim()) input.dispatchEvent(new Event("change"));

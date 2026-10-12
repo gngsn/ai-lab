@@ -1,0 +1,4 @@
+# Never upload local secrets; the build writes js/config.local.js from env.
+js/config.local.js
+.env*
+node_modules
