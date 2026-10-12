@@ -18,6 +18,7 @@ import * as deckRepo from "./repo/deck-repo.js";
 import * as notesRepo from "./repo/notes-repo.js";
 import * as slideRepo from "./repo/slide-repo.js";
 import * as storageRepo from "./repo/storage-repo.js";
+import { supabase } from "./supabase.js";
 import { bindShortcutsHelp } from "./shortcuts-help.js";
 import {
   isSlideHiddenContent,
@@ -29,6 +30,7 @@ import { sha1Hex } from "./sha1.js";
 import { syncRoomFor } from "./sync-room.js";
 import { fitSlideFrame } from "./slide-fit.js";
 import { createTrainingPanel } from "./training-panel.js";
+import { parseNotesMd } from "./import-html.js";
 
 bindShortcutsHelp("Edit", [
   { keys: ["E"], desc: "Toggle edit mode (canvas)" },
@@ -64,6 +66,7 @@ const $ = (id) => document.getElementById(id);
 let deck = null;
 let slides = [];
 let notes = new Map(); // sid → content string (populated at load, kept current by mutations)
+let keyMessages = new Map(); // sid → key message (notes.key_message)
 let currentSectionId = null;
 let editMode = true;
 let htmlMode = false; // raw <section>…</section> edit in textarea
@@ -313,8 +316,10 @@ async function refresh({ keepIframe = false } = {}) {
     ]);
     // Populate notes cache from the full fetch.
     notes.clear();
+    keyMessages.clear();
     for (const n of allNotes) {
       notes.set(n.section_id, n.content ?? "");
+      keyMessages.set(n.section_id, n.key_message ?? "");
     }
   } catch (err) {
     setStatus("load failed", "err");
@@ -627,6 +632,10 @@ async function duplicateSlide(sourceSid) {
       content: newContent,
     });
     await notesRepo.upsert(deckId, newSid, newNotes);
+    const newKeyMessage = keyMessages.get(sourceSid) ?? "";
+    if (newKeyMessage) {
+      await notesRepo.upsertKeyMessage(deckId, newSid, newKeyMessage);
+    }
 
     // 2. Splice into the right position locally.
     slides.splice(srcIdx + 1, 0, {
@@ -637,6 +646,7 @@ async function duplicateSlide(sourceSid) {
       content: newContent,
     });
     notes.set(newSid, newNotes);
+    keyMessages.set(newSid, newKeyMessage);
 
     // 3. Persist that order on the server (single-transaction RPC).
     await slideRepo.reorder(
@@ -807,19 +817,25 @@ function updateNotesTtsState(playing) {
 function loadNotesForCurrent() {
   stopNotesSpeech();
   const ta = $("notes-textarea");
+  const km = $("key-message-textarea");
   if (!currentSectionId) {
     ta.value = "";
     ta.disabled = true;
+    km.value = "";
+    km.disabled = true;
     updateNotesSpeechButtons();
     return;
   }
   // Read from in-memory cache — no network round-trip.
   ta.value = notes.get(currentSectionId) ?? "";
   ta.disabled = false;
+  km.value = keyMessages.get(currentSectionId) ?? "";
+  km.disabled = false;
   updateNotesSpeechButtons();
 }
 
 async function flushNotesSave() {
+  await flushKeyMessageSave(); // every notes flush point covers it too
   if (!notesPending) return;
   clearTimeout(notesSaveTimer);
   notesSaveTimer = 0;
@@ -847,6 +863,89 @@ $("notes-textarea").addEventListener("input", (e) => {
   updateNotesSpeechButtons();
 });
 
+// ── key message (debounced, like notes) ───────────────────────────
+let keyMessagePending = null; // { sid, content }
+let keyMessageSaveTimer = 0;
+
+async function flushKeyMessageSave() {
+  if (!keyMessagePending) return;
+  clearTimeout(keyMessageSaveTimer);
+  keyMessageSaveTimer = 0;
+  const { sid, content } = keyMessagePending;
+  keyMessagePending = null;
+  try {
+    await notesRepo.upsertKeyMessage(deckId, sid, content);
+    keyMessages.set(sid, content);
+    setStatus(`key message saved · ${new Date().toLocaleTimeString()}`, "ok");
+  } catch (err) {
+    setStatus("key message save failed", "err");
+    toast("Key message save failed: " + err.message, "err");
+  }
+}
+
+$("key-message-textarea").addEventListener("input", (e) => {
+  keyMessagePending = { sid: currentSectionId, content: e.target.value };
+  clearTimeout(keyMessageSaveTimer);
+  if (autoSave) {
+    setStatus("key message: saving…");
+    keyMessageSaveTimer = setTimeout(flushKeyMessageSave, 800);
+  } else {
+    setStatus("key message: unsaved", "warn");
+  }
+});
+
+// Import key messages for every slide from a Markdown file, in the same
+// format as the script (`---` between slides, optional `## title`), matched
+// by slide order. Slides past the end of the file get an empty message.
+async function importKeyMessages(file) {
+  const items = parseNotesMd(await file.text());
+  if (!items.length) {
+    toast("No key messages found in " + file.name, "err");
+    return;
+  }
+  const filled = slides.filter((s) => keyMessages.get(s.section_id)?.trim());
+  if (
+    filled.length &&
+    !confirm(
+      `${file.name}: ${items.length} key message(s) for ${slides.length} slide(s).\n` +
+        `Replace the ${filled.length} existing key message(s)?`,
+    )
+  )
+    return;
+  keyMessagePending = null; // the import supersedes an unsaved edit
+  clearTimeout(keyMessageSaveTimer);
+  setStatus("key messages: importing…");
+  try {
+    const ordered = [...slides].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    for (const [i, slide] of ordered.entries()) {
+      const text = items[i]?.body ?? "";
+      await notesRepo.upsertKeyMessage(deckId, slide.section_id, text);
+      keyMessages.set(slide.section_id, text);
+    }
+    loadNotesForCurrent();
+    setStatus(`key messages imported · ${new Date().toLocaleTimeString()}`, "ok");
+    toast(
+      `Imported ${Math.min(items.length, ordered.length)} key message(s)` +
+        (items.length !== ordered.length
+          ? ` (file has ${items.length}, deck has ${ordered.length} slides)`
+          : ""),
+      "ok",
+    );
+  } catch (err) {
+    setStatus("key message import failed", "err");
+    toast("Key message import failed: " + err.message, "err");
+  }
+}
+
+$("key-message-import")?.addEventListener("click", () =>
+  $("key-message-import-file").click(),
+);
+$("key-message-import-file")?.addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  e.target.value = "";
+  if (file) await importKeyMessages(file);
+});
+
 function adjustNotesFontSize(delta) {
   const current = getNotesFontSize();
   setNotesFontSize(current + delta * NOTES_FONT_SIZE_STEP);
@@ -860,7 +959,7 @@ updateNotesSpeechButtons();
 
 window.addEventListener("beforeunload", () => {
   if (titlePending) flushTitleSave();
-  if (notesPending) flushNotesSave();
+  if (notesPending || keyMessagePending) flushNotesSave();
 });
 
 // ── title field (debounced) ───────────────────────────────────────
@@ -925,6 +1024,7 @@ async function refreshImagesGrid() {
         <div class="actions">
           <button class="act-copy" title="Copy this asset's URL">Copy URL</button>
           <button class="act-insert" title="Insert into current slide">↩</button>
+          <button class="act-rename" title="Rename this asset">Rename</button>
           <button class="act-del" title="Delete">🗑</button>
         </div>
         <div class="meta">
@@ -959,6 +1059,43 @@ async function refreshImagesGrid() {
         $("images-modal-bg").classList.remove("show");
         toast("Inserted into current slide", "ok");
       };
+      card.querySelector(".act-rename").onclick = async () => {
+        const nextName = prompt("New asset name:", name);
+        if (nextName == null || nextName.trim() === "" || nextName.trim() === name)
+          return;
+        try {
+          card.classList.add("uploading");
+          const renamed = await storageRepo.copyAssetForRename(path, nextName);
+          if (renamed.newPath === renamed.oldPath) {
+            card.classList.remove("uploading");
+            toast("That asset already has this name", "ok");
+            return;
+          }
+          const { error } = await supabase.rpc("rename_asset_references", {
+            p_old_url: renamed.oldUrl,
+            p_new_url: renamed.newUrl,
+          });
+          if (error) {
+            await storageRepo.deleteAsset(renamed.newPath).catch(() => {});
+            throw error;
+          }
+          try {
+            await storageRepo.deleteAsset(renamed.oldPath);
+          } catch (cleanupErr) {
+            toast(
+              "Renamed, but the old file could not be removed: " + cleanupErr.message,
+              "err",
+            );
+            await refreshImagesGrid();
+            return;
+          }
+          toast(`Renamed to ${renamed.name}`, "ok");
+          await refreshImagesGrid();
+        } catch (err) {
+          card.classList.remove("uploading");
+          toast("Rename failed: " + err.message, "err");
+        }
+      };
       card.querySelector(".act-del").onclick = async () => {
         if (
           !confirm(
@@ -991,6 +1128,58 @@ function filterAssetCards() {
   }
 }
 $("images-filter")?.addEventListener("input", filterAssetCards);
+
+// Trigger the iframe's DOM directly rather than relying on a message listener
+// inside the slide. This lets normal deck click handlers and global functions
+// run exactly as they do on the presentation page.
+$("canvas-preview-click")?.addEventListener("click", () => {
+  const frame = $("canvas");
+  const win = frame?.contentWindow;
+  const doc = frame?.contentDocument;
+  const slide = doc?.querySelector(".slide");
+  if (!win || !doc || !slide) {
+    toast("Slide preview is still loading", "warn");
+    return;
+  }
+
+  const beforeFragments = [...slide.querySelectorAll(".fragment")].map(
+    (fragment) => fragment.classList.contains("show"),
+  );
+  const detail = { slide, sectionId: currentSectionId };
+  const clickOptions = { bubbles: true, cancelable: true, view: win };
+  // Use the iframe's constructors so event listeners receive an event from
+  // their own window realm.
+  slide.dispatchEvent(new win.MouseEvent("mousedown", clickOptions));
+  slide.dispatchEvent(new win.MouseEvent("mouseup", clickOptions));
+  slide.dispatchEvent(new win.MouseEvent("click", clickOptions));
+
+  const functionName = slide.dataset.previewClick?.trim();
+  if (functionName && typeof win[functionName] === "function") {
+    win[functionName].call(slide, detail);
+  }
+  slide.dispatchEvent(
+    new win.CustomEvent("speakeasy:preview-click", { bubbles: true, detail }),
+  );
+
+  // Only ask the overlay for a generic fragment/step fallback when deck code
+  // did not already change the slide's fragment state.
+  const deckHandledClick = beforeFragments.some(
+    (shown, index) =>
+      shown !==
+      slide.querySelectorAll(".fragment")[index]?.classList.contains("show"),
+  );
+  if (!deckHandledClick) {
+    win.postMessage({ type: "edit:preview-fallback" }, "*");
+  }
+});
+
+// Step back: undo the last revealed fragment (or stepper card) on the
+// canvas slide. Effects a deck runs itself on click can't be undone.
+$("canvas-preview-prev")?.addEventListener("click", () => {
+  const win = $("canvas")?.contentWindow;
+  if (!win) return;
+  win.postMessage({ type: "edit:preview-back" }, "*");
+});
 
 async function uploadFiles(files) {
   const list = Array.from(files || []);
@@ -1945,6 +2134,29 @@ document.addEventListener("click", (e) => {
   e.stopPropagation();
   toggleAside(btn.dataset.aside);
 });
+
+// ── collapsible training panel ─────────────────────────────────────
+const TRAINING_COLLAPSED_KEY = "speakeasy:edit:collapsed:training";
+
+function setTrainingCollapsed(collapsed) {
+  $("training-section")?.classList.toggle("collapsed", collapsed);
+  $("training-toggle")?.setAttribute("aria-expanded", String(!collapsed));
+  try {
+    if (collapsed) localStorage.setItem(TRAINING_COLLAPSED_KEY, "1");
+    else localStorage.removeItem(TRAINING_COLLAPSED_KEY);
+  } catch {}
+}
+
+{
+  let saved = false;
+  try {
+    saved = localStorage.getItem(TRAINING_COLLAPSED_KEY) === "1";
+  } catch {}
+  setTrainingCollapsed(saved);
+  $("training-toggle")?.addEventListener("click", () =>
+    setTrainingCollapsed(!$("training-section").classList.contains("collapsed")),
+  );
+}
 
 // ── keyboard shortcuts ─────────────────────────────────────────────
 document.addEventListener("keydown", (e) => {

@@ -84,14 +84,10 @@ if (html.includes("<!-- slides -->")) {
   html = html.replace(/<\/body>/i, `${slideHtml}</body>`);
 }
 
-// In edit mode, strip the deck's own <script> tags. Slide-nav scripts
-// (e.g., the v5 SlidePresentation) register keydown handlers that swallow
-// typing inside the inline editor. CSS/styles are preserved, so the slide
-// still looks right; only the deck's JS behavior is disabled while editing.
-if (editMode) {
-  html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
-  html = html.replace(/<script\b[^>]*\/>/gi, "");
-}
+// Keep deck scripts in the editor preview so canvas controls can exercise the
+// same click-driven animations as the real presentation. The edit overlay
+// captures keyboard events from contenteditable fields before they reach deck
+// navigation handlers.
 
 const EDIT_FRAME_CSS = new URL("./css/edit-frame.css", location.href).href;
 const EDIT_FRAME_OVERLAY_URL = new URL(

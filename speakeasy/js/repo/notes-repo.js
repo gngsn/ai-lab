@@ -35,3 +35,22 @@ export async function upsert(deckId, sectionId, content) {
     .appendAutoNote({ deck_id: deckId, section_id: sectionId, content })
     .catch((err) => console.warn("[history] notes auto-append:", err));
 }
+
+// Key message lives on the same notes row; only that column is written, so
+// the speaker notes are left as they are (and vice versa for upsert above).
+export async function upsertKeyMessage(deckId, sectionId, keyMessage) {
+  const { error } = await supabase
+    .from("notes")
+    .upsert(
+      { deck_id: deckId, section_id: sectionId, key_message: keyMessage },
+      { onConflict: "deck_id,section_id" },
+    );
+  if (error) {
+    if (/key_message/.test(error.message || "")) {
+      throw new Error(
+        "notes.key_message column missing — run migrations/010_key_message.sql",
+      );
+    }
+    throw error;
+  }
+}

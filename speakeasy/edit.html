@@ -126,8 +126,9 @@
         position: static;
         flex: none;
       }
-      #props > .aside-toggle {
-        left: 6px;
+      .notes-header > .aside-toggle {
+        position: static;
+        flex: none;
       }
       @media (min-width: 769px) {
         #body.slide-list-collapsed {
@@ -146,7 +147,8 @@
         #body.slide-list-collapsed .slide-list-meta > :not(.slide-list-meta-top),
         #body.slide-list-collapsed .slide-list-meta-top > :not(.slide-list-meta-right),
         #body.slide-list-collapsed .slide-list-meta-right > :not(.aside-toggle),
-        #body.props-collapsed #props > :not(.aside-toggle) {
+        #body.props-collapsed #props > :not(.notes-header),
+        #body.props-collapsed #props .notes-header > :not(.aside-toggle) {
           display: none !important;
         }
         #body.slide-list-collapsed .slide-list-meta,
@@ -162,10 +164,9 @@
           padding: 0;
           overflow: hidden;
         }
-        #body.props-collapsed #props > .aside-toggle {
-          left: 50%;
-          right: auto;
-          transform: translateX(-50%);
+        #body.props-collapsed #props .notes-header {
+          display: flex;
+          justify-content: center;
         }
       }
       @media (max-width: 768px) {
@@ -870,6 +871,7 @@
         place-items: center;
         overflow: hidden;
         padding: 24px;
+        position: relative;
         /* Lets the stage size itself from the canvas area (cqw/cqh). */
         container-type: size;
       }
@@ -880,6 +882,28 @@
         max-height: 100%;
         position: relative;
         overflow: hidden;
+      }
+      #canvas-preview-controls {
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        z-index: 2;
+        display: flex;
+        gap: 4px;
+      }
+      .canvas-preview-btn {
+        width: 28px;
+        height: 26px;
+        padding: 0;
+        background: color-mix(in srgb, var(--se-bg) 92%, transparent);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font: 600 11px/1 "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
+        cursor: pointer;
+      }
+      .canvas-preview-btn:hover {
+        border-color: var(--accent);
+        color: var(--se-primary-text);
       }
       #canvas {
         width: 100%;
@@ -920,6 +944,9 @@
         display: none;
       }
       #canvas-wrap.html-mode #canvas {
+        display: none;
+      }
+      #canvas-wrap.html-mode #canvas-preview-controls {
         display: none;
       }
       #canvas-wrap:not(.html-mode) .CodeMirror {
@@ -1067,10 +1094,13 @@
       }
       .notes-header {
         display: flex;
-        align-items: center;
         justify-content: space-between;
         gap: 8px;
         margin-bottom: 10px;
+      }
+      #props .notes-header h3 {
+        padding: 5px;
+        margin-bottom: 0px;
       }
       .notes-controls {
         display: inline-flex;
@@ -1097,11 +1127,15 @@
       #props .field {
         margin-bottom: 14px;
       }
+      /* Props column: notes 50% / key message 40% of the panel height,
+         training below (collapsible). Expanding training shrinks both
+         proportionally. */
       #props .field.notes-only {
         margin-bottom: 0;
-        flex: 1;
-        min-height: 30vh;
+        flex: 0 1 50%;
+        min-height: 0;
         display: flex;
+        flex-direction: column;
       }
       #props label {
         display: block;
@@ -1136,22 +1170,97 @@
         border-radius: 0;
       }
       #props #notes-textarea {
-        height: 100%;
-        min-height: 40vh;
-        resize: auto;
+        flex: 1 1 auto;
+        height: auto;
+        min-height: 0;
+        resize: none;
         font-size: var(--notes-font-size, 14px);
       }
-
-      #props #notes-textarea {
-        height: 100%;
-        min-height: 30vh;
-        resize: auto;
-        font-size: var(--notes-font-size, 14px);
+      /* Key message (between notes and the training panel) */
+      #props .field.key-message {
+        flex: 0 1 40%;
+        min-height: 0;
+        margin: 10px 0 0;
+        display: flex;
+        flex-direction: column;
       }
-      /* Training panel mount (bottom of props column) */
-      #training-mount {
+      #props .key-message-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      #props .key-message-head label {
+        margin: 0;
+      }
+      #key-message-import {
+        font-size: 10px;
+        padding: 2px 8px;
+      }
+      #props #key-message-textarea {
+        flex: 1 1 auto;
+        resize: none;
+        min-height: 0;
+        font-family: "IBM Plex Sans KR", sans-serif;
+        font-size: var(--notes-font-size, 14px);
+        line-height: 1.5;
+      }
+      /* Training panel (bottom of props column), collapsible */
+      #training-section {
         flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        max-height: 50%;
         margin-top: 10px;
+        border-top: 1px solid var(--border);
+      }
+      #training-toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        padding: 8px 0 4px;
+        background: none;
+        border: 0;
+        color: var(--text-mid);
+        font: 600 10px/1 "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+      #training-toggle:hover {
+        color: var(--se-primary-text);
+      }
+      #training-toggle .chev {
+        display: inline-block;
+        transition: transform 0.15s;
+      }
+      #training-section.collapsed #training-toggle .chev {
+        transform: rotate(-90deg);
+      }
+      #training-section.collapsed #training-mount {
+        display: none;
+      }
+      #training-mount {
+        min-height: 0;
+        overflow-y: auto;
+      }
+      /* Phones: the props column grows with content, so % heights don't
+         apply — give the two text areas fixed heights instead. */
+      @media (max-width: 768px) {
+        #props .field.notes-only {
+          flex: 0 0 auto;
+          height: 40vh;
+        }
+        #props .field.key-message {
+          flex: 0 0 auto;
+          height: 25vh;
+        }
+        #training-section {
+          max-height: none;
+        }
       }
 
       /* Modal */
@@ -1599,6 +1708,26 @@
           </div>
         </aside>
         <div id="canvas-wrap">
+          <div id="canvas-preview-controls">
+            <button
+              id="canvas-preview-prev"
+              class="canvas-preview-btn"
+              type="button"
+              title="Previous animation step"
+              aria-label="Previous animation step"
+            >
+              &lt;
+            </button>
+            <button
+              id="canvas-preview-click"
+              class="canvas-preview-btn"
+              type="button"
+              title="Next animation step"
+              aria-label="Next animation step"
+            >
+              &gt;
+            </button>
+          </div>
           <div id="canvas-stage">
             <iframe id="canvas" src="about:blank"></iframe>
           </div>
@@ -1610,18 +1739,18 @@
           ></textarea>
         </div>
         <aside id="props">
-          <button
-            class="aside-toggle"
-            type="button"
-            data-aside="props"
-            aria-controls="props"
-            aria-expanded="true"
-            title="Collapse notes panel (])"
-          >
-            ›
-          </button>
           <div id="props-resizer" aria-hidden="true"></div>
           <div class="notes-header">
+            <button
+              class="aside-toggle"
+              type="button"
+              data-aside="props"
+              aria-controls="props"
+              aria-expanded="true"
+              title="Collapse notes panel (])"
+            >
+              ›
+            </button>
             <h3>Notes</h3>
             <div class="notes-controls">
               <button
@@ -1655,7 +1784,43 @@
               "
             ></textarea>
           </div>
-          <div id="training-mount"></div>
+          <div class="field key-message">
+            <div class="key-message-head">
+              <label for="key-message-textarea">Key message</label>
+              <button
+                class="btn"
+                id="key-message-import"
+                type="button"
+                title="Import key messages for all slides from a Markdown file (same format as the script)"
+              >
+                Import .md
+              </button>
+              <input
+                id="key-message-import-file"
+                type="file"
+                accept=".md,.markdown,text/markdown"
+                hidden
+              />
+            </div>
+            <textarea
+              id="key-message-textarea"
+              rows="3"
+              placeholder="이 슬라이드에서 꼭 전할 한 문장. 800ms 후 자동 저장."
+              spellcheck="false"
+              disabled
+            ></textarea>
+          </div>
+          <div id="training-section">
+            <button
+              id="training-toggle"
+              type="button"
+              aria-controls="training-mount"
+              aria-expanded="true"
+            >
+              <span class="chev">▾</span> Training
+            </button>
+            <div id="training-mount"></div>
+          </div>
         </aside>
       </main>
     </div>

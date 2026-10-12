@@ -165,13 +165,91 @@
       }
       /* One dialog, two modes: show only the fields for the chosen import. */
       .modal[data-mode="file"] [data-only="url"],
-      .modal[data-mode="url"] [data-only="file"],
-      .modal[data-mode="reimport"]:not([data-github]) [data-only="url"] {
+      .modal[data-mode="url"] [data-only="file"] {
         display: none;
       }
-      .field input[readonly] {
+
+      /* Re-import: deck name, then one row per replaceable part. */
+      .modal-eyebrow {
+        margin: 0 0 0.35rem !important;
+        font-size: 12px !important;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
         color: var(--muted);
-        border-bottom-style: dashed;
+      }
+      .reimport-note {
+        color: var(--muted);
+      }
+      .reimport-part {
+        display: grid;
+        grid-template-columns: 7rem minmax(0, 1fr);
+        gap: 0.75rem 1rem;
+        align-items: baseline;
+        padding: 1.1rem 0;
+        border-top: 1px solid var(--ink);
+      }
+      .reimport-part:last-of-type {
+        border-bottom: 1px solid var(--ink);
+      }
+      .part-name {
+        font-family: var(--serif);
+        font-size: 1.25rem;
+        letter-spacing: -0.02em;
+      }
+      .part-body {
+        display: grid;
+        gap: 0.6rem;
+        min-width: 0;
+      }
+      .part-pick {
+        display: flex;
+        align-items: baseline;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .part-pick input[type="file"] {
+        display: none;
+      }
+      .part-url {
+        flex: 1 1 12rem;
+        min-width: 0;
+        border: none;
+        border-bottom: 1px solid var(--muted);
+        background: transparent;
+        color: var(--ink);
+        padding: 0.25rem 0;
+        font: inherit;
+        font-size: 14px;
+      }
+      .part-url:focus {
+        outline: none;
+        border-bottom-color: var(--ink);
+      }
+      .part-state {
+        display: flex;
+        align-items: baseline;
+        gap: 0.75rem;
+        font-size: 13px;
+        color: var(--muted);
+        min-width: 0;
+      }
+      .part-state span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .reimport-part[data-state="ready"] .part-state {
+        color: var(--ok);
+      }
+      .reimport-part[data-state="error"] .part-state {
+        color: var(--bad);
+      }
+      .part-clear {
+        font-size: 13px;
+      }
+      .md-btn:disabled {
+        opacity: 0.35;
+        cursor: default;
       }
       .field-hint {
         font-size: 13px;
@@ -376,6 +454,24 @@
           />
           <span class="field-hint" id="import-notes-url-hint"></span>
         </div>
+        <div class="field" data-only="file">
+          <label for="import-km-file">Key messages Markdown (optional)</label>
+          <input
+            id="import-km-file"
+            type="file"
+            accept=".md,.markdown,text/markdown"
+          />
+        </div>
+        <div class="field" data-only="url">
+          <label for="import-km-url">Key messages Markdown URL (optional)</label>
+          <input
+            id="import-km-url"
+            type="url"
+            placeholder="https://github.com/…/key-messages.md"
+            autocomplete="off"
+          />
+          <span class="field-hint" id="import-km-url-hint"></span>
+        </div>
         <div class="field" data-only="url">
           <label for="import-github-token">
             GitHub token (optional, for private repositories)
@@ -404,6 +500,90 @@
           </button>
           <button class="md-btn md-primary" id="import-run-btn" type="button">
             Import
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-bg" id="reimport-modal-bg" aria-hidden="true">
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reimport-title"
+      >
+        <p class="modal-eyebrow">Re-import</p>
+        <h2 id="reimport-title"></h2>
+        <p class="reimport-note">
+          Replace any of the parts below; the rest stay as they are. Replaced
+          slides and script are saved to History first.
+        </p>
+        <div class="reimport-part" data-part="slides">
+          <span class="part-name">Slides</span>
+          <div class="part-body">
+            <div class="part-pick">
+              <label class="md-btn md-secondary">
+                Choose HTML
+                <input type="file" accept=".html,.htm,text/html" />
+              </label>
+              <input
+                class="part-url"
+                type="url"
+                placeholder="or paste a GitHub URL"
+                autocomplete="off"
+              />
+            </div>
+            <div class="part-state"><span>Keep current</span></div>
+          </div>
+        </div>
+        <div class="reimport-part" data-part="script">
+          <span class="part-name">Script</span>
+          <div class="part-body">
+            <div class="part-pick">
+              <label class="md-btn md-secondary">
+                Choose Markdown
+                <input type="file" accept=".md,.markdown,text/markdown" />
+              </label>
+              <input
+                class="part-url"
+                type="url"
+                placeholder="or paste a GitHub URL"
+                autocomplete="off"
+              />
+            </div>
+            <div class="part-state"><span>Keep current</span></div>
+          </div>
+        </div>
+        <div class="reimport-part" data-part="keys">
+          <span class="part-name">Key messages</span>
+          <div class="part-body">
+            <div class="part-pick">
+              <label class="md-btn md-secondary">
+                Choose Markdown
+                <input type="file" accept=".md,.markdown,text/markdown" />
+              </label>
+              <input
+                class="part-url"
+                type="url"
+                placeholder="or paste a GitHub URL"
+                autocomplete="off"
+              />
+            </div>
+            <div class="part-state"><span>Keep current</span></div>
+          </div>
+        </div>
+        <p id="reimport-error" class="bad" hidden></p>
+        <div class="actions">
+          <button class="md-btn md-secondary" id="reimport-cancel" type="button">
+            Cancel
+          </button>
+          <button
+            class="md-btn md-primary"
+            id="reimport-run"
+            type="button"
+            disabled
+          >
+            Replace
           </button>
         </div>
       </div>
@@ -457,6 +637,9 @@
       const importNotesUrlHint = document.getElementById(
         "import-notes-url-hint",
       );
+      const importKmInput = document.getElementById("import-km-file");
+      const importKmUrlInput = document.getElementById("import-km-url");
+      const importKmUrlHint = document.getElementById("import-km-url-hint");
       const importTokenInput = document.getElementById("import-github-token");
       const TOKEN_KEY = "speakeasy:github-token";
       try {
@@ -475,10 +658,12 @@
       // file or a fetched URL — whichever the user picked last.
       let htmlSource = null;
       let notesSource = null;
+      let kmSource = null; // key messages: same Markdown format as the script
       // In-flight URL fetches; Import waits for them (clicking Import blurs
       // the URL field, which starts its fetch).
       let htmlUrlPending = null;
       let notesUrlPending = null;
+      let kmUrlPending = null;
 
       function setImportError(message = "") {
         if (!message) {
@@ -498,46 +683,15 @@
           "Paste the URL of an HTML presentation — GitHub file links, raw " +
           "links, gists and GitHub Pages work. Linked images and video in " +
           "the same repo are copied into your storage.",
-        reimport:
-          "Replace this deck's slides and/or script from a whole new file. " +
-          "Leave a part empty to keep it. Whatever is replaced is saved " +
-          "to History first as \"Before re-import\".",
       };
-      let importMode = "file";
-      let reimportDeck = null; // { id, title } while re-importing
 
-      // mode: "file" (local HTML + notes files), "url" (GitHub/remote links)
-      // or "reimport" (replace an existing deck's slides and/or script).
-      function openImportModal(mode = "file", deck = null) {
-        importMode = mode;
-        reimportDeck = mode === "reimport" ? deck : null;
+      // mode: "file" (local HTML + notes files) or "url" (GitHub/remote links).
+      function openImportModal(mode = "file") {
         importModal.dataset.mode = mode;
-        if (mode === "reimport" && githubToken()) {
-          importModal.dataset.github = "";
-        } else {
-          delete importModal.dataset.github;
-        }
         importModalTitle.textContent =
-          mode === "url"
-            ? "Import from GitHub"
-            : mode === "reimport"
-              ? `Re-import · ${deck.title}`
-              : "Import HTML deck";
+          mode === "url" ? "Import from GitHub" : "Import HTML deck";
         document.getElementById("import-intro").textContent =
           IMPORT_INTRO[mode];
-        const re = mode === "reimport";
-        for (const [id, normal, reimport] of [
-          ["import-file", "HTML file", "New slides — HTML file (optional)"],
-          ["import-url", "HTML URL", "New slides — HTML URL (optional)"],
-          ["import-notes-file", "Notes Markdown (optional)", "New script — Markdown file (optional)"],
-          ["import-notes-url", "Notes Markdown URL (optional)", "New script — Markdown URL (optional)"],
-        ]) {
-          document.querySelector(`label[for="${id}"]`).textContent = re
-            ? reimport
-            : normal;
-        }
-        importRunBtn.dataset.label = re ? "Re-import" : "Import";
-        importRunBtn.textContent = importRunBtn.dataset.label;
         setImportError("");
         importDeckIdInput.value = "";
         importTitleInput.value = "";
@@ -546,16 +700,15 @@
         importNotesUrlInput.value = "";
         importUrlHint.textContent = "";
         importNotesUrlHint.textContent = "";
+        importKmInput.value = "";
+        importKmUrlInput.value = "";
+        importKmUrlHint.textContent = "";
+        kmSource = null;
         importModalBg.classList.add("show");
         importModalBg.setAttribute("aria-hidden", "false");
         importFileInput.value = "";
         htmlSource = null;
         notesSource = null;
-        importDeckIdInput.readOnly = mode === "reimport";
-        if (reimportDeck) {
-          importDeckIdInput.value = reimportDeck.id;
-          importTitleInput.value = reimportDeck.title;
-        }
       }
 
       function closeImportModal() {
@@ -587,25 +740,33 @@
         });
       }
 
-      async function handleImportUrl(value) {
-        importFileInput.value = "";
-        importUrlHint.textContent = "Fetching…";
+      // Fetch a remote HTML deck, inline its stylesheets, and find the repo
+      // files it links to (copied to storage on import). Missing ones are
+      // reported up front so broken paths show before importing.
+      async function loadRemoteHtml(value) {
         const token = githubToken();
         const { text, url } = await fetchRemoteText(value, { token });
         const html = await makeSelfContained(text, url, { token });
-        // Files the deck links to in its repo get copied to storage on import;
-        // list missing ones now so broken paths show up before importing.
         const media = findRepoMedia(html, url);
         const exists = await Promise.all(
           media.map((m) => remoteFileExists(m.url, { token })),
         );
-        const found = media.filter((_, i) => exists[i]);
-        const missing = media.filter((_, i) => !exists[i]);
-        const parsed = await useHtmlSource({
-          name: nameFromUrl(url),
-          load: async () => html,
-          media: found,
-        });
+        return {
+          source: {
+            name: nameFromUrl(url),
+            load: async () => html,
+            media: media.filter((_, i) => exists[i]),
+          },
+          missing: media.filter((_, i) => !exists[i]),
+        };
+      }
+
+      async function handleImportUrl(value) {
+        importFileInput.value = "";
+        importUrlHint.textContent = "Fetching…";
+        const { source, missing } = await loadRemoteHtml(value);
+        const found = source.media;
+        const parsed = await useHtmlSource(source);
         importUrlHint.textContent = [
           `✓ ${parsed.slides.length} slide(s) found`,
           found.length && `${found.length} linked file(s) will be copied`,
@@ -619,6 +780,34 @@
         ]
           .filter(Boolean)
           .join(" · ");
+      }
+
+      async function handleImportKmFile(file) {
+        importKmUrlInput.value = "";
+        importKmUrlHint.textContent = "";
+        kmSource = { name: file.name, load: () => file.text() };
+      }
+
+      async function handleImportKmUrl(value) {
+        importKmInput.value = "";
+        importKmUrlHint.textContent = "Fetching…";
+        const { text, url } = await fetchRemoteText(value, {
+          token: githubToken(),
+        });
+        kmSource = { name: nameFromUrl(url), load: async () => text };
+        importKmUrlHint.textContent = `✓ ${parseNotesMd(text).length} key message(s) found`;
+      }
+
+      // Write key messages to slides in order (parsed like the script).
+      async function writeKeyMessages(deckId, orderedSlides, keyMessages, btn) {
+        btn.textContent = "Writing key messages…";
+        for (const [i, slide] of orderedSlides.entries()) {
+          await notesRepo.upsertKeyMessage(
+            deckId,
+            slide.section_id,
+            keyMessages[i]?.body ?? "",
+          );
+        }
       }
 
       async function handleImportNotesFile(file) {
@@ -639,10 +828,9 @@
 
       // Copy a GitHub deck's repo images/video into storage and point the
       // HTML at the copies, so it no longer depends on GitHub access.
-      async function copyRepoMedia(html, deckId) {
-        const media = htmlSource?.media || [];
+      async function copyRepoMedia(html, deckId, media = [], btn = importRunBtn) {
         for (const [i, file] of media.entries()) {
-          importRunBtn.textContent = `Copying files ${i + 1}/${media.length}…`;
+          btn.textContent = `Copying files ${i + 1}/${media.length}…`;
           const blob = await fetchRemoteBlob(file.url, {
             token: githubToken(),
           });
@@ -657,8 +845,7 @@
       }
 
       async function runImport() {
-        await Promise.all([htmlUrlPending, notesUrlPending]);
-        if (importMode === "reimport") return runReimport();
+        await Promise.all([htmlUrlPending, notesUrlPending, kmUrlPending]);
         if (!htmlSource) {
           throw new Error("Choose an HTML file or enter its URL first.");
         }
@@ -681,12 +868,15 @@
             `[import] notes count mismatch — will import first ${Math.min(notes.length, parsed.slides.length)}`,
           );
         }
+        const keyMessages = kmSource
+          ? parseNotesMd(await kmSource.load())
+          : null;
 
         importRunBtn.disabled = true;
         importRunBtn.textContent = "Importing…";
         try {
           if (htmlSource.media?.length) {
-            html = await copyRepoMedia(html, parsed.deckId);
+            html = await copyRepoMedia(html, parsed.deckId, htmlSource.media);
             parsed = parseImportedHtmlDeck(html, { deckId, title });
           }
           importRunBtn.textContent = "Importing…";
@@ -712,43 +902,210 @@
               );
             }
           }
+          if (keyMessages?.length) {
+            await writeKeyMessages(
+              parsed.deckId,
+              parsed.slides,
+              keyMessages,
+              importRunBtn,
+            );
+          }
           closeImportModal();
           location.href = `./edit.html?deck=${encodeURIComponent(parsed.deckId)}`;
         } finally {
           importRunBtn.disabled = false;
-          importRunBtn.textContent = importRunBtn.dataset.label || "Import";
+          importRunBtn.textContent = "Import";
         }
       }
 
+      // ── Re-import ────────────────────────────────────────────────────
       // Replace an existing deck's slides (frame + all slides) and/or its
-      // script (all notes) from new whole files. The deck ID stays, so links
-      // keep working; the current state is saved to History first.
-      async function runReimport() {
-        const deckId = reimportDeck.id;
-        if (!htmlSource && !notesSource) {
-          throw new Error(
-            "Choose new slides (HTML) and/or a new script (Markdown) first.",
-          );
+      // script (all notes) from new whole files. The deck ID and title stay,
+      // so links keep working; whatever is replaced is saved to History first.
+      const reimportBg = document.getElementById("reimport-modal-bg");
+      const reimportTitle = document.getElementById("reimport-title");
+      const reimportError = document.getElementById("reimport-error");
+      const reimportCancel = document.getElementById("reimport-cancel");
+      const reimportRun = document.getElementById("reimport-run");
+      let reimportDeck = null; // { id, title }
+
+      // One entry per part: its row, and what it'll be replaced with.
+      const reimportParts = {};
+      for (const row of reimportBg.querySelectorAll(".reimport-part")) {
+        reimportParts[row.dataset.part] = {
+          row,
+          file: row.querySelector('input[type="file"]'),
+          url: row.querySelector(".part-url"),
+          state: row.querySelector(".part-state"),
+          source: null, // { load, media? } once chosen
+          pending: null, // in-flight URL fetch
+        };
+      }
+
+      const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+      function setReimportError(message = "") {
+        reimportError.textContent = message;
+        reimportError.hidden = !message;
+      }
+
+      function updateReimportRun() {
+        const names = { slides: "slides", script: "script", keys: "key messages" };
+        const picked = Object.entries(reimportParts)
+          .filter(([, part]) => part.source)
+          .map(([name]) => names[name]);
+        reimportRun.disabled = picked.length === 0;
+        reimportRun.textContent =
+          picked.length === 0
+            ? "Replace"
+            : picked.length === 1
+              ? `Replace ${picked[0]}`
+              : picked.length === 2
+                ? `Replace ${picked.join(" + ")}`
+                : "Replace all";
+      }
+
+      // state: "" (keep current), "busy", "ready" or "error".
+      function setPartState(part, state, text) {
+        part.row.dataset.state = state;
+        part.state.replaceChildren();
+        const label = document.createElement("span");
+        label.textContent = text || "Keep current";
+        label.title = label.textContent;
+        part.state.append(label);
+        if (state === "ready" || state === "error") {
+          const clear = document.createElement("button");
+          clear.type = "button";
+          clear.className = "md-btn md-text part-clear";
+          clear.textContent = "Clear";
+          clear.addEventListener("click", () => resetPart(part));
+          part.state.append(clear);
         }
-        const title =
-          importTitleInput.value.trim() || reimportDeck.title || deckId;
+        updateReimportRun();
+      }
+
+      function resetPart(part) {
+        part.source = null;
+        part.pending = null;
+        part.file.value = "";
+        part.url.value = "";
+        setPartState(part, "");
+      }
+
+      // Validate a chosen source right away so the row can say what it holds.
+      async function pickPart(name, getSource, label) {
+        const part = reimportParts[name];
+        part.source = null;
+        setPartState(part, "busy", "Reading…");
+        setReimportError("");
+        const pending = (async () => {
+          const { source, missing = [] } = await getSource();
+          const text = await source.load();
+          let summary;
+          if (name === "slides") {
+            const parsed = parseImportedHtmlDeck(text, {
+              deckId: reimportDeck.id,
+            });
+            if (!parsed.slides.length) {
+              throw new Error("No <section> slides found.");
+            }
+            summary = plural(parsed.slides.length, "slide");
+            if (source.media?.length) {
+              summary += ` · ${plural(source.media.length, "file")} to copy`;
+            }
+            if (missing.length) summary += ` · ⚠ ${missing.length} missing`;
+          } else {
+            const notes = parseNotesMd(text);
+            const what = name === "keys" ? "key message" : "note";
+            if (!notes.length) throw new Error(`No ${what}s found.`);
+            summary = plural(notes.length, what);
+          }
+          part.source = source;
+          setPartState(part, "ready", `✓ ${label} — ${summary}`);
+        })().catch((err) => {
+          part.source = null;
+          setPartState(part, "error", err.message);
+        });
+        part.pending = pending;
+        await pending;
+      }
+
+      for (const [name, part] of Object.entries(reimportParts)) {
+        part.file.addEventListener("change", () => {
+          const file = part.file.files?.[0];
+          if (!file) return;
+          part.url.value = "";
+          pickPart(name, async () => ({ source: { load: () => file.text() } }), file.name);
+        });
+        part.url.addEventListener("change", () => {
+          const value = part.url.value.trim();
+          if (!value) return resetPart(part);
+          part.file.value = "";
+          pickPart(
+            name,
+            async () => {
+              if (name === "slides") return loadRemoteHtml(value);
+              const { text, url } = await fetchRemoteText(value, {
+                token: githubToken(),
+              });
+              return { source: { name: nameFromUrl(url), load: async () => text } };
+            },
+            nameFromUrl(value),
+          );
+        });
+      }
+
+      function openReimportModal(deck) {
+        reimportDeck = deck;
+        reimportTitle.textContent = deck.title;
+        // GitHub URLs only when a token is configured, like the import buttons.
+        const github = Boolean(githubToken());
+        for (const part of Object.values(reimportParts)) {
+          part.url.hidden = !github;
+          resetPart(part);
+        }
+        setReimportError("");
+        reimportBg.classList.add("show");
+        reimportBg.setAttribute("aria-hidden", "false");
+      }
+
+      function closeReimportModal() {
+        reimportBg.classList.remove("show");
+        reimportBg.setAttribute("aria-hidden", "true");
+        reimportDeck = null;
+      }
+
+      async function runReimport() {
+        const { slides: slidesPart, script: scriptPart, keys: keysPart } =
+          reimportParts;
+        await Promise.all(Object.values(reimportParts).map((p) => p.pending));
+        const deckId = reimportDeck.id;
+        const htmlSrc = slidesPart.source;
+        const notesSrc = scriptPart.source;
+        const kmSrc = keysPart.source;
+        if (!htmlSrc && !notesSrc && !kmSrc) {
+          throw new Error("Choose at least one part to replace first.");
+        }
 
         // Parse and validate everything before touching the database.
-        let html = htmlSource ? await htmlSource.load() : null;
-        let parsed = html ? parseImportedHtmlDeck(html, { deckId, title }) : null;
+        let html = htmlSrc ? await htmlSrc.load() : null;
+        let parsed = html ? parseImportedHtmlDeck(html, { deckId }) : null;
         if (parsed && parsed.slides.length === 0) {
           throw new Error("No <section> slides found in the new HTML.");
         }
-        const newNotes = notesSource
-          ? parseNotesMd(await notesSource.load())
-          : null;
+        const newNotes = notesSrc ? parseNotesMd(await notesSrc.load()) : null;
         if (newNotes && newNotes.length === 0) {
           throw new Error("No notes found in the new Markdown.");
         }
+        const newKeys = kmSrc ? parseNotesMd(await kmSrc.load()) : null;
+        if (newKeys && newKeys.length === 0) {
+          throw new Error("No key messages found in the new Markdown.");
+        }
 
-        importRunBtn.disabled = true;
+        reimportRun.disabled = true;
+        reimportCancel.disabled = true;
         try {
-          importRunBtn.textContent = "Saving current version…";
+          reimportRun.textContent = "Saving current version…";
           const [deck, slides, notes] = await Promise.all([
             deckRepo.getDeck(deckId),
             slideRepo.listByDeck(deckId),
@@ -766,14 +1123,14 @@
 
           let finalSlides = slides;
           if (parsed) {
-            if (htmlSource.media?.length) {
-              html = await copyRepoMedia(html, deckId);
-              parsed = parseImportedHtmlDeck(html, { deckId, title });
+            if (htmlSrc.media?.length) {
+              html = await copyRepoMedia(html, deckId, htmlSrc.media, reimportRun);
+              parsed = parseImportedHtmlDeck(html, { deckId });
             }
-            importRunBtn.textContent = "Replacing slides…";
+            reimportRun.textContent = "Replacing slides…";
             await deckRepo.upsertDeck({
               deck_id: deckId,
-              title,
+              title: deck.title || reimportDeck.title || deckId,
               frame_html: parsed.frameHtml,
             });
             await slideRepo.deleteByDeck(deckId);
@@ -781,14 +1138,12 @@
               parsed.slides.map((slide) => ({ ...slide, deck_id: deckId })),
             );
             finalSlides = parsed.slides;
-          } else if (title !== deck.title) {
-            await deckRepo.updateTitle(deckId, title);
           }
 
           if (newNotes) {
             // Whole-script replace, in slide order: slides past the end of
             // the script get empty notes.
-            importRunBtn.textContent = "Replacing script…";
+            reimportRun.textContent = "Replacing script…";
             const ordered = [...finalSlides].sort((a, b) => a.order - b.order);
             for (const [i, slide] of ordered.entries()) {
               await notesRepo.upsert(
@@ -799,20 +1154,45 @@
             }
           }
 
-          closeImportModal();
+          if (newKeys) {
+            // Same as the script: by slide order, extra slides get "".
+            const ordered = [...finalSlides].sort((a, b) => a.order - b.order);
+            await writeKeyMessages(deckId, ordered, newKeys, reimportRun);
+          }
+
+          closeReimportModal();
           const parts = [
             parsed && `${parsed.slides.length} slide(s)`,
             newNotes && `script (${newNotes.length} note(s))`,
+            newKeys && `${newKeys.length} key message(s)`,
           ].filter(Boolean);
           await loadDecks();
           status.innerHTML +=
             ` · <span class="ok">re-imported ${escapeHtml(deckId)}: ` +
             `${escapeHtml(parts.join(" + "))}</span>`;
         } finally {
-          importRunBtn.disabled = false;
-          importRunBtn.textContent = importRunBtn.dataset.label || "Re-import";
+          reimportCancel.disabled = false;
+          updateReimportRun();
         }
       }
+
+      reimportCancel.addEventListener("click", closeReimportModal);
+      reimportBg.addEventListener("click", (e) => {
+        if (e.target === reimportBg) closeReimportModal();
+      });
+      reimportRun.addEventListener("click", async () => {
+        try {
+          setReimportError("");
+          await runReimport();
+        } catch (err) {
+          setReimportError(err.message);
+        }
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && reimportBg.classList.contains("show")) {
+          closeReimportModal();
+        }
+      });
 
       importBtn.addEventListener("click", () => openImportModal("file"));
       importUrlBtn.addEventListener("click", () => openImportModal("url"));
@@ -843,6 +1223,16 @@
           setImportError(err.message);
         }
       });
+      importKmInput.addEventListener("change", async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+          setImportError("");
+          await handleImportKmFile(file);
+        } catch (err) {
+          setImportError(err.message);
+        }
+      });
       importTokenInput.addEventListener("change", () => {
         try {
           const token = githubToken();
@@ -851,7 +1241,7 @@
         } catch {}
         importUrlBtn.hidden = !githubToken();
         // Re-fetch any URL that may have failed for lack of a token.
-        for (const input of [importUrlInput, importNotesUrlInput]) {
+        for (const input of [importUrlInput, importNotesUrlInput, importKmUrlInput]) {
           if (input.value.trim()) input.dispatchEvent(new Event("change"));
         }
       });
@@ -881,6 +1271,9 @@
           notesUrlPending = p;
         },
       );
+      bindUrlInput(importKmUrlInput, importKmUrlHint, handleImportKmUrl, (p) => {
+        kmUrlPending = p;
+      });
       importRunBtn.addEventListener("click", async () => {
         try {
           setImportError("");
@@ -960,7 +1353,7 @@
         const title =
           btn.closest(".deck-item")?.querySelector(".deck-title")
             ?.textContent || btn.dataset.reimportDeck;
-        openImportModal("reimport", { id: btn.dataset.reimportDeck, title });
+        openReimportModal({ id: btn.dataset.reimportDeck, title });
       });
 
       list.addEventListener("click", async (e) => {

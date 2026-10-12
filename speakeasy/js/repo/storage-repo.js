@@ -148,3 +148,36 @@ export async function deleteAsset(path) {
   const { error } = await supabase.storage.from(BUCKET).remove([path]);
   if (error) throw error;
 }
+
+/**
+ * Copy an asset to a path with a new display name. Callers update every URL
+ * reference before removing `oldPath`, so a failed reference update never
+ * leaves existing slides pointing at a missing file.
+ */
+export async function copyAssetForRename(path, requestedName) {
+  const slash = String(path).lastIndexOf("/");
+  if (slash < 1) throw new Error("Invalid asset path");
+
+  const folder = path.slice(0, slash);
+  const oldFileName = path.slice(slash + 1);
+  const timestamp = oldFileName.match(/^([0-9a-z]+-)/)?.[1] || "";
+  const requested = String(requestedName || "").trim();
+  if (!requested) throw new Error("Enter an asset name");
+  let name = safeName(requested);
+
+  // Keep the original extension when the new name omits one, so downloads
+  // and browser media handling retain the asset's type.
+  const oldExt = extOf(oldFileName);
+  if (oldExt && !name.toLowerCase().endsWith(`.${oldExt}`)) {
+    name += `.${oldExt}`;
+  }
+
+  const newPath = `${folder}/${timestamp}${name}`;
+  if (newPath === path) {
+    return { oldPath: path, newPath, oldUrl: publicUrl(path), newUrl: publicUrl(path), name };
+  }
+
+  const { error } = await supabase.storage.from(BUCKET).copy(path, newPath);
+  if (error) throw error;
+  return { oldPath: path, newPath, oldUrl: publicUrl(path), newUrl: publicUrl(newPath), name };
+}
