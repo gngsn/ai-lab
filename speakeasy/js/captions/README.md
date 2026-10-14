@@ -18,9 +18,11 @@ lines over a Supabase realtime channel.
    > A few months ago, I built a service in a single day at a hackathon.
    ```
 
-2. During the talk, open `captions.html?deck=<id>` on the presenter's laptop
-   (desktop Chrome, next to `present.html`), load the script once (kept in
-   that browser) and press **Start captions**.
+2. During the talk, press **CC** in the presenter panel of `present.html`
+   (desktop Chrome): the first click loads the script (kept in that
+   browser), the next ones start / stop listening. `captions.html?deck=<id>`
+   is the same thing as a full console (heard text, log, click a line to
+   send it).
 3. The console follows the current slide over the deck's sync room, listens
    (Korean), finds the script line being said on that slide and broadcasts
    its **reviewed** English. Speech that matches no line is translated by
@@ -33,8 +35,9 @@ lines over a Supabase realtime channel.
 
 | File | Role |
 |---|---|
-| `captions.html` | Presenter console page |
-| `js/captions/console.js` | Mic → match → send |
+| `captions.html` | Full caption console page |
+| `js/captions/console.js` | Console UI |
+| `js/captions/engine.js` | Mic → match → send (no UI) |
 | `js/captions/matcher.js` | Finds the script line for a heard phrase |
 | `js/captions/bilingual.js` | Parses the bilingual script |
 | `js/captions/channel.js` | Realtime channel `speakeasy-captions-<room>` |
@@ -43,5 +46,6 @@ lines over a Supabase realtime channel.
 ## Removing the feature
 
 Delete `captions.html` and `js/captions/`, then remove the two lines in
-`js/view-bootstrap.js` that mention `CAPTIONS_URL`. Nothing else depends on
-it (the share page already ignores a failed import).
+`js/view-bootstrap.js` that mention `CAPTIONS_URL` and `mountCaptions` in
+`js/presenter-panel.js`. Both pages already work without the folder (the
+imports fail quietly and the CC controls stay hidden).

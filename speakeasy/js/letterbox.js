@@ -6,10 +6,15 @@
 // together instead of reflowing. Inside that iframe — or in ?print=1 mode,
 // which needs the plain document — it just loads the page's real bootstrap
 // module (data-boot).
+//
+// With data-panel (present.html), the slide shares the window with a side
+// panel: the slide is letterboxed into the left stage and data-panel names
+// a module whose mountPresenterPanel({ panel, frame }) fills the right.
 (() => {
   const script = document.currentScript;
   const params = new URLSearchParams(location.search);
   const hosting = window.self === window.top && params.get("print") !== "1";
+  const panelSrc = script.dataset.panel;
 
   if (!hosting) {
     const boot = document.createElement("script");
@@ -54,6 +59,22 @@
       -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
     }
     #__se_stepnav button:active { background: rgba(255,255,255,.2); }
+    /* Presenter layout (data-panel): slide stage | side panel. */
+    #__se_presenter {
+      position: fixed; inset: 0; display: grid;
+      grid-template-columns: minmax(0, 1fr) var(--se-panel-w, 38%);
+    }
+    #__se_presenter.panel-hidden { grid-template-columns: minmax(0, 1fr) 0; }
+    #__se_stage { position: relative; overflow: hidden; min-width: 0; }
+    #__se_stage #__se_letterbox { position: absolute; }
+    #__se_panel { min-width: 0; overflow: hidden; }
+    @media (max-width: 760px), (orientation: portrait) {
+      #__se_presenter {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, 45%) minmax(0, 1fr);
+      }
+      #__se_presenter.panel-hidden { grid-template-rows: 1fr 0; }
+    }
   `;
   document.head.appendChild(style);
 
@@ -62,9 +83,11 @@
   frame.title = "Slides";
   frame.src = location.href;
 
+  // The area the slide is fitted into: the window, or the presenter stage.
+  const stage = panelSrc ? document.createElement("div") : null;
   const fit = () => {
-    const w = document.documentElement.clientWidth;
-    const h = document.documentElement.clientHeight;
+    const w = stage ? stage.clientWidth : document.documentElement.clientWidth;
+    const h = stage ? stage.clientHeight : document.documentElement.clientHeight;
     const scale = Math.min(w / SLIDE_W, h / SLIDE_H);
     const x = (w - SLIDE_W * scale) / 2;
     const y = (h - SLIDE_H * scale) / 2;
@@ -91,7 +114,22 @@
   nextBtn.addEventListener("click", () => press("ArrowRight"));
 
   const start = () => {
-    document.body.replaceChildren(frame, stepNav);
+    if (stage) {
+      const layout = document.createElement("div");
+      layout.id = "__se_presenter";
+      stage.id = "__se_stage";
+      const panel = document.createElement("aside");
+      panel.id = "__se_panel";
+      stage.append(frame);
+      layout.append(stage, panel);
+      document.body.replaceChildren(layout, stepNav);
+      new ResizeObserver(fit).observe(stage);
+      import(new URL(panelSrc, location.href).href)
+        .then((m) => m.mountPresenterPanel({ panel, frame, layout, fit }))
+        .catch((err) => console.warn("[letterbox] panel:", err));
+    } else {
+      document.body.replaceChildren(frame, stepNav);
+    }
     fit();
     frame.addEventListener("load", () => {
       frame.contentWindow.focus();

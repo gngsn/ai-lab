@@ -278,9 +278,17 @@ const interactiveBoot = `
       onHello: () => lastPayload && sync.broadcast(lastPayload),
     });
   }
+  // The presenter panel around this frame (js/presenter-panel.js) follows
+  // the current slide through these messages.
+  const tellPanel = (payload) => {
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: "se:slide", ...payload }, location.origin);
+    }
+  };
   host.onChange(({ index, section_id, fragments, stepper }) => {
     lastPayload = { section_id, index, fragments, stepper };
     if (sync) sync.broadcast(lastPayload);
+    tellPanel(lastPayload);
   });
 
   if (host.mode === "speakeasy") {
@@ -372,6 +380,7 @@ const interactiveBoot = `
     index: host.index(),
     ...host.getStepState(),
   };
+  tellPanel(lastPayload);
 <\/script>
 `;
 
