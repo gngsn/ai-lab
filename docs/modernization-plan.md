@@ -21,7 +21,8 @@
 7. **`git push --force`, `git reset --hard`, `git stash`(이름 없는 것), `rm -rf`를 쓰지 마라.**
 8. **운영 DB(Supabase)에 직접 SQL을 실행하거나 `supabase db push`를 실행하지 마라.** DB 작업은 사람이 한다(§0.3).
 9. **`vercel deploy --prod`를 실행하지 마라.** 배포는 사람이 한다.
-10. 테스트가 실패하면 **테스트를 고쳐서 통과시키지 마라.** 앱 코드가 원래 동작과 같아지도록 고친다. 테스트 자체가 틀렸다고 확신할 때만 고치고, 그 이유를 커밋 메시지에 적는다.
+10. **패키지 도구는 pnpm만 쓴다.** `npm`, `npx`, `yarn`을 쓰지 마라. 설치는 `pnpm add` / `pnpm add -D`, 실행은 `pnpm <script>` / `pnpm exec <bin>`, 일회성 도구는 `pnpm dlx <pkg>`. 잠금 파일은 `pnpm-lock.yaml` 하나만 둔다.
+11. 테스트가 실패하면 **테스트를 고쳐서 통과시키지 마라.** 앱 코드가 원래 동작과 같아지도록 고친다. 테스트 자체가 틀렸다고 확신할 때만 고치고, 그 이유를 커밋 메시지에 적는다.
 
 ### 0.2 작업 단위
 
@@ -216,6 +217,7 @@ sync.js   (루트. 덱이 자체적으로 import("./sync.js") 하는 것을 받�
 | 화면 테스트 | Playwright | 가짜 백엔드(§5.2) |
 | 린트·포맷 | Biome | `src/`, `tests/`만 대상. `public/`은 제외 |
 | 배포 | Vercel (정적) | `outputDirectory: dist` |
+| 패키지 관리 | **pnpm** (9 이상) | `package.json`의 `packageManager` 필드로 버전 고정. Vercel은 `pnpm-lock.yaml`을 보고 pnpm을 자동으로 쓴다 |
 
 라이브러리를 추가로 넣지 않는다. 필요해 보이면 STOP(§0.3).
 
@@ -263,12 +265,22 @@ edit은 캔버스로 `edit-frame.html`(레거시)을 iframe으로 띄우고 post
 
 ## 5. Phase 0: 동작을 테스트로 고정하기
 
-**목적:** 이후 모든 단계에서 "동작이 같다"를 이 테스트로 증명한다. **Phase 0이 끝나기 전에는 앱 코드를 한 줄도 바꾸지 않는다.**
+**목적:** 이후 모든 단계에서 "동작이 같다"를 이 테스트로 증명한다. **Phase 0이 끝나기 전에는 앱 코드를 한 줄도 바꾸지 않는다.** (P0-0의 패키지 도구 교체는 앱 코드가 아니므로 예외)
+
+- [ ] **P0-0 pnpm으로 전환 (가장 먼저)**
+  1. `corepack enable`로 pnpm을 켠다. 안 되면 STOP. 전역 설치는 사람이 한다.
+  2. `speakeasy/`에서 `pnpm import`를 실행해 `package-lock.json`으로 `pnpm-lock.yaml`을 만든다. 버전이 그대로 유지된다.
+  3. `git rm speakeasy/package-lock.json`
+  4. `package.json`에 `"packageManager": "pnpm@<설치된 버전>"`를 추가한다. 버전은 `pnpm --version`의 출력을 그대로 쓴다.
+  5. `package.json` scripts의 `npm`/`npx`를 pnpm으로 바꾼다. 예: `"dev"`는 그대로 두고, 앞으로 추가하는 스크립트는 `pnpm`을 쓴다.
+  6. 테스트 도구를 설치한다: `pnpm add -D @playwright/test vitest http-server`, 그리고 `pnpm exec playwright install chromium`
+  7. **주의:** 저장소 루트(`../package-lock.json`)는 speakeasy와 별개다. 건드리지 않는다.
+  - 완료 조건: `pnpm install --frozen-lockfile` 성공, `pnpm run build:vendor`로 다시 만든 `vendor/modules/supabase-client.mjs`의 `git diff`가 비어 있음(의존성 버전이 바뀌지 않았다는 확인)
 
 ### 5.1 테스트 실행 방식
 
 - 테스트 대상: 현재 `speakeasy/` 폴더를 **그대로** 정적 서버로 띄운 앱
-  - 서버: `npx http-server speakeasy -p 4173 -c-1 --silent` (`-c-1`은 캐시 끄기)
+  - 서버: `pnpm exec http-server speakeasy -p 4173 -c-1 --silent` (`-c-1`은 캐시 끄기)
   - 이유: 캐시가 켜져 있으면 예전 JS가 실행되어 테스트가 엉뚱하게 실패하거나 통과한다. 실제로 겪은 문제다.
 - 설정 파일: `js/config.local.js`는 **실제 파일을 쓰지 않는다.** 테스트는 Playwright `page.route('**/js/config.local.js', ...)`로 다음 내용을 돌려준다.
   ```js
@@ -399,8 +411,8 @@ export function createClient() {
   - 원본 파일을 import해서 테스트한다(복사하지 않음).
 
 **완료 조건 (Phase 0 전체)**
-- `npx playwright test` 전부 통과 (3회 연속 실행해도 통과, flaky 금지)
-- `npx vitest run` 전부 통과
+- `pnpm exec playwright test` 전부 통과 (3회 연속 실행해도 통과, flaky 금지)
+- `pnpm exec vitest run` 전부 통과
 - 앱 코드(`speakeasy/*.html`, `speakeasy/js/**`, `speakeasy/css/**`) 변경 0건: `git diff --stat -- speakeasy/js speakeasy/css speakeasy/*.html`가 비어 있어야 한다.
 
 ### 5.5 사람이 직접 확인할 것 (자동 테스트 불가)
@@ -416,24 +428,24 @@ export function createClient() {
 ## 6. Phase 1: 개발 도구 정비 (앱 동작 그대로)
 
 - [ ] **P1-1 package.json 정리**
-  - devDependencies 추가: `typescript`, `vitest`, `@playwright/test`, `@biomejs/biome`, `http-server`.
-  - `vercel`은 `dependencies`에서 빼고 devDependencies로 옮긴다(앱 실행에 필요 없음).
+  - devDependencies 추가: `pnpm add -D typescript @biomejs/biome` (vitest, playwright, http-server는 P0-0에서 설치됨)
+  - `vercel`은 `dependencies`에서 빼고 devDependencies로 옮긴다: `pnpm remove vercel && pnpm add -D vercel`. 앱 실행에 필요 없다.
   - scripts:
     ```json
     "test": "vitest run",
     "e2e": "playwright test",
     "lint": "biome check src tests",
     "typecheck": "tsc --noEmit",
-    "check": "npm run lint && npm run typecheck && npm test"
+    "check": "pnpm lint && pnpm typecheck && pnpm test"
     ```
-  - 완료 조건: `npm ci && npm run check && npm run e2e` 통과
+  - 완료 조건: `pnpm install --frozen-lockfile && pnpm check && pnpm e2e` 통과
 - [ ] **P1-2 Biome 설정:** `biome.json`에서 `files.include`를 `["src/**", "tests/**"]`로 한다. **레거시 파일은 포맷하지 않는다**(큰 diff 금지).
 - [ ] **P1-3 TypeScript 설정:** `tsconfig.json`
   - `strict: true`, `allowJs: true`, `checkJs: false`, `noEmit: true`
   - include: `src`, `tests`, `public/js`(Phase 2 이후)
   - 레거시 JS는 기본으로 검사하지 않는다. 파일 맨 위에 `// @ts-check`를 붙인 파일만 검사된다.
 - [ ] **P1-4 CI:** `.github/workflows/speakeasy.yml`
-  - `speakeasy/` 변경 시 실행: `npm ci` → `npm run check` → `npx playwright install --with-deps chromium` → `npm run e2e`
+  - `speakeasy/` 변경 시 실행: `pnpm/action-setup`(버전은 `packageManager` 필드를 따름) → `actions/setup-node`(`cache: pnpm`) → `pnpm install --frozen-lockfile` → `pnpm check` → `pnpm exec playwright install --with-deps chromium` → `pnpm e2e`
   - 비밀 값을 쓰지 않는다(가짜 백엔드만 사용).
 - [ ] **P1-5 마이그레이션 형식 준비 (DB 적용 금지)**
   - `supabase/migrations/`에 `migrations/001~010`을 **내용 그대로** 복사한다. 파일 이름은 Supabase CLI 형식 `<14자리 타임스탬프>_<이름>.sql`로 바꾼다.
@@ -457,12 +469,12 @@ export function createClient() {
   - `scripts/build-config.mjs`의 출력 위치를 `public/js/config.local.js`로 바꾼다. **생성 내용은 그대로**(Supabase URL, anon key, passphrase. GitHub 토큰은 넣지 않음).
   - `.gitignore`와 `.vercelignore`의 `js/config.local.js`를 `public/js/config.local.js`로 바꾼다.
   - 로컬 개발자의 기존 `js/config.local.js`는 사람이 직접 옮긴다(STOP 아님, 보고만).
-- [ ] **P2-4 vercel.json:** `buildCommand`를 `node scripts/build-config.mjs && vite build`로, `outputDirectory`를 `dist`로 한다. `cleanUrls`와 `headers`는 그대로다.
+- [ ] **P2-4 vercel.json:** `"installCommand": "pnpm install --frozen-lockfile"`를 추가하고, `buildCommand`를 `node scripts/build-config.mjs && vite build`로, `outputDirectory`를 `dist`로 한다. `cleanUrls`와 `headers`는 그대로다.
 - [ ] **P2-5 개발 서버:** `"dev": "vite"`. e2e 서버를 `vite preview --port 4173`으로 바꾼다(빌드 결과물로 테스트).
 
 **완료 조건 (Phase 2)**
-- `npm run build` 성공
-- `npm run e2e`(빌드 결과물 대상) 전부 통과
+- `pnpm build` 성공
+- `pnpm e2e`(빌드 결과물 대상) 전부 통과
 - `cmp`로 확인했을 때 `dist/`의 레거시 파일이 원본과 모두 같다.
 - 사람에게 미리보기 배포를 요청한다(`vercel deploy`, prod 아님). 그리고 §5.5 수동 확인 목록을 전달한다.
 
@@ -484,7 +496,7 @@ export function createClient() {
 - [ ] **P3-5 런타임 파일에 JSDoc 타입:** §3.2 파일에 `// @ts-check`와 JSDoc만 추가한다. 실행 코드가 바뀌면 안 된다.
   - 커밋 전에 `git diff`에서 `+` 줄이 주석(`//`, `/**`, ` *`)뿐인지 확인한다.
 
-**완료 조건:** `npm run check`, `npm run e2e` 통과
+**완료 조건:** `pnpm check`, `pnpm e2e` 통과
 
 ---
 
@@ -517,7 +529,7 @@ export function createClient() {
    - **런타임 파일(§3.2)과 다른 페이지가 쓰는 파일은 지우지 않는다.** 지우기 전에 `grep -rn "<파일명>" public src`로 다른 사용처가 없는지 확인한다.
 7. Phase 0 e2e 중 그 페이지 테스트가 **수정 없이** 통과해야 한다.
 
-**완료 조건 (페이지마다):** `npm run check`, `npm run e2e` 전부 통과, 그리고 그 페이지 테스트 파일의 diff가 0이어야 한다.
+**완료 조건 (페이지마다):** `pnpm check`, `pnpm e2e` 전부 통과, 그리고 그 페이지 테스트 파일의 diff가 0이어야 한다.
 
 ### 9.3 edit.html 분할 (P4-7a ~ P4-7h)
 
@@ -592,7 +604,7 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 
 | Phase | 상태 | 날짜 | 메모 |
 |---|---|---|---|
-| 0 | 대기 | | |
+| 0 | 대기 | | P0-0(pnpm 전환)부터 |
 | 1 | 대기 | | |
 | 2 | 대기 | | |
 | 3 | 대기 | | |
