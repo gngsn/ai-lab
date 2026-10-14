@@ -4,11 +4,6 @@ function normalizePath(path) {
   return String(path || "").replace(/^\/+/, "");
 }
 
-export function toStorageSrc(path) {
-  const normalized = normalizePath(path);
-  return normalized ? `${SCHEME_PREFIX}${normalized}` : "";
-}
-
 export function fromStorageSrc(src) {
   const text = String(src || "");
   if (!text.startsWith(SCHEME_PREFIX)) return null;

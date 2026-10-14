@@ -15,10 +15,6 @@ const jobs = [
     entryPoints: [path.join(entryDir, "supabase-client-entry.js")],
     outfile: path.join(outDir, "supabase-client.mjs"),
   },
-  {
-    entryPoints: [path.join(entryDir, "dompurify-entry.js")],
-    outfile: path.join(outDir, "dompurify.mjs"),
-  },
 ];
 
 for (const job of jobs) {
@@ -34,4 +30,4 @@ for (const job of jobs) {
   });
 }
 
-console.log("[vendor] built supabase-client.mjs and dompurify.mjs");
+console.log("[vendor] built supabase-client.mjs");

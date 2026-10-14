@@ -50,7 +50,3 @@ export async function ensureAuthed() {
   alert("Wrong passphrase. Edit access denied.");
   return false;
 }
-
-export function logout() {
-  localStorage.removeItem(TOKEN_KEY);
-}

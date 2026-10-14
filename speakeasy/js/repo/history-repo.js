@@ -136,13 +136,3 @@ function listFrameHistoryRows(frameRows) {
   return frameRows.map((r) => ({ ...r, _source: "frame" }));
 }
 
-export async function getRow(source, id) {
-  const table = source === "slide" ? SLIDE : source === "notes" ? NOTES : FRAME;
-  const { data, error } = await supabase
-    .from(table)
-    .select("*")
-    .eq("id", id)
-    .single();
-  if (error) throw error;
-  return data;
-}
