@@ -405,11 +405,12 @@ export function createClient() {
 - [x] **P0-15 대본 리더:** `script.html?deck=…&sync=r1`이 발표자를 따라간다.
 - [x] **P0-16 노트 편집·보기:** script-edit에서 노트를 고치면 저장되고, notes.html에 반영된다.
 - [x] **P0-17 가져오기:** index의 가져오기로 fixture HTML 파일을 올리면 덱이 만들어진다(슬라이드 수, 제목 확인). 노트 `.md`와 key message `.md`도 함께 가져온다.
-- [ ] **P0-18 자막 순수 로직(Vitest):** 대상은 `js/captions/matcher.js`, `bilingual.js`(`parseBilingualMd`, `alignToSlides`).
+- [x] **P0-18 자막 순수 로직(Vitest):** 대상은 `js/captions/matcher.js`, `bilingual.js`(`parseBilingualMd`, `alignToSlides`).
   - 일부만 들린 문장과 글자가 틀린 문장도 맞는 줄로 찾는다.
   - 관계없는 문장은 점수가 0.4 미만이다.
   - 제목이 조금 다른 섹션(`"2. Verify: Production validation"` ↔ `"Production validation"`)도 짝지어진다.
   - 원본 파일을 import해서 테스트한다(복사하지 않음).
+  - 추가로 `tagSection`(재생 상태 제거 포함), `parseNotesMd`, `parseImportedHtmlDeck`, `isSlideHiddenContent`, `storage-src`도 같은 방식으로 테스트했다(`tests/unit/`). Phase 3에서 TS로 옮길 때 이 테스트가 그대로 통과해야 한다.
 
 **완료 조건 (Phase 0 전체)**
 - `pnpm exec playwright test` 전부 통과 (3회 연속 실행해도 통과, flaky 금지)
@@ -605,7 +606,7 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 
 | Phase | 상태 | 날짜 | 메모 |
 |---|---|---|---|
-| 0 | 진행 중 | 2026-10-14 | P0-0 완료(pnpm 11.24). §11.2 C-1: 내보내기 메뉴 변경 미커밋 → C 항목 보류 |
+| 0 | **완료** | 2026-10-14 | P0-0~18 완료. e2e 95개(3회 연속 통과) + 단위 50개. 앱 코드 변경 0건. §11.2 C-1: 내보내기 메뉴 변경이 아직 미커밋이라 C 항목은 보류 |
 | 1 | 대기 | | |
 | 2 | 대기 | | |
 | 3 | 대기 | | |
