@@ -18,3 +18,4 @@ Things found while writing the Phase 0 tests. The tests pin today's behavior; no
 - **`supabase/.temp/`** (created by `supabase link`: project ref, pooler URL) is now gitignored and excluded from Vercel uploads.
 - **`dev` is Vite's dev server** (port 5173); `pnpm e2e` builds first and serves `dist/` with `vite preview`.
 - `scripts/import.mjs` and `scripts/build-*.mjs` were updated for the new paths; the rebuilt `supabase-client.mjs` is identical.
+- **Before the first Vercel preview (human):** (1) Vercel must use pnpm 11 to match `packageManager`; if its default pnpm is older, set `ENABLE_EXPERIMENTAL_COREPACK=1` in the project env. (2) A Preview deployment needs `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `OWNER_PASSPHRASE` in the Preview environment, otherwise `build-config` writes no config and the pages can't reach Supabase. (3) Check `/edit`, `/present`, `/share`, `/view` still resolve (cleanUrls) and that `/js/config.local.js` has no `GITHUB_TOKEN`.

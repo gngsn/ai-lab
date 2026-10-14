@@ -609,7 +609,7 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 | 0 | **완료** | 2026-10-14 | P0-0~18 완료. e2e 95개(3회 연속 통과) + 단위 50개. 앱 코드 변경 0건 |
 | 11.2 정리 | **완료** | 2026-10-14 | 내보내기 메뉴 변경이 커밋된 뒤(`feat/slides-editor` 77e6459) PPTX 코드, `vendor/pptxgenjs`, screenshot-PDF 정리 |
 | 1 | **완료** | 2026-10-14 | P1-1~5 완료. 깨끗한 clone에서 `pnpm install --frozen-lockfile && pnpm check && pnpm e2e` 통과(CI와 같은 조건). 마이그레이션 CLI 연결·`migration repair`는 사람이 할 일 |
-| 2 | 진행 중 | 2026-10-14 | P2-1~5 완료: dist의 레거시 파일이 public과 바이트 단위로 같고(`diff -rq`), 빌드 결과물 대상 e2e 95개·단위 50개 통과. **남은 것: Vercel 미리보기 배포 확인(사람)** |
+| 2 | 진행 중 | 2026-10-14 | P2-1~5 완료: dist의 레거시 파일이 public과 바이트 단위로 같고(`diff -rq`), 빌드 결과물 대상 e2e 95개·단위 50개 통과. 깨끗한 clone에서 가짜 환경변수로 Vercel식 빌드(`build-config && vite build`)와 `pnpm check`·`pnpm e2e`도 통과(GitHub 토큰은 무시되어 dist에 없음). **남은 것: Vercel 미리보기 배포 확인(사람). 확인할 점은 아래 참고** |
 | 3 | 대기 | | |
 | 4 | 대기 | | |
 
