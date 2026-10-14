@@ -371,7 +371,7 @@ export function createClient() {
   - 맞는 암호(`test`)를 넣으면 열린다.
   - 모달 DOM: `#__se_prompt_input`, `#__se_prompt_ok`, `#__se_prompt_cancel`. `alert`는 자동 수락한다. present는 모달이 iframe(`#__se_letterbox`) 안에 뜬다.
 - [ ] **P0-2 덱 목록:** 목록에 fixture 덱이 보이고 편집, 발표, 대본 링크가 올바른 URL이다.
-- [ ] **P0-3 발표 기본(deck 모드):** `present.html?deck=controller-deck`에서 → 키를 누른다.
+- [x] **P0-3 발표 기본(deck 모드):** `present.html?deck=controller-deck`에서 → 키를 누른다.
   - 기대: `__seDeckController.currentSlide`가 증가한다. fragment는 하나씩 `show`가 붙는다. 그룹 fragment는 한 번에 붙는다. ← 키로 되돌린다.
 - [ ] **P0-4 발표 기본(speakeasy 모드):** `plain-deck`에서 같은 동작. 오버레이 카운터 `#__se_counter`가 `n / total`이다.
 - [ ] **P0-5 재생 상태 제거:** 저장된 `visible`/`show`가 있어도 시작 시 `.slide.visible`은 첫 슬라이드 1개뿐이고 `.fragment.show`는 0개다.

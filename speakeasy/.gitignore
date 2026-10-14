@@ -9,3 +9,7 @@ node_modules/
 .vercel/
 *.log
 .vercel
+
+# test output
+test-results/
+playwright-report/

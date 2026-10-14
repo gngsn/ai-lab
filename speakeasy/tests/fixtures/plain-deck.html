@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Plain Deck</title>
+    <!-- Test deck in "speakeasy mode": no controller of its own, so
+         Speakeasy's runtime (js/slide-runtime.js) drives it. -->
+    <style>
+      body { margin: 0; background: #fafafa; color: #222; font: 24px sans-serif; }
+      .slide { height: 100vh; padding: 40px; box-sizing: border-box; }
+      .reveal { opacity: 0; transition: opacity 0.6s ease; }
+      .slide.visible .reveal { opacity: 1; }
+      .fragment { opacity: 0; }
+      .fragment.show { opacity: 1; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="slide" data-title="Plain one"><h1 class="reveal">Plain one</h1></section>
+      <section class="slide" data-title="Plain two">
+        <h1 class="reveal">Plain two</h1>
+        <p class="fragment">plain step</p>
+      </section>
+      <section class="slide" data-title="Plain three"><h1 class="reveal">Plain three</h1></section>
+      <section class="slide" data-title="Plain four"><h1 class="reveal">Plain four</h1></section>
+    </main>
+  </body>
+</html>
