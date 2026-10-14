@@ -50,7 +50,10 @@ export class InlineEditor {
 
     this.ensureEditIds();
     this.savePending = null;
-    this.lastSavedHtml = this.serializeSection();
+    this.needsChromeCleanup = this.hasPersistedPresentationChrome();
+    this.lastSavedHtml = this.needsChromeCleanup
+      ? this.section.outerHTML
+      : this.serializeSection();
     // Auto-save: parent flips this via `edit:set-autosave` on `edit:ready`
     // and whenever the toolbar toggle changes. When OFF, scheduleSave still
     // notifies the parent that the section is dirty but never sets the
@@ -98,6 +101,11 @@ export class InlineEditor {
     });
 
     this.postReady();
+
+    // Clean chrome written by earlier editor sessions. This is deliberately
+    // queued until after `edit:ready`, so the parent has mounted its message
+    // handler before the normalized slide is saved.
+    if (this.needsChromeCleanup) queueMicrotask(() => this.commitSave());
 
     // Flush save before unload (covers iframe re-mount / nav).
     window.addEventListener("beforeunload", () => this.commitSave(/* sync */));
@@ -243,7 +251,30 @@ export class InlineEditor {
     clone
       .querySelectorAll(".fragment.show")
       .forEach((el) => el.classList.remove("show"));
+    // Presentation-only chrome is created from data-hl/data-hr/data-page by
+    // deck-host. Never persist it in slide content. The data attribute covers
+    // new chrome; the direct-child rules also repair older duplicated saves.
+    clone.querySelectorAll("[data-se-generated]").forEach((el) => el.remove());
+    if (clone.dataset.hl || clone.dataset.hr) {
+      clone.querySelectorAll(":scope > .slide-header").forEach((el) => el.remove());
+    }
+    if (clone.dataset.page) {
+      clone.querySelectorAll(":scope > .slide-footer").forEach((el) => el.remove());
+    }
     return clone.outerHTML;
+  }
+
+  hasPersistedPresentationChrome() {
+    if (this.section.querySelector("[data-se-generated]")) return true;
+    if (
+      (this.section.dataset.hl || this.section.dataset.hr) &&
+      this.section.querySelector(":scope > .slide-header")
+    )
+      return true;
+    return Boolean(
+      this.section.dataset.page &&
+        this.section.querySelector(":scope > .slide-footer"),
+    );
   }
 
   scheduleSave() {

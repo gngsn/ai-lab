@@ -84,10 +84,14 @@ if (html.includes("<!-- slides -->")) {
   html = html.replace(/<\/body>/i, `${slideHtml}</body>`);
 }
 
-// Keep deck scripts in the editor preview so canvas controls can exercise the
-// same click-driven animations as the real presentation. The edit overlay
-// captures keyboard events from contenteditable fields before they reach deck
-// navigation handlers.
+// Keep deck runtime scripts out of the inline editor. They may inject
+// presentation chrome (for example `.slide-header` / `.slide-footer`), and an
+// editor save would otherwise persist those generated nodes back into the
+// slide. CSS/styles are preserved so the editing canvas still matches the deck.
+if (editMode) {
+  html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
+  html = html.replace(/<script\b[^>]*\/?>/gi, "");
+}
 
 const EDIT_FRAME_CSS = new URL("./css/edit-frame.css", location.href).href;
 const EDIT_FRAME_OVERLAY_URL = new URL(

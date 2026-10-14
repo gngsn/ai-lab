@@ -150,6 +150,7 @@ function decorateSlides() {
     if ((hl || hr) && !slide.querySelector(":scope > .slide-header")) {
       const header = document.createElement("div");
       header.className = "slide-header reveal";
+      header.dataset.seGenerated = "slide-header";
       header.innerHTML =
         '<div class="left"><span class="spike"></span>' +
         (hl || "") +
@@ -161,6 +162,7 @@ function decorateSlides() {
     if (page && !slide.querySelector(":scope > .slide-footer")) {
       const footer = document.createElement("div");
       footer.className = "slide-footer";
+      footer.dataset.seGenerated = "slide-footer";
       footer.innerHTML =
         '<span class="slide-page">' + page.replace("/", " / ") + "</span>";
       slide.append(footer);
