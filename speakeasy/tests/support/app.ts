@@ -103,3 +103,20 @@ export async function press(page: Page, key: string, times = 1) {
     await page.waitForTimeout(250);
   }
 }
+
+/** The fake database as the pages currently see it (see fake-backend). */
+export async function readDb(page: Page) {
+  return page.evaluate(() => JSON.parse(localStorage.getItem("__fakedb") || "{}")) as Promise<
+    Record<string, Record<string, unknown>[]>
+  >;
+}
+
+/** One row's current value from the fake DB, e.g. the note of a slide. */
+export async function dbRow(
+  page: Page,
+  table: string,
+  where: Record<string, unknown>,
+): Promise<Record<string, unknown> | undefined> {
+  const db = await readDb(page);
+  return (db[table] ?? []).find((r) => Object.entries(where).every(([k, v]) => r[k] === v));
+}

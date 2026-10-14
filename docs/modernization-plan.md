@@ -398,11 +398,11 @@ export function createClient() {
   - present에서 `window.__seCaptions.feed("<대본 줄 일부, 띄어쓰기 없이>", true)`를 호출한다.
   - 기대: 관객 share의 `#__se_cc_box`에 그 줄의 영어가 보인다. CC 버튼(`#__se_cc_toggle`)으로 끄면 숨겨진다.
   - `captions.html`에서도 같은 흐름을 확인하고, 줄을 클릭해 보내는 것도 확인한다.
-- [ ] **P0-13 편집 기본:** edit에서 슬라이드 선택, 노트 입력 후 자동 저장(가짜 DB에 반영), key message 입력, 슬라이드 순서 바꾸기, 숨기기.
-- [ ] **P0-14 Share 모달:** edit에서 Share를 연다.
+- [x] **P0-13 편집 기본:** edit에서 슬라이드 선택, 노트 입력 후 자동 저장(가짜 DB에 반영), key message 입력, 슬라이드 순서 바꾸기, 숨기기.
+- [x] **P0-14 Share 모달:** edit에서 Share를 연다.
   - `#share-url`이 `share.html?deck=…&token=…&sync=…` 형태다. `#share-open` href가 같은 URL이다. `#share-qr` src가 QR 주소다.
   - New link를 누르면 token이 바뀐다. Stop sharing을 누르면 token이 null이 된다.
-- [ ] **P0-15 대본 리더:** `script.html?deck=…&sync=r1`이 발표자를 따라간다.
+- [x] **P0-15 대본 리더:** `script.html?deck=…&sync=r1`이 발표자를 따라간다.
 - [ ] **P0-16 노트 편집·보기:** script-edit에서 노트를 고치면 저장되고, notes.html에 반영된다.
 - [ ] **P0-17 가져오기:** index의 가져오기로 fixture HTML 파일을 올리면 덱이 만들어진다(슬라이드 수, 제목 확인). 노트 `.md`와 key message `.md`도 함께 가져온다.
 - [ ] **P0-18 자막 순수 로직(Vitest):** 대상은 `js/captions/matcher.js`, `bilingual.js`(`parseBilingualMd`, `alignToSlides`).
