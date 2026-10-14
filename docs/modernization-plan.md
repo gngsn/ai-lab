@@ -459,20 +459,20 @@ export function createClient() {
 
 ## 7. Phase 2: Vite 도입 (레거시는 public/으로, 동작 그대로)
 
-- [ ] **P2-1 레거시 파일을 `public/`으로 이동**
+- [x] **P2-1 레거시 파일을 `public/`으로 이동**
   - `git mv`로 옮긴다: 모든 `*.html`, `js/`, `css/`, `vendor/`, 루트 `sync.js` → `speakeasy/public/`
   - 옮기지 않는 것: `scripts/`, `migrations/`, `package.json`, `vercel.json`, `README.md`, `SPEC.md`, `IDEA.md`
   - 파일 내용은 바꾸지 않는다. 상대 경로(`./js/...`)는 `public/` 안에서도 그대로 동작한다.
-- [ ] **P2-2 Vite 설정:** `vite.config.ts`
+- [x] **P2-2 Vite 설정:** `vite.config.ts`
   - 아직 React 진입점이 없으므로 `build.rollupOptions.input`에 빈 플레이스홀더 페이지 하나만 둔다. 예: `src/pages/_placeholder/index.html`, 배포 경로와 겹치지 않게.
   - `public/`은 Vite가 `dist/`로 그대로 복사한다.
   - **확인할 것:** `dist/present.html`, `dist/js/deck-host.js`가 원본과 바이트 단위로 같은지(`cmp`).
-- [ ] **P2-3 설정 파일 경로 변경**
+- [x] **P2-3 설정 파일 경로 변경**
   - `scripts/build-config.mjs`의 출력 위치를 `public/js/config.local.js`로 바꾼다. **생성 내용은 그대로**(Supabase URL, anon key, passphrase. GitHub 토큰은 넣지 않음).
   - `.gitignore`와 `.vercelignore`의 `js/config.local.js`를 `public/js/config.local.js`로 바꾼다.
   - 로컬 개발자의 기존 `js/config.local.js`는 사람이 직접 옮긴다(STOP 아님, 보고만).
-- [ ] **P2-4 vercel.json:** `"installCommand": "pnpm install --frozen-lockfile"`를 추가하고, `buildCommand`를 `node scripts/build-config.mjs && vite build`로, `outputDirectory`를 `dist`로 한다. `cleanUrls`와 `headers`는 그대로다.
-- [ ] **P2-5 개발 서버:** `"dev": "vite"`. e2e 서버를 `vite preview --port 4173`으로 바꾼다(빌드 결과물로 테스트).
+- [x] **P2-4 vercel.json:** `"installCommand": "pnpm install --frozen-lockfile"`를 추가하고, `buildCommand`를 `node scripts/build-config.mjs && vite build`로, `outputDirectory`를 `dist`로 한다. `cleanUrls`와 `headers`는 그대로다.
+- [x] **P2-5 개발 서버:** `"dev": "vite"`. e2e 서버를 `vite preview --port 4173`으로 바꾼다(빌드 결과물로 테스트).
 
 **완료 조건 (Phase 2)**
 - `pnpm build` 성공
@@ -609,7 +609,7 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 | 0 | **완료** | 2026-10-14 | P0-0~18 완료. e2e 95개(3회 연속 통과) + 단위 50개. 앱 코드 변경 0건 |
 | 11.2 정리 | **완료** | 2026-10-14 | 내보내기 메뉴 변경이 커밋된 뒤(`feat/slides-editor` 77e6459) PPTX 코드, `vendor/pptxgenjs`, screenshot-PDF 정리 |
 | 1 | **완료** | 2026-10-14 | P1-1~5 완료. 깨끗한 clone에서 `pnpm install --frozen-lockfile && pnpm check && pnpm e2e` 통과(CI와 같은 조건). 마이그레이션 CLI 연결·`migration repair`는 사람이 할 일 |
-| 2 | 대기 | | |
+| 2 | 진행 중 | 2026-10-14 | P2-1~5 완료: dist의 레거시 파일이 public과 바이트 단위로 같고(`diff -rq`), 빌드 결과물 대상 e2e 95개·단위 50개 통과. **남은 것: Vercel 미리보기 배포 확인(사람)** |
 | 3 | 대기 | | |
 | 4 | 대기 | | |
 

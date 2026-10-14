@@ -1,4 +1,10 @@
-# Never upload local secrets; the build writes js/config.local.js from env.
+# Never upload local secrets; the build writes public/js/config.local.js from env.
 js/config.local.js
+public/js/config.local.js
+# local build output and test artifacts; Vercel builds its own
+dist
+test-results
+playwright-report
 .env*
 node_modules
+supabase/.temp

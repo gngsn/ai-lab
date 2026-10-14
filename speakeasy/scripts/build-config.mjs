@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // scripts/build-config.mjs
-// Generate js/config.local.js from environment variables at build time.
+// Generate public/js/config.local.js from environment variables at build time.
 // Skips silently if env vars are absent (local dev manages config.local.js
 // by hand). Designed to run as Vercel's buildCommand.
 
@@ -11,7 +11,7 @@ const url = process.env.SUPABASE_URL;
 const key = process.env.SUPABASE_ANON_KEY;
 const passphrase = process.env.OWNER_PASSPHRASE;
 
-const OUT = "js/config.local.js";
+const OUT = "public/js/config.local.js";
 
 if (!url || !key) {
   // No env vars — assume local dev where config.local.js is committed-by-hand

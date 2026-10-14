@@ -18,7 +18,7 @@
 // is dropped. Each chunk's first `## title` line is stripped (used as a hint
 // only); the rest is the note body. Chunks are matched to slides by index.
 //
-// Config: env SUPABASE_URL/SUPABASE_ANON_KEY, or read from js/config.local.js.
+// Config: env SUPABASE_URL/SUPABASE_ANON_KEY, or read from public/js/config.local.js.
 // No npm dependencies (Node 18+, native fetch).
 
 import { readFile } from "node:fs/promises";
@@ -51,7 +51,7 @@ function usage(exit = 0) {
       "  --title     (optional) deck title; defaults to <title> tag or deck_id",
       "  --dry-run   parse + summary, no DB writes",
       "",
-      "Env: SUPABASE_URL, SUPABASE_ANON_KEY (else reads js/config.local.js)",
+      "Env: SUPABASE_URL, SUPABASE_ANON_KEY (else reads public/js/config.local.js)",
     ].join("\n"),
   );
   process.exit(exit);
@@ -65,20 +65,20 @@ async function loadConfig() {
       key: process.env.SUPABASE_ANON_KEY,
     };
   }
-  const cfgPath = path.join(REPO_ROOT, "js/config.local.js");
+  const cfgPath = path.join(REPO_ROOT, "public/js/config.local.js");
   let text;
   try {
     text = await readFile(cfgPath, "utf8");
   } catch {
     throw new Error(
-      "Set SUPABASE_URL + SUPABASE_ANON_KEY env, or create js/config.local.js " +
-        "(copy from js/config.local.js.example).",
+      "Set SUPABASE_URL + SUPABASE_ANON_KEY env, or create public/js/config.local.js " +
+        "(copy from public/js/config.local.js.example).",
     );
   }
   const url = text.match(/window\.SUPABASE_URL\s*=\s*["']([^"']+)["']/)?.[1];
   const key = text.match(/window\.SUPABASE_ANON_KEY\s*=\s*["']([^"']+)["']/)?.[1];
   if (!url || !key) {
-    throw new Error("Could not parse SUPABASE_URL/KEY from js/config.local.js");
+    throw new Error("Could not parse SUPABASE_URL/KEY from public/js/config.local.js");
   }
   return { url, key };
 }

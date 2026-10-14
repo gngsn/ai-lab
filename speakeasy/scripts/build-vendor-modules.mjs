@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
-const entryDir = path.join(root, "vendor", "modules", "entry");
-const outDir = path.join(root, "vendor", "modules");
+const entryDir = path.join(root, "public", "vendor", "modules", "entry");
+const outDir = path.join(root, "public", "vendor", "modules");
 
 await mkdir(outDir, { recursive: true });
 

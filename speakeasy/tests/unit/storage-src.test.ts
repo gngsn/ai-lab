@@ -1,6 +1,6 @@
 // P0-18: supabase://slides-images/… links resolve to public storage URLs.
 import { beforeEach, describe, expect, it } from "vitest";
-import { fromStorageSrc, resolveStorageSourcesInHtml } from "../../js/storage-src.js";
+import { fromStorageSrc, resolveStorageSourcesInHtml } from "../../public/js/storage-src.js";
 
 beforeEach(() => {
   (globalThis as any).window = { SUPABASE_URL: "https://x.supabase.co/" };

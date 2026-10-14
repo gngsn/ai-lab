@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// Phase 0 safety net (docs/modernization-plan.md §5): the current app,
-// served as plain static files with caching off, against a fake backend.
+// Phase 0 safety net (docs/modernization-plan.md §5): the app against a fake
+// backend. Since Phase 2 it is served from the Vite build output.
 export default defineConfig({
   testDir: "tests/e2e",
   fullyParallel: true,
@@ -19,9 +19,12 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 720 } },
     },
   ],
+  // Tests run against the built site (dist/), the same files Vercel serves.
   webServer: {
-    command: "pnpm exec http-server . -p 4173 -c-1 --silent",
+    command:
+      "pnpm exec vite build && pnpm exec vite preview --host 127.0.0.1 --port 4173 --strictPort",
     url: "http://127.0.0.1:4173/index.html",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
+    timeout: 120_000,
   },
 });

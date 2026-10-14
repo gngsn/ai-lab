@@ -1,6 +1,6 @@
 // P0-18: which script line is being said? (js/captions/matcher.js)
 import { describe, expect, it } from "vitest";
-import { createMatcher } from "../../js/captions/matcher.js";
+import { createMatcher } from "../../public/js/captions/matcher.js";
 
 const line = (ko: string) => ({ ko, en: `EN: ${ko}` });
 const slides = [

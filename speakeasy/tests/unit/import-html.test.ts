@@ -1,7 +1,7 @@
 // P0-18: parseImportedHtmlDeck — turns a deck's HTML into frame + slides.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { parseImportedHtmlDeck } from "../../js/import-html.js";
+import { parseImportedHtmlDeck } from "../../public/js/import-html.js";
 
 const fixture = (n: string) => readFileSync(new URL(`../fixtures/${n}`, import.meta.url), "utf8");
 

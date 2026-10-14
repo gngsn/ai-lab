@@ -1,6 +1,6 @@
 // P0-18: tagSection — makes a stored slide ready to show (js/slide-render.js).
 import { describe, expect, it } from "vitest";
-import { tagSection } from "../../js/slide-render.js";
+import { tagSection } from "../../public/js/slide-render.js";
 
 describe("tagSection", () => {
   it("adds data-section-id and the slide class", () => {

@@ -1,7 +1,7 @@
 // P0-18: the bilingual script format and aligning it to a deck's slides.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { alignToSlides, parseBilingualMd } from "../../js/captions/bilingual.js";
+import { alignToSlides, parseBilingualMd } from "../../public/js/captions/bilingual.js";
 
 const fixture = readFileSync(
   new URL("../fixtures/controller-deck.bilingual.md", import.meta.url),

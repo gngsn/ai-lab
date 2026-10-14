@@ -1,6 +1,7 @@
 {
-  "buildCommand": "node scripts/build-config.mjs",
-  "outputDirectory": ".",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "node scripts/build-config.mjs && vite build",
+  "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [

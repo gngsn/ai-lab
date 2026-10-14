@@ -53,21 +53,22 @@ See [SPEC.md](./SPEC.md) for the current behavior and design notes.
 
 ### 2. Local Config
 ```bash
-cp js/config.local.js.example js/config.local.js
-# Edit js/config.local.js and fill in SUPABASE_URL, SUPABASE_ANON_KEY, OWNER_PASSPHRASE
+cp public/js/config.local.js.example public/js/config.local.js
+# Edit public/js/config.local.js and fill in SUPABASE_URL, SUPABASE_ANON_KEY, OWNER_PASSPHRASE
 ```
 
 ### 3. Run Locally
 ```bash
-npm install
-npm run build:vendor
-python3 -m http.server 8000
-# or: npx serve .
+pnpm install
+pnpm dev          # Vite dev server
+# pnpm build      # production build into dist/ (what Vercel serves)
+# pnpm check      # lint + typecheck + unit tests;  pnpm e2e  # Playwright (builds first)
 ```
-Open [http://localhost:8000](http://localhost:8000) — you should see **"✓ connected — 1 deck(s)"** and `seed-hello` if setup is correct.
+Open [http://localhost:5173](http://localhost:5173) — you should see **"✓ connected — 1 deck(s)"** and `seed-hello` if setup is correct.
 
-`build:vendor` generates local browser bundles under `vendor/modules/` for
-Supabase client and DOMPurify, so runtime no longer depends on `esm.sh`.
+`pnpm build:vendor` (only when the Supabase client version changes) regenerates
+the browser bundle `public/vendor/modules/supabase-client.mjs`, so runtime
+doesn't depend on `esm.sh`.
 
 ---
 
@@ -112,9 +113,9 @@ vercel env add OWNER_PASSPHRASE   production
 # Deploy
 vercel --prod
 ```
-The build step (`node scripts/build-config.mjs`) generates `js/config.local.js` from env vars at build time. Any committed `js/config.local.js` is overwritten on Vercel.
+The build (`node scripts/build-config.mjs && vite build`) generates `public/js/config.local.js` from env vars, then Vite copies `public/` to `dist/`, which Vercel serves. Any committed config file is overwritten on Vercel.
 
-> ⚠ `js/config.local.js` is served publicly, so the build never writes a GitHub token into it (a `GITHUB_TOKEN` env var is ignored). To import from private repos, paste a fine-grained token with read-only **Contents** access into the import dialog — it is kept only in that browser.
+> ⚠ `public/js/config.local.js` is served publicly, so the build never writes a GitHub token into it (a `GITHUB_TOKEN` env var is ignored). To import from private repos, paste a fine-grained token with read-only **Contents** access into the import dialog — it is kept only in that browser.
 
 > ⚠ **Before public deployment, review [Security Posture](#security-posture).**
 > The default `dev_anon_all` RLS policy allows anyone to access the DB. Harden for production.
@@ -185,8 +186,12 @@ node scripts/import.mjs --deck=my-talk \
 
 ## Project Structure
 
+The pages and scripts below live in `public/` (Vite copies it to `dist/`
+unchanged; see `docs/modernization-plan.md`). Tests are in `tests/`, build
+config in `vite.config.ts`, and new code goes in `src/`.
+
 ```
-speakeasy/
+speakeasy/public/
 ├─ index.html              # Setup check + deck list
 ├─ present.html            # Slide read + navigation (?deck=<id>[&sync=<room>])
 ├─ script.html             # Teleprompter + realtime sync

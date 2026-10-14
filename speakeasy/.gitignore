@@ -1,5 +1,7 @@
-# local secrets (Supabase keys, owner passphrase)
+# local secrets (Supabase keys, owner passphrase). The first line is the old
+# location, before the legacy files moved into public/.
 js/config.local.js
+public/js/config.local.js
 
 # tooling artifacts
 .DS_Store
@@ -13,3 +15,9 @@ node_modules/
 # test output
 test-results/
 playwright-report/
+
+# build output
+dist/
+
+# Supabase CLI link state (project ref, pooler URL): local only
+supabase/.temp/

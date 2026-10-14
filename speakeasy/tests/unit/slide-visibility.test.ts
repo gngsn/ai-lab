@@ -1,6 +1,6 @@
 // P0-18: hidden slides carry data-hidden on their <section>.
 import { describe, expect, it } from "vitest";
-import { isSlideHiddenContent } from "../../js/slide-visibility.js";
+import { isSlideHiddenContent } from "../../public/js/slide-visibility.js";
 
 describe("isSlideHiddenContent", () => {
   it.each([

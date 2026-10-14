@@ -4,15 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/build-config.mjs",
+    "build": "node scripts/build-config.mjs && vite build",
     "build:vendor": "node scripts/build-vendor-modules.mjs",
-    "dev": "python3 -m http.server 8000",
+    "dev": "vite",
     "import": "node scripts/import.mjs",
     "test": "vitest run",
     "e2e": "playwright test",
     "lint": "biome check",
     "typecheck": "tsc --noEmit",
-    "check": "pnpm lint && pnpm typecheck && pnpm test"
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8"
@@ -25,6 +26,7 @@
     "http-server": "^14.1.1",
     "typescript": "^7.0.2",
     "vercel": "^54.21.1",
+    "vite": "^8.3.4",
     "vitest": "^5.0.4"
   },
   "packageManager": "pnpm@11.24.0"
