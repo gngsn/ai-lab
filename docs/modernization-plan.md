@@ -267,7 +267,7 @@ edit은 캔버스로 `edit-frame.html`(레거시)을 iframe으로 띄우고 post
 
 **목적:** 이후 모든 단계에서 "동작이 같다"를 이 테스트로 증명한다. **Phase 0이 끝나기 전에는 앱 코드를 한 줄도 바꾸지 않는다.** (P0-0의 패키지 도구 교체는 앱 코드가 아니므로 예외)
 
-- [ ] **P0-0 pnpm으로 전환 (가장 먼저)**
+- [x] **P0-0 pnpm으로 전환 (가장 먼저)**
   1. `corepack enable`로 pnpm을 켠다. 안 되면 STOP. 전역 설치는 사람이 한다.
   2. `speakeasy/`에서 `pnpm import`를 실행해 `package-lock.json`으로 `pnpm-lock.yaml`을 만든다. 버전이 그대로 유지된다.
   3. `git rm speakeasy/package-lock.json`
@@ -275,6 +275,7 @@ edit은 캔버스로 `edit-frame.html`(레거시)을 iframe으로 띄우고 post
   5. `package.json` scripts의 `npm`/`npx`를 pnpm으로 바꾼다. 예: `"dev"`는 그대로 두고, 앞으로 추가하는 스크립트는 `pnpm`을 쓴다.
   6. 테스트 도구를 설치한다: `pnpm add -D @playwright/test vitest http-server`, 그리고 `pnpm exec playwright install chromium`
   7. **주의:** 저장소 루트(`../package-lock.json`)는 speakeasy와 별개다. 건드리지 않는다.
+  8. pnpm 10 이상은 의존성의 설치 스크립트를 기본으로 막는다. esbuild는 설치 스크립트로 바이너리를 받으므로 `speakeasy/pnpm-workspace.yaml`에 `allowBuilds: { esbuild: true }`가 있어야 한다(완료됨). 다른 패키지가 막혔다는 경고가 나오면 함부로 허용하지 말고 STOP.
   - 완료 조건: `pnpm install --frozen-lockfile` 성공, `pnpm run build:vendor`로 다시 만든 `vendor/modules/supabase-client.mjs`의 `git diff`가 비어 있음(의존성 버전이 바뀌지 않았다는 확인)
 
 ### 5.1 테스트 실행 방식
@@ -604,7 +605,7 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 
 | Phase | 상태 | 날짜 | 메모 |
 |---|---|---|---|
-| 0 | 대기 | | P0-0(pnpm 전환)부터 |
+| 0 | 진행 중 | 2026-10-14 | P0-0 완료(pnpm 11.24). §11.2 C-1: 내보내기 메뉴 변경 미커밋 → C 항목 보류 |
 | 1 | 대기 | | |
 | 2 | 대기 | | |
 | 3 | 대기 | | |
