@@ -1504,12 +1504,27 @@ function shareUrlFor(token) {
   return url.toString();
 }
 
+function qrUrlFor(url, format = "png") {
+  return (
+    "https://api.qrserver.com/v1/create-qr-code/?size=480x480&margin=0" +
+    `&format=${format}&data=${encodeURIComponent(url)}`
+  );
+}
+
+function setShareLink(token) {
+  const url = shareUrlFor(token);
+  $("share-url").value = url;
+  $("share-qr").src = qrUrlFor(url);
+  $("share-qr-download").href = qrUrlFor(url);
+  $("share-open").href = url;
+}
+
 async function rotateShareToken({ silent = false } = {}) {
   const t = crypto.randomUUID();
   try {
     await deckRepo.setShareToken(deckId, t);
     deck.share_token = t;
-    $("share-url").value = shareUrlFor(t);
+    setShareLink(t);
     if (!silent) toast("New share link", "ok");
     return t;
   } catch (err) {
@@ -1527,15 +1542,23 @@ $("share-btn").addEventListener("click", async () => {
       return;
     }
   } else {
-    $("share-url").value = shareUrlFor(deck.share_token);
+    setShareLink(deck.share_token);
   }
   $("share-modal-bg").classList.add("show");
 });
 
+let shareCopiedTimer = 0;
 $("share-copy").addEventListener("click", async () => {
   try {
     if (!(await copyText($("share-url").value))) throw new Error("not allowed");
-    toast("Copied", "ok");
+    const btn = $("share-copy");
+    btn.textContent = "Copied ✓";
+    btn.classList.add("copied");
+    clearTimeout(shareCopiedTimer);
+    shareCopiedTimer = setTimeout(() => {
+      btn.textContent = "Copy";
+      btn.classList.remove("copied");
+    }, 1600);
   } catch (err) {
     toast("Copy failed: " + err.message, "err");
   }

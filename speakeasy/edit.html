@@ -1315,6 +1315,199 @@
         gap: 8px;
       }
 
+      /* Share modal */
+      .share-modal {
+        width: min(600px, calc(100vw - 32px)) !important;
+        height: auto !important;
+        max-height: calc(100vh - 32px);
+        overflow: auto;
+        padding: 0;
+        gap: 0;
+        box-shadow: 0 24px 80px color-mix(in srgb, #000 28%, transparent);
+      }
+      .share-modal-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 22px 24px 0;
+      }
+      .share-modal-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 8px;
+        color: var(--se-primary-text);
+        font: 600 10px/1 "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .share-modal-eyebrow::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--se-primary);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--se-primary) 22%, transparent);
+      }
+      .share-modal-head h2 {
+        font-size: 26px;
+        line-height: 1.1;
+      }
+      .share-modal-close {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border-color: transparent !important;
+        color: var(--text-mid);
+        font-size: 20px;
+        line-height: 1;
+      }
+      .share-modal-close:hover {
+        background: var(--se-fill);
+        color: var(--text-bright);
+      }
+      .share-modal-body {
+        display: grid;
+        gap: 20px;
+        padding: 20px 24px 24px;
+      }
+      .share-hero {
+        display: grid;
+        grid-template-columns: 168px minmax(0, 1fr);
+        align-items: center;
+        gap: 22px;
+      }
+      .share-qr-frame {
+        padding: 10px;
+        background: #fff;
+        border: 1px solid var(--se-rule);
+        box-shadow: 0 6px 20px color-mix(in srgb, #000 10%, transparent);
+      }
+      .share-qr-image {
+        display: block;
+        width: 100%;
+        aspect-ratio: 1;
+        image-rendering: pixelated;
+      }
+      .share-hero-copy {
+        display: grid;
+        gap: 8px;
+        align-content: center;
+      }
+      .share-hero-copy strong {
+        color: var(--text-bright);
+        font-size: 17px;
+        font-weight: 600;
+      }
+      .share-modal-note {
+        color: var(--text-mid);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+      .share-hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+      }
+      .share-hero-actions .btn {
+        padding: 6px 11px;
+        border: 1px solid var(--se-rule);
+        font-size: 12px;
+        text-decoration: none;
+      }
+      .share-hero-actions .btn:hover {
+        border-color: var(--text-mid);
+        color: var(--text-bright);
+      }
+      .share-link {
+        display: grid;
+        gap: 8px;
+      }
+      .share-link label {
+        color: var(--text-mid);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .share-url-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        border: 1px solid var(--border);
+        background: var(--bg);
+      }
+      .share-url-row:focus-within {
+        border-color: var(--accent);
+      }
+      #share-url {
+        min-width: 0;
+        height: 42px;
+        padding: 0 12px;
+        background: transparent;
+        border: 0;
+        color: var(--text);
+        font: 12px/1.2 "JetBrains Mono", ui-monospace, monospace;
+      }
+      #share-url:focus {
+        outline: none;
+      }
+      .share-copy-btn {
+        min-width: 96px;
+        height: 42px;
+        border: 0 !important;
+        background: var(--se-primary) !important;
+        color: var(--se-on-primary, #1d1d1f) !important;
+        font-weight: 600;
+      }
+      .share-copy-btn.copied {
+        background: var(--se-ok, #2f9e61) !important;
+        color: #fff !important;
+      }
+      .share-modal-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 14px 24px;
+        border-top: 1px solid var(--se-rule);
+        background: var(--se-fill);
+      }
+      .share-modal-foot p {
+        color: var(--text-mid);
+        font-size: 11px;
+        line-height: 1.45;
+      }
+      .share-modal-foot .share-foot-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .share-modal-foot .btn {
+        font-size: 12px;
+      }
+      .share-modal-foot .share-danger {
+        color: var(--danger);
+      }
+      .share-modal-foot .share-danger:hover {
+        background: color-mix(in srgb, var(--danger) 9%, transparent);
+        border-color: var(--danger);
+      }
+      @media (max-width: 560px) {
+        .share-hero {
+          grid-template-columns: 1fr;
+          justify-items: center;
+          text-align: center;
+        }
+        .share-qr-frame {
+          width: min(220px, 70vw);
+        }
+        .share-hero-actions {
+          justify-content: center;
+        }
+      }
+
       #frame-modal-bg .modal {
         width: min(1320px, 95vw);
         height: min(860px, 90vh);
@@ -1986,26 +2179,45 @@
     </div>
 
     <div class="modal-bg" id="share-modal-bg">
-      <div
-        class="modal"
-        style="height: auto; width: min(560px, 90vw); gap: 12px"
-      >
-        <h2>Share link</h2>
-        <p>
-          Anyone with this link can <strong>read-only</strong> view the slides
-          and follows along live while you present (▶ Present). Notes are
-          hidden. Rotating invalidates previous links.
-        </p>
-        <div class="field">
-          <label>Share URL</label>
-          <input id="share-url" readonly />
+      <div class="modal share-modal" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
+        <div class="share-modal-head">
+          <div>
+            <div class="share-modal-eyebrow">Live audience</div>
+            <h2 id="share-modal-title">Share this deck</h2>
+          </div>
+          <button class="btn share-modal-close" id="share-close" type="button" aria-label="Close share dialog">×</button>
         </div>
-        <div class="actions">
-          <button class="btn danger" id="share-revoke">Revoke</button>
-          <button class="btn" id="share-rotate">↻ Rotate</button>
-          <span style="flex: 1"></span>
-          <button class="btn" id="share-copy">Copy link</button>
-          <button class="btn" id="share-close">Close</button>
+        <div class="share-modal-body">
+          <div class="share-hero">
+            <div class="share-qr-frame">
+              <img class="share-qr-image" id="share-qr" alt="QR code for the audience link" />
+            </div>
+            <div class="share-hero-copy">
+              <strong>Scan to join</strong>
+              <p class="share-modal-note">
+                Your audience sees the slides and follows along as you present.
+                Notes and your script stay private.
+              </p>
+              <div class="share-hero-actions">
+                <a class="btn" id="share-qr-download" download="speakeasy-share-qr.png">↓ Download QR</a>
+                <a class="btn" id="share-open" target="_blank" rel="noopener">Open audience view ↗</a>
+              </div>
+            </div>
+          </div>
+          <div class="share-link">
+            <label for="share-url">Audience link</label>
+            <div class="share-url-row">
+              <input id="share-url" readonly />
+              <button class="btn share-copy-btn" id="share-copy" type="button">Copy</button>
+            </div>
+          </div>
+        </div>
+        <div class="share-modal-foot">
+          <p>A new link turns the current one off.</p>
+          <div class="share-foot-actions">
+            <button class="btn" id="share-rotate" type="button">↻ New link</button>
+            <button class="btn share-danger" id="share-revoke" type="button">Stop sharing</button>
+          </div>
         </div>
       </div>
     </div>
