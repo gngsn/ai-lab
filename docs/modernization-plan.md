@@ -390,11 +390,11 @@ export function createClient() {
   - deck 모드에서 `#__se_phone` 스타일이 있고, `[data-se-near]`가 현재 ±1 슬라이드에만 있다.
   - 데스크톱에서는 `#__se_stepnav`가 `display: none`이고 `#__se_phone`이 없다.
 - [x] **P0-10 share는 미리 다운로드 안 함:** share의 `<img>` src에 `blob:`이 없다. view는 `blob:`이 있다(미리 다운로드).
-- [ ] **P0-11 발표자 대본 패널:** present 바깥 문서의 `#__se_panel`.
+- [x] **P0-11 발표자 대본 패널:** present 바깥 문서의 `#__se_panel`.
   - 슬라이드를 넘기면 `.pp-count`, `.pp-title`, `.pp-script`, `.pp-next`가 바뀐다. key message가 있는 슬라이드에서 `.pp-key`가 보인다.
   - fragment를 진행하면 `.cue[data-cue]`가 `done` / `next`로 바뀐다.
   - `.pp-hide`를 누르면 슬라이드가 전체 폭이 된다.
-- [ ] **P0-12 실시간 자막:** 2개 언어 대본을 `localStorage["speakeasy:captions:script:<deck>"]`에 넣는다.
+- [x] **P0-12 실시간 자막:** 2개 언어 대본을 `localStorage["speakeasy:captions:script:<deck>"]`에 넣는다.
   - present에서 `window.__seCaptions.feed("<대본 줄 일부, 띄어쓰기 없이>", true)`를 호출한다.
   - 기대: 관객 share의 `#__se_cc_box`에 그 줄의 영어가 보인다. CC 버튼(`#__se_cc_toggle`)으로 끄면 숨겨진다.
   - `captions.html`에서도 같은 흐름을 확인하고, 줄을 클릭해 보내는 것도 확인한다.
