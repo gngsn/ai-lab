@@ -2,7 +2,7 @@
 // (cancel, Esc, click outside) or entering a wrong passphrase must NOT open
 // the page. (Regression: five pages once forgot to `await ensureAuthed()`,
 // and a Promise is always truthy.)
-import { AUTH_KEY, PASSPHRASE, expect, test } from "../support/app";
+import { AUTH_KEY, expect, PASSPHRASE, test } from "../support/app";
 import { DECK } from "../support/seed";
 
 test.use({ authed: false });

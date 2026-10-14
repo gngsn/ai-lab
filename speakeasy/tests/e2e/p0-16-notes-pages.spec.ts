@@ -1,6 +1,6 @@
 // P0-16: the full notes editor (script-edit.html) and the Markdown notes
 // view (notes.html).
-import { type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { dbRow, expect, readDb, test } from "../support/app";
 import { DECK } from "../support/seed";
 
@@ -30,8 +30,12 @@ test.describe("script-edit", () => {
     await page.locator("#edit-textarea").fill("고친 대본");
     await expect(page.locator("#status")).toHaveText("saving…");
     await expect(page.locator("#status")).toHaveText(/^saved · /);
-    expect((await dbRow(page, "notes", { deck_id: DECK, section_id: sid }))?.content).toBe("고친 대본");
-    const history = (await readDb(page)).notes_history.filter((h) => h.section_id === sid && h.kind === "auto");
+    expect((await dbRow(page, "notes", { deck_id: DECK, section_id: sid }))?.content).toBe(
+      "고친 대본",
+    );
+    const history = (await readDb(page)).notes_history.filter(
+      (h) => h.section_id === sid && h.kind === "auto",
+    );
     expect(history.map((h) => h.content)).toContain("고친 대본");
   });
 
@@ -64,9 +68,15 @@ test.describe("script-edit", () => {
     await expect(page.locator("#status")).toHaveText("version saved");
 
     const db = await readDb(page);
-    expect(db.slide_history.filter((h) => h.kind === "manual" && h.message === "v1")).toHaveLength(6);
-    expect(db.notes_history.filter((h) => h.kind === "manual" && h.message === "v1")).toHaveLength(6);
-    expect(db.frame_history.filter((h) => h.kind === "manual" && h.message === "v1")).toHaveLength(1);
+    expect(db.slide_history.filter((h) => h.kind === "manual" && h.message === "v1")).toHaveLength(
+      6,
+    );
+    expect(db.notes_history.filter((h) => h.kind === "manual" && h.message === "v1")).toHaveLength(
+      6,
+    );
+    expect(db.frame_history.filter((h) => h.kind === "manual" && h.message === "v1")).toHaveLength(
+      1,
+    );
 
     await page.locator("#history-toggle").click();
     await expect(page.locator("#hist-drawer")).toHaveClass(/\bopen\b/);
@@ -93,7 +103,14 @@ test.describe("notes view", () => {
     const text = await page.locator("#content").innerText();
     expect(text.startsWith("---\nmarp: true\ntheme: default\n---\n")).toBe(true);
     const headings = [...text.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
-    expect(headings).toEqual(["Opening", "Saved state", "Two steps", "Grouped", "Plain middle", "Closing"]);
+    expect(headings).toEqual([
+      "Opening",
+      "Saved state",
+      "Two steps",
+      "Grouped",
+      "Plain middle",
+      "Closing",
+    ]);
     expect(text.split("\n---\n").length).toBe(7); // front matter + 6 slides
     expect(text).toContain("두 단계로 나뉜 슬라이드입니다.");
   });
@@ -103,7 +120,9 @@ test.describe("notes view", () => {
     await open(page);
     const shown = await page.locator("#content").innerText();
     await page.locator("#copy-btn").click();
-    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(shown.replace(/\n$/, "") + "\n");
+    await expect
+      .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+      .toBe(`${shown.replace(/\n$/, "")}\n`);
   });
 
   test("downloads a .md file named after the deck", async ({ page }) => {

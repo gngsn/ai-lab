@@ -52,14 +52,20 @@ test("follows the presenter, and manual mode ignores them", async ({ page, conte
 
 test("text size and highlight controls", async ({ page }) => {
   await page.goto(script);
-  const size = () => page.locator(".sec-body").first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+  const size = () =>
+    page
+      .locator(".sec-body")
+      .first()
+      .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
   const before = await size();
   await page.locator("#increaseFont").click();
   expect(await size()).toBeGreaterThan(before);
   await page.locator("#decreaseFont").click();
   await page.locator("#decreaseFont").click();
   expect(await size()).toBeLessThan(before);
-  expect(await page.evaluate(() => localStorage.getItem("speakeasy:notes:fontsize"))).not.toBeNull();
+  expect(
+    await page.evaluate(() => localStorage.getItem("speakeasy:notes:fontsize")),
+  ).not.toBeNull();
 
   await page.locator("#toggleHL").click();
   await expect(page.locator("#script")).toHaveClass(/\bno-hl\b/);

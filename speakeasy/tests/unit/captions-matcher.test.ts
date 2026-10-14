@@ -1,11 +1,15 @@
 // P0-18: which script line is being said? (js/captions/matcher.js)
 import { describe, expect, it } from "vitest";
-// @ts-expect-error — legacy JS without types
 import { createMatcher } from "../../js/captions/matcher.js";
 
 const line = (ko: string) => ({ ko, en: `EN: ${ko}` });
 const slides = [
-  { lines: [line("안녕하세요 여러분 오늘 발표를 시작하겠습니다"), line("저는 카카오뱅크에서 백엔드 개발자로 일하고 있습니다")] },
+  {
+    lines: [
+      line("안녕하세요 여러분 오늘 발표를 시작하겠습니다"),
+      line("저는 카카오뱅크에서 백엔드 개발자로 일하고 있습니다"),
+    ],
+  },
   {
     lines: [
       line("핸드폰 잠깐만 보려고 했는데 정신 차려 보면 삼십 분이 지나 있는 경험"),
@@ -13,7 +17,11 @@ const slides = [
       line("저희는 이 습관을 조금 다르게 활용해 보고 싶었습니다"),
     ],
   },
-  { lines: [line("전체 파이프라인을 여덟 개의 노드로 나누고 각 노드가 하나의 역할만 하도록 설계했습니다")] },
+  {
+    lines: [
+      line("전체 파이프라인을 여덟 개의 노드로 나누고 각 노드가 하나의 역할만 하도록 설계했습니다"),
+    ],
+  },
 ];
 
 describe("matcher", () => {
@@ -33,7 +41,11 @@ describe("matcher", () => {
 
   it("gives unrelated speech a score below the 0.4 acceptance threshold", () => {
     const m = createMatcher(slides);
-    for (const text of ["잠깐 물 좀 마시고 하겠습니다", "질문 있으신 분 계신가요 손 들어 주세요", "날씨가 많이 추워졌네요"]) {
+    for (const text of [
+      "잠깐 물 좀 마시고 하겠습니다",
+      "질문 있으신 분 계신가요 손 들어 주세요",
+      "날씨가 많이 추워졌네요",
+    ]) {
       const r = m.match(text, 1);
       expect(r?.score ?? 0).toBeLessThan(0.4);
     }
@@ -53,7 +65,14 @@ describe("matcher", () => {
   });
 
   it("favours the line after the last accepted one when two lines are alike", () => {
-    const twins = [{ lines: [line("이 부분은 정말 중요한 내용입니다 잘 들어 주세요"), line("이 부분은 정말 중요한 내용입니다 꼭 기억해 주세요")] }];
+    const twins = [
+      {
+        lines: [
+          line("이 부분은 정말 중요한 내용입니다 잘 들어 주세요"),
+          line("이 부분은 정말 중요한 내용입니다 꼭 기억해 주세요"),
+        ],
+      },
+    ];
     const m = createMatcher(twins);
     const first = m.match("이 부분은 정말 중요한 내용입니다", 0);
     m.accept({ slide: 0, line: 0 });
@@ -65,6 +84,10 @@ describe("matcher", () => {
 
   it("returns the reviewed English with the match", () => {
     const r = createMatcher(slides).match("안녕하세요여러분오늘발표를시작하겠습니다", 0);
-    expect(r).toMatchObject({ slide: 0, line: 0, en: "EN: 안녕하세요 여러분 오늘 발표를 시작하겠습니다" });
+    expect(r).toMatchObject({
+      slide: 0,
+      line: 0,
+      en: "EN: 안녕하세요 여러분 오늘 발표를 시작하겠습니다",
+    });
   });
 });

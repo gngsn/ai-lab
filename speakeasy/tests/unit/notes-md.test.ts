@@ -1,6 +1,5 @@
 // P0-18: parseNotesMd — notes / key-message Markdown, one section per slide.
 import { describe, expect, it } from "vitest";
-// @ts-expect-error — legacy JS without types
 import { parseNotesMd, slugify } from "../../js/import-html.js";
 
 describe("parseNotesMd", () => {

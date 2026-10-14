@@ -5,6 +5,8 @@
 // Data lives in localStorage["__fakedb"] / ["__fakestorage"] so every page
 // and frame of one browser context sees the same rows. Each operation reads
 // the latest state, so writes made in one tab show up in another.
+// The query builder is deliberately thenable (awaited like supabase-js's, so Biome's
+// noThenProperty is off for this folder in biome.json).
 // Realtime broadcast uses BroadcastChannel (same browser context only),
 // which, like `broadcast: { self: false }`, never echoes to the sender.
 
@@ -28,8 +30,7 @@ const now = () => new Date().toISOString();
 const load = (key) => JSON.parse(localStorage.getItem(key) || "{}");
 const save = (key, value) => localStorage.setItem(key, JSON.stringify(value));
 const table = (db, name) => (db[name] ||= []);
-const sameKey = (name, a, b, cols = KEYS[name]) =>
-  cols && cols.every((c) => a[c] === b[c]);
+const sameKey = (name, a, b, cols = KEYS[name]) => cols?.every((c) => a[c] === b[c]);
 
 function newRow(name, values) {
   const row = { ...(DEFAULTS[name]?.() || {}), ...values };
@@ -66,7 +67,10 @@ function query(name) {
     } else if (action.kind === "insert") {
       for (const values of [].concat(action.values)) {
         if (KEYS[name] && rows.some((r) => sameKey(name, r, values))) {
-          return { data: null, error: { message: `duplicate key value violates unique constraint on ${name}` } };
+          return {
+            data: null,
+            error: { message: `duplicate key value violates unique constraint on ${name}` },
+          };
         }
         rows.push(newRow(name, values));
       }
@@ -92,7 +96,13 @@ function query(name) {
     if (single) {
       const list = data || [];
       if (single === "single" && list.length !== 1) {
-        return { data: null, error: { message: "JSON object requested, multiple (or no) rows returned", code: "PGRST116" } };
+        return {
+          data: null,
+          error: {
+            message: "JSON object requested, multiple (or no) rows returned",
+            code: "PGRST116",
+          },
+        };
       }
       data = list[0] ?? null;
     }
@@ -100,16 +110,45 @@ function query(name) {
   }
 
   const builder = {
-    select() { return builder; }, // column lists are ignored: full rows are returned
-    eq(col, value) { filters.push([col, value]); return builder; },
-    order(col, { ascending = true } = {}) { orderBy = { col, asc: ascending }; return builder; },
-    limit(n) { limitTo = n; return builder; },
-    single() { single = "single"; return builder; },
-    maybeSingle() { single = "maybe"; return builder; },
-    insert(values) { action = { kind: "insert", values }; return builder; },
-    upsert(values, { onConflict } = {}) { action = { kind: "upsert", values, onConflict }; return builder; },
-    update(values) { action = { kind: "update", values }; return builder; },
-    delete() { action = { kind: "delete" }; return builder; },
+    select() {
+      return builder;
+    }, // column lists are ignored: full rows are returned
+    eq(col, value) {
+      filters.push([col, value]);
+      return builder;
+    },
+    order(col, { ascending = true } = {}) {
+      orderBy = { col, asc: ascending };
+      return builder;
+    },
+    limit(n) {
+      limitTo = n;
+      return builder;
+    },
+    single() {
+      single = "single";
+      return builder;
+    },
+    maybeSingle() {
+      single = "maybe";
+      return builder;
+    },
+    insert(values) {
+      action = { kind: "insert", values };
+      return builder;
+    },
+    upsert(values, { onConflict } = {}) {
+      action = { kind: "upsert", values, onConflict };
+      return builder;
+    },
+    update(values) {
+      action = { kind: "update", values };
+      return builder;
+    },
+    delete() {
+      action = { kind: "delete" };
+      return builder;
+    },
     then(resolve, reject) {
       return Promise.resolve().then(run).then(resolve, reject);
     },
@@ -129,7 +168,14 @@ const RPC = {
   },
   delete_deck({ p_deck_id }) {
     const db = load(DB_KEY);
-    for (const t of ["slides", "notes", "slide_history", "notes_history", "frame_history", "decks"]) {
+    for (const t of [
+      "slides",
+      "notes",
+      "slide_history",
+      "notes_history",
+      "frame_history",
+      "decks",
+    ]) {
       db[t] = table(db, t).filter((r) => r.deck_id !== p_deck_id);
     }
     save(DB_KEY, db);
@@ -140,10 +186,16 @@ const RPC = {
     let slides_updated = 0;
     let frames_updated = 0;
     for (const s of table(db, "slides")) {
-      if (s.content.includes(p_old_url)) { s.content = s.content.split(p_old_url).join(p_new_url); slides_updated++; }
+      if (s.content.includes(p_old_url)) {
+        s.content = s.content.split(p_old_url).join(p_new_url);
+        slides_updated++;
+      }
     }
     for (const d of table(db, "decks")) {
-      if (d.frame_html.includes(p_old_url)) { d.frame_html = d.frame_html.split(p_old_url).join(p_new_url); frames_updated++; }
+      if (d.frame_html.includes(p_old_url)) {
+        d.frame_html = d.frame_html.split(p_old_url).join(p_new_url);
+        frames_updated++;
+      }
     }
     save(DB_KEY, db);
     return [{ slides_updated, frames_updated }];
@@ -159,8 +211,14 @@ function storageBucket(bucket) {
     },
     async upload(path, file, { upsert = false } = {}) {
       const s = all();
-      if (files(s)[path] && !upsert) return { data: null, error: { message: "The resource already exists" } };
-      files(s)[path] = { size: file?.size ?? 0, mimetype: file?.type || "", updated_at: now(), created_at: now() };
+      if (files(s)[path] && !upsert)
+        return { data: null, error: { message: "The resource already exists" } };
+      files(s)[path] = {
+        size: file?.size ?? 0,
+        mimetype: file?.type || "",
+        updated_at: now(),
+        created_at: now(),
+      };
       save(STORAGE_KEY, s);
       return { data: { path }, error: null };
     },
@@ -172,8 +230,16 @@ function storageBucket(bucket) {
         const rest = path.slice(prefix.length);
         const [head, ...tail] = rest.split("/");
         if (search && !head.includes(search)) continue;
-        if (tail.length) names.set(head, { name: head, id: null, metadata: null }); // folder
-        else names.set(head, { name: head, id: path, updated_at: meta.updated_at, created_at: meta.created_at, metadata: { size: meta.size, mimetype: meta.mimetype } });
+        if (tail.length)
+          names.set(head, { name: head, id: null, metadata: null }); // folder
+        else
+          names.set(head, {
+            name: head,
+            id: path,
+            updated_at: meta.updated_at,
+            created_at: meta.created_at,
+            metadata: { size: meta.size, mimetype: meta.mimetype },
+          });
       }
       return { data: [...names.values()], error: null };
     },
@@ -204,17 +270,31 @@ export function createClient() {
     channel(name) {
       const bc = new BroadcastChannel(name);
       const handlers = [];
-      bc.onmessage = (e) =>
-        handlers
-          .filter((h) => h.event === e.data.event)
-          .forEach((h) => h.cb({ type: "broadcast", event: e.data.event, payload: e.data.payload }));
+      bc.onmessage = (e) => {
+        for (const h of handlers) {
+          if (h.event === e.data.event) {
+            h.cb({ type: "broadcast", event: e.data.event, payload: e.data.payload });
+          }
+        }
+      };
       const channel = {
-        on(_type, { event }, cb) { handlers.push({ event, cb }); return channel; },
-        subscribe(cb) { setTimeout(() => cb?.("SUBSCRIBED"), 50); return channel; },
-        send({ event, payload }) { bc.postMessage({ event, payload }); return Promise.resolve("ok"); },
+        on(_type, { event }, cb) {
+          handlers.push({ event, cb });
+          return channel;
+        },
+        subscribe(cb) {
+          setTimeout(() => cb?.("SUBSCRIBED"), 50);
+          return channel;
+        },
+        send({ event, payload }) {
+          bc.postMessage({ event, payload });
+          return Promise.resolve("ok");
+        },
       };
       return channel;
     },
-    removeChannel() { return Promise.resolve("ok"); },
+    removeChannel() {
+      return Promise.resolve("ok");
+    },
   };
 }

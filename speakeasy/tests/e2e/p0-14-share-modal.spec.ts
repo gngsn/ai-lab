@@ -1,6 +1,6 @@
 // P0-14: the editor's Share dialog — audience link, QR, open link, copy,
 // new link (rotate) and stop sharing (revoke).
-import { type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { dbRow, expect, test } from "../support/app";
 import { DECK, PLAIN, TOKEN } from "../support/seed";
 
@@ -28,7 +28,10 @@ test("shows the audience link, QR and an open link", async ({ page }) => {
   const qr = (await page.locator("#share-qr").getAttribute("src"))!;
   expect(qr).toContain("api.qrserver.com/v1/create-qr-code/");
   expect(decodeURIComponent(qr)).toContain(url.href);
-  await expect(page.locator("#share-qr-download")).toHaveAttribute("download", "speakeasy-share-qr.png");
+  await expect(page.locator("#share-qr-download")).toHaveAttribute(
+    "download",
+    "speakeasy-share-qr.png",
+  );
 });
 
 test("Copy confirms inline and copies the link", async ({ page, context }) => {
@@ -65,7 +68,9 @@ test("a deck that was never shared gets a token when you open Share", async ({ p
   await openShare(page, PLAIN); // the "generate one?" confirm is accepted
   const token = (await deckRow(page, PLAIN))?.share_token as string;
   expect(token).toBeTruthy();
-  expect(new URL(await page.locator("#share-url").inputValue()).searchParams.get("token")).toBe(token);
+  expect(new URL(await page.locator("#share-url").inputValue()).searchParams.get("token")).toBe(
+    token,
+  );
 });
 
 test("the dialog closes with × and by clicking outside", async ({ page }) => {

@@ -17,11 +17,15 @@ test("slides and fragments follow the presenter", async ({ page, context }) => {
   await press(page, "ArrowRight", 4); // Opening → Saved state (2 presses) → Two steps → step one
   const want = await slideState(presenter);
   expect(want.index).toBeGreaterThan(0);
-  await expect.poll(() => slideState(audience)).toMatchObject({ index: want.index, shown: want.shown });
+  await expect
+    .poll(() => slideState(audience))
+    .toMatchObject({ index: want.index, shown: want.shown });
 
   await press(page, "ArrowRight");
   const next = await slideState(presenter);
-  await expect.poll(() => slideState(audience)).toMatchObject({ index: next.index, shown: next.shown });
+  await expect
+    .poll(() => slideState(audience))
+    .toMatchObject({ index: next.index, shown: next.shown });
   await expect(audiencePage.locator("#__se_status")).toHaveText("● Live");
 });
 
@@ -34,8 +38,10 @@ test("a late joiner lands on the presenter's current step", async ({ page, conte
   const audiencePage = await context.newPage();
   await audiencePage.goto(share);
   const audience = await deckFrame(audiencePage);
-  await expect.poll(() => slideState(audience), { timeout: 10_000 }).toMatchObject({
-    index: want.index,
-    shown: want.shown,
-  });
+  await expect
+    .poll(() => slideState(audience), { timeout: 10_000 })
+    .toMatchObject({
+      index: want.index,
+      shown: want.shown,
+    });
 });

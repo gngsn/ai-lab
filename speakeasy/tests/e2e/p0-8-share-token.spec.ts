@@ -2,7 +2,8 @@
 import { expect, test } from "../support/app";
 import { DECK, PLAIN } from "../support/seed";
 
-const body = (page: import("@playwright/test").Page) => page.frameLocator("#__se_letterbox").locator("body");
+const body = (page: import("@playwright/test").Page) =>
+  page.frameLocator("#__se_letterbox").locator("body");
 
 test("a wrong token is rejected", async ({ page }) => {
   await page.goto(`/view.html?deck=${DECK}&token=wrong`);

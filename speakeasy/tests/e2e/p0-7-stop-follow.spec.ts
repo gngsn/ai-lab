@@ -8,17 +8,22 @@ import { DECK, TOKEN } from "../support/seed";
 const present = `/present.html?deck=${DECK}&sync=r1`;
 const share = `/share.html?deck=${DECK}&token=${TOKEN}&sync=r1`;
 
-async function open(page: import("@playwright/test").Page, context: import("@playwright/test").BrowserContext) {
+async function open(
+  page: import("@playwright/test").Page,
+  context: import("@playwright/test").BrowserContext,
+) {
   await page.goto(present);
   const presenter = await deckFrame(page);
   const audiencePage = await context.newPage();
   await audiencePage.goto(share);
   const audience = await deckFrame(audiencePage);
-  await expect(audiencePage.locator("#__se_status")).toHaveText("● Live", { timeout: 10_000 }).catch(async () => {
-    await page.bringToFront();
-    await press(page, "ArrowRight");
-    await expect(audiencePage.locator("#__se_status")).toHaveText("● Live");
-  });
+  await expect(audiencePage.locator("#__se_status"))
+    .toHaveText("● Live", { timeout: 10_000 })
+    .catch(async () => {
+      await page.bringToFront();
+      await press(page, "ArrowRight");
+      await expect(audiencePage.locator("#__se_status")).toHaveText("● Live");
+    });
   return { presenter, audiencePage, audience };
 }
 

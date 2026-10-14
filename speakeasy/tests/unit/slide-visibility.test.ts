@@ -1,6 +1,5 @@
 // P0-18: hidden slides carry data-hidden on their <section>.
 import { describe, expect, it } from "vitest";
-// @ts-expect-error — legacy JS without types
 import { isSlideHiddenContent } from "../../js/slide-visibility.js";
 
 describe("isSlideHiddenContent", () => {

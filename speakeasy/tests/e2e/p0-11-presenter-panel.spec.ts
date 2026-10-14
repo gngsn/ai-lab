@@ -54,19 +54,26 @@ test("the panel can be hidden and shown again", async ({ page }) => {
   await expect(page.locator("#__se_presenter")).toHaveClass(/panel-hidden/);
   await expect.poll(async () => (await stage.boundingBox())!.width).toBeGreaterThan(1270);
   await expect(page.locator(".pp-show")).toBeVisible();
-  expect(await page.evaluate(() => localStorage.getItem("speakeasy:present:panel-hidden"))).toBe("1");
+  expect(await page.evaluate(() => localStorage.getItem("speakeasy:present:panel-hidden"))).toBe(
+    "1",
+  );
 
   await page.locator(".pp-show").click();
   await expect(page.locator("#__se_presenter")).not.toHaveClass(/panel-hidden/);
-  expect(await page.evaluate(() => localStorage.getItem("speakeasy:present:panel-hidden"))).toBe("0");
+  expect(await page.evaluate(() => localStorage.getItem("speakeasy:present:panel-hidden"))).toBe(
+    "0",
+  );
 });
 
 test("text size is adjustable and remembered", async ({ page }) => {
   await page.goto(`/present.html?deck=${DECK}`);
   await deckFrame(page);
-  const size = () => page.locator("#__se_panel").evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+  const size = () =>
+    page.locator("#__se_panel").evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
   const before = await size();
   await page.locator('.pp-bar [data-font="1"]').click();
   expect(await size()).toBeGreaterThan(before);
-  expect(await page.evaluate(() => localStorage.getItem("speakeasy:present:fontsize"))).not.toBeNull();
+  expect(
+    await page.evaluate(() => localStorage.getItem("speakeasy:present:fontsize")),
+  ).not.toBeNull();
 });

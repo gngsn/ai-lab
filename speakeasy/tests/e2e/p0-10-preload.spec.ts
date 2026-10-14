@@ -4,7 +4,9 @@ import { deckFrame, expect, test } from "../support/app";
 import { DECK, TOKEN } from "../support/seed";
 
 const imgSrcs = (frame: import("@playwright/test").Frame) =>
-  frame.evaluate(() => [...document.querySelectorAll("img")].map((i) => i.getAttribute("src") || ""));
+  frame.evaluate(() =>
+    [...document.querySelectorAll("img")].map((i) => i.getAttribute("src") || ""),
+  );
 
 test("view preloads assets into blob: URLs", async ({ page }) => {
   await page.goto(`/view.html?deck=${DECK}&token=${TOKEN}`);

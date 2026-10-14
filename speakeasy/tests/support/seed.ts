@@ -3,7 +3,6 @@
 // a real import would store them.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-// @ts-expect-error — legacy JS module without types
 import { parseImportedHtmlDeck, parseNotesMd } from "../../js/import-html.js";
 
 const fixture = (name: string) =>
@@ -47,7 +46,7 @@ export function buildSeed(): FakeDb {
   const b = deckRows(PLAIN, "plain-deck.html", null);
   const notesByTitle = new Map(
     parseNotesMd(fixture("controller-deck.notes.md")).map(
-      (n: { title: string; body: string }) => [n.title, n.body],
+      (n: { title: string | null; body: string }) => [n.title, n.body],
     ),
   );
   const notes: Row[] = a.slides.map((s) => ({

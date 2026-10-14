@@ -1,6 +1,5 @@
 // P0-18: tagSection — makes a stored slide ready to show (js/slide-render.js).
 import { describe, expect, it } from "vitest";
-// @ts-expect-error — legacy JS without types
 import { tagSection } from "../../js/slide-render.js";
 
 describe("tagSection", () => {

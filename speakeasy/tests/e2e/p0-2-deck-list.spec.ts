@@ -16,8 +16,14 @@ test("lists decks with working links", async ({ page }) => {
     items.nth(item).getByRole("link", { name: text, exact: true });
   await expect(link(0, "Edit")).toHaveAttribute("href", `./edit.html?deck=${DECK}`);
   await expect(link(0, "Practice")).toHaveAttribute("href", `./pronunciation.html?deck=${DECK}`);
-  await expect(link(0, "Present")).toHaveAttribute("href", `./present.html?deck=${DECK}&sync=${DECK}`);
-  await expect(link(0, "Script")).toHaveAttribute("href", `./script.html?deck=${DECK}&sync=${DECK}`);
+  await expect(link(0, "Present")).toHaveAttribute(
+    "href",
+    `./present.html?deck=${DECK}&sync=${DECK}`,
+  );
+  await expect(link(0, "Script")).toHaveAttribute(
+    "href",
+    `./script.html?deck=${DECK}&sync=${DECK}`,
+  );
   await expect(link(0, "Shared view ↗")).toHaveAttribute(
     "href",
     `./view.html?deck=${DECK}&token=${TOKEN}`,

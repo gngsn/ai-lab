@@ -18,7 +18,11 @@ async function select(page: Page, title: string) {
 async function sectionIdOf(page: Page, title: string) {
   return items(page).filter({ hasText: title }).first().getAttribute("data-section-id");
 }
-async function slideAction(page: Page, title: string, action: "toggle-hidden" | "duplicate" | "delete") {
+async function slideAction(
+  page: Page,
+  title: string,
+  action: "toggle-hidden" | "duplicate" | "delete",
+) {
   const item = items(page).filter({ hasText: title }).first();
   await item.hover();
   await item.locator("summary").click();
@@ -41,29 +45,41 @@ test("notes and key message autosave without touching each other", async ({ page
   const sid = (await sectionIdOf(page, "Two steps"))!;
 
   await page.locator("#notes-textarea").fill("새로 쓴 대본입니다.");
-  await expect.poll(async () => (await dbRow(page, "notes", { deck_id: DECK, section_id: sid }))?.content).toBe(
-    "새로 쓴 대본입니다.",
+  await expect
+    .poll(async () => (await dbRow(page, "notes", { deck_id: DECK, section_id: sid }))?.content)
+    .toBe("새로 쓴 대본입니다.");
+  expect((await dbRow(page, "notes", { deck_id: DECK, section_id: sid }))?.key_message).toBe(
+    KEY_MESSAGE.text,
   );
-  expect((await dbRow(page, "notes", { deck_id: DECK, section_id: sid }))?.key_message).toBe(KEY_MESSAGE.text);
 
   await page.locator("#key-message-textarea").fill("한 줄 요약");
-  await expect.poll(async () => (await dbRow(page, "notes", { deck_id: DECK, section_id: sid }))?.key_message).toBe(
-    "한 줄 요약",
+  await expect
+    .poll(async () => (await dbRow(page, "notes", { deck_id: DECK, section_id: sid }))?.key_message)
+    .toBe("한 줄 요약");
+  expect((await dbRow(page, "notes", { deck_id: DECK, section_id: sid }))?.content).toBe(
+    "새로 쓴 대본입니다.",
   );
-  expect((await dbRow(page, "notes", { deck_id: DECK, section_id: sid }))?.content).toBe("새로 쓴 대본입니다.");
 });
 
 test("hiding a slide marks it and shows Show in its menu", async ({ page }) => {
   await open(page);
   await slideAction(page, "Plain middle", "toggle-hidden");
-  await expect(items(page).filter({ hasText: "Plain middle" })).toHaveAttribute("data-hidden", "true");
-  const sid = (await sectionIdOf(page, "Plain middle"))!;
-  await expect.poll(async () => String((await dbRow(page, "slides", { deck_id: DECK, section_id: sid }))?.content)).toContain(
+  await expect(items(page).filter({ hasText: "Plain middle" })).toHaveAttribute(
     "data-hidden",
+    "true",
   );
+  const sid = (await sectionIdOf(page, "Plain middle"))!;
+  await expect
+    .poll(async () =>
+      String((await dbRow(page, "slides", { deck_id: DECK, section_id: sid }))?.content),
+    )
+    .toContain("data-hidden");
 
   await slideAction(page, "Plain middle", "toggle-hidden"); // Show again
-  await expect(items(page).filter({ hasText: "Plain middle" })).toHaveAttribute("data-hidden", "false");
+  await expect(items(page).filter({ hasText: "Plain middle" })).toHaveAttribute(
+    "data-hidden",
+    "false",
+  );
 });
 
 test("duplicating copies the slide with its notes and key message", async ({ page }) => {
@@ -84,7 +100,9 @@ test("deleting a slide removes it and its notes", async ({ page }) => {
   const sid = (await sectionIdOf(page, "Closing"))!;
   await slideAction(page, "Closing", "delete"); // the confirm dialog is accepted
   await expect(items(page)).toHaveCount(5);
-  await expect.poll(async () => await dbRow(page, "slides", { deck_id: DECK, section_id: sid })).toBeUndefined();
+  await expect
+    .poll(async () => await dbRow(page, "slides", { deck_id: DECK, section_id: sid }))
+    .toBeUndefined();
 });
 
 test("adding a slide appends it", async ({ page }) => {
@@ -98,7 +116,8 @@ test("adding a slide appends it", async ({ page }) => {
 
 test("dragging a slide reorders the list and the saved order", async ({ page }) => {
   await open(page);
-  const titles = async () => (await items(page).locator(".title").allInnerTexts()).map((t) => t.trim());
+  const titles = async () =>
+    (await items(page).locator(".title").allInnerTexts()).map((t) => t.trim());
   const before = await titles();
   expect(before.slice(0, 3)).toEqual(["Opening", "Saved state", "Two steps"]);
 

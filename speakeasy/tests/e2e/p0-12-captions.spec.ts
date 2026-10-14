@@ -2,7 +2,7 @@
 // of the bilingual script, and that line's reviewed English goes to the
 // audience page (CC toggle there). Microphone and Chrome's translator are
 // not available to tests, so speech is fed in through window.__seCaptions.
-import { type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { deckFrame, expect, press, test } from "../support/app";
 import { BILINGUAL, DECK, TOKEN } from "../support/seed";
 
@@ -11,10 +11,10 @@ const LINE = "This slide is split into two steps."; // "두 단계로 나뉜 슬
 const HEARD = "두단계로나뉜슬라이드입니다"; // spaces lost, as speech recognition often does
 
 test.beforeEach(async ({ context }) => {
-  await context.addInitScript(
-    ({ md, key }) => localStorage.setItem(key, md),
-    { md: BILINGUAL, key: `speakeasy:captions:script:${DECK}` },
-  );
+  await context.addInitScript(({ md, key }) => localStorage.setItem(key, md), {
+    md: BILINGUAL,
+    key: `speakeasy:captions:script:${DECK}`,
+  });
 });
 
 async function goToTwoSteps(page: Page) {
@@ -49,7 +49,9 @@ test("a heard line is sent to the audience, and CC hides it", async ({ page, con
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-pressed", "true");
   await expect(box).not.toHaveClass(/\bshow\b/);
-  await page.evaluate(() => (window as any).__seCaptions.feed("첫번째단계를보여드리겠습니다", true));
+  await page.evaluate(() =>
+    (window as any).__seCaptions.feed("첫번째단계를보여드리겠습니다", true),
+  );
   await expect(box).toHaveText("Let me show you the first step.");
   await expect(box).toHaveClass(/\bshow\b/);
 });
@@ -61,12 +63,17 @@ test("speech that is not in the script sends nothing", async ({ page, context })
   await deckFrame(audience);
 
   await page.bringToFront();
-  await page.evaluate(() => (window as any).__seCaptions.feed("잠깐 물 좀 마시고 하겠습니다", true));
+  await page.evaluate(() =>
+    (window as any).__seCaptions.feed("잠깐 물 좀 마시고 하겠습니다", true),
+  );
   await page.waitForTimeout(800);
   await expect(audience.locator("#__se_cc_box")).toHaveText("");
 });
 
-test("the caption console follows the presenter and can send a line by hand", async ({ page, context }) => {
+test("the caption console follows the presenter and can send a line by hand", async ({
+  page,
+  context,
+}) => {
   await goToTwoSteps(page);
   const audience = await context.newPage();
   await audience.goto(`/share.html?deck=${DECK}&token=${TOKEN}&sync=${room}`);
@@ -74,7 +81,9 @@ test("the caption console follows the presenter and can send a line by hand", as
 
   const consolePage = await context.newPage();
   await consolePage.goto(`/captions.html?deck=${DECK}&sync=${room}`);
-  await expect(consolePage.locator("#script-status")).toContainText("6/6 slides have lines · 10 lines");
+  await expect(consolePage.locator("#script-status")).toContainText(
+    "6/6 slides have lines · 10 lines",
+  );
 
   // nudge the presenter so the console receives the current slide
   await page.bringToFront();

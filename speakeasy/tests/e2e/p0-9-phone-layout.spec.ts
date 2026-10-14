@@ -29,7 +29,7 @@ test.describe("phone", () => {
 
     // a horizontal swipe across the slide changes nothing
     const cdp = await page.context().newCDPSession(page);
-    const touch = (type: string, x: number, y = 422) =>
+    const touch = (type: "touchStart" | "touchMove" | "touchEnd", x: number, y = 422) =>
       cdp.send("Input.dispatchTouchEvent", {
         type,
         touchPoints: type === "touchEnd" ? [] : [{ x, y }],
@@ -48,7 +48,8 @@ test.describe("phone", () => {
     await expect(frame.locator("#__se_phone")).toHaveCount(1);
     const near = () =>
       frame.evaluate(() => {
-        const ctl = (window as unknown as { __seDeckController: { slides: HTMLElement[] } }).__seDeckController;
+        const ctl = (window as unknown as { __seDeckController: { slides: HTMLElement[] } })
+          .__seDeckController;
         return ctl.slides.flatMap((s, i) => (s.hasAttribute("data-se-near") ? [i] : []));
       });
     expect(await near()).toEqual([0, 1]);
@@ -72,7 +73,9 @@ test.describe("desktop", () => {
     await expect(page.locator("#__se_stepnav")).toBeHidden();
     await expect(frame.locator("#__se_phone")).toHaveCount(0);
     expect(
-      await frame.evaluate(() => getComputedStyle(document.querySelector("main")!).transitionDuration),
+      await frame.evaluate(
+        () => getComputedStyle(document.querySelector("main")!).transitionDuration,
+      ),
     ).toBe("0.6s");
   });
 });

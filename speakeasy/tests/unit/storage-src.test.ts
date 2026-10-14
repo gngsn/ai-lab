@@ -1,6 +1,5 @@
 // P0-18: supabase://slides-images/… links resolve to public storage URLs.
 import { beforeEach, describe, expect, it } from "vitest";
-// @ts-expect-error — legacy JS without types
 import { fromStorageSrc, resolveStorageSourcesInHtml } from "../../js/storage-src.js";
 
 beforeEach(() => {
@@ -22,6 +21,8 @@ describe("storage-src", () => {
 
   it("leaves links alone when there is no Supabase URL", () => {
     (globalThis as any).window = {};
-    expect(resolveStorageSourcesInHtml('<img src="supabase://slides-images/a.png">')).toContain("supabase://");
+    expect(resolveStorageSourcesInHtml('<img src="supabase://slides-images/a.png">')).toContain(
+      "supabase://",
+    );
   });
 });
