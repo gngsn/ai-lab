@@ -543,7 +543,7 @@ export function createClient() {
 - [ ] P4-7d 노트 패널(노트, key message, 자동 저장 800ms, Import .md, 글자 크기, TTS)
 - [ ] P4-7e 에셋 라이브러리(업로드, 검색, URL 복사, 삽입, 이름 변경 → `rename_asset_references`, 삭제)
 - [ ] P4-7f 모달: Share(§P0-14), 프레임 편집기(CodeMirror), 히스토리, SVG
-- [ ] P4-7g 내보내기(HTML, PDF 인쇄, PPTX, 노트 복사)
+- [ ] P4-7g 내보내기(HTML, PDF 인쇄, 노트 .md 다운로드·복사). PPTX와 screenshot-PDF는 제거됨
 - [ ] P4-7h 발음 연습 패널(`training-panel.js`, 1,190줄. 가장 마지막)
 
 edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태스크(P4-7h)가 끝날 때까지 지우지 않는다.** 새 edit은 임시 경로 `/edit-next.html`로 만들어 테스트한다. P4-7h가 끝나면 그때 `/edit.html`로 교체한다.
@@ -570,12 +570,12 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 
 작성 시점에 다른 작업자의 **미커밋 변경**이 있다. 내보내기 메뉴에서 PPTX와 screenshot-PDF를 빼고, `pdf-export.html`을 지우는 변경이다. 이 변경이 커밋되면 다음이 쓸모없어진다. **커밋되기 전에는 건드리지 마라.**
 
-- [ ] C-1 `git log`로 그 변경이 커밋됐는지 확인한다. 아직이면 이 항목은 건너뛰고 STOP 보고한다.
-- [ ] C-2 `edit.html`에 `data-export="pptx"` 버튼이 없으면 다음을 지운다.
+- [x] C-1 `git log`로 그 변경이 커밋됐는지 확인한다. 아직이면 이 항목은 건너뛰고 STOP 보고한다.
+- [x] C-2 `edit.html`에 `data-export="pptx"` 버튼이 없으면 다음을 지운다.
   - `js/export.js`의 PPTX 코드(`exportPptx`와 그것만 쓰는 함수)
   - `edit.html`의 `<script src="./vendor/pptxgenjs/pptxgen.bundle.js">`
   - `vendor/pptxgenjs/`
-- [ ] C-3 `exportScreenshotPdf`가 어디서도 import되지 않으면 그 함수와, 그 함수만 쓰는 코드를 지운다.
+- [x] C-3 `exportScreenshotPdf`가 어디서도 import되지 않으면 그 함수와, 그 함수만 쓰는 코드를 지운다.
 - 각 삭제 전에 `grep -rn "<이름>" speakeasy --include=*.js --include=*.html`로 다른 사용처가 없는지 확인한다.
 
 ### 11.3 export를 뺄 수 있는 것 (선택, 낮은 우선순위)
@@ -606,7 +606,8 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 
 | Phase | 상태 | 날짜 | 메모 |
 |---|---|---|---|
-| 0 | **완료** | 2026-10-14 | P0-0~18 완료. e2e 95개(3회 연속 통과) + 단위 50개. 앱 코드 변경 0건. §11.2 C-1: 내보내기 메뉴 변경이 아직 미커밋이라 C 항목은 보류 |
+| 0 | **완료** | 2026-10-14 | P0-0~18 완료. e2e 95개(3회 연속 통과) + 단위 50개. 앱 코드 변경 0건 |
+| 11.2 정리 | **완료** | 2026-10-14 | 내보내기 메뉴 변경이 커밋된 뒤(`feat/slides-editor` 77e6459) PPTX 코드, `vendor/pptxgenjs`, screenshot-PDF 정리 |
 | 1 | 대기 | | |
 | 2 | 대기 | | |
 | 3 | 대기 | | |
