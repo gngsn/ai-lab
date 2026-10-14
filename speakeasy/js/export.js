@@ -75,19 +75,6 @@ export function exportPdf(deckId) {
   return { url };
 }
 
-// ── PDF (screenshot via html2canvas + jsPDF) ──────────────────────
-
-export function exportScreenshotPdf(deckId) {
-  const url = `./pdf-export.html?deck=${encodeURIComponent(deckId)}`;
-  const a = document.createElement("a");
-  a.href = url;
-  a.target = "_blank";
-  a.rel = "noopener";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
-
 // ── Marp notes ────────────────────────────────────────────────────
 
 export async function buildNotesMd(deckId) {

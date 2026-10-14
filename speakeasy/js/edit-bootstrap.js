@@ -11,7 +11,6 @@ import {
   exportNotesMd,
   exportPdf,
   exportPptx,
-  exportScreenshotPdf,
 } from "./export.js";
 import { HistoryUI, saveVersionPrompt } from "./history-ui.js";
 import * as deckRepo from "./repo/deck-repo.js";
@@ -2310,8 +2309,6 @@ document.querySelectorAll("[data-export]").forEach((btn) => {
         toast("PPTX 생성 중…", "ok");
         const r = await exportPptx(deckId);
         toast(`Saved ${r.filename}`, "ok");
-      } else if (kind === "screenshot-pdf") {
-        exportScreenshotPdf(deckId);
       }
     } catch (err) {
       toast("Export failed: " + err.message, "err");

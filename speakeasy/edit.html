@@ -256,11 +256,12 @@
         display: flex;
         flex-direction: column;
         gap: 2px;
-        min-width: 160px;
+        min-width: 220px;
         z-index: 200;
         box-shadow: none;
       }
       .dropdown-menu button,
+      .dropdown-menu details,
       .dropdown-menu a {
         background: transparent;
         border: 0;
@@ -274,6 +275,7 @@
         text-decoration: none;
       }
       .dropdown-menu button:hover,
+      .dropdown-menu details:hover,
       .dropdown-menu a:hover {
         background: var(--se-fill);
         color: var(--text);
@@ -1828,28 +1830,17 @@
               id="export-dropdown"
               style="position: static; display: block"
             >
-              <summary
-                class="btn"
-                style="
-                  padding: 0 0 0 8px;
-                  font-size: 12px;
-                  background: none;
-                  border: none;
-                  box-shadow: none;
-                "
-              >
+              <summary class="btn" style="padding: 0;">
                 ⬇ Export
               </summary>
               <div
                 class="dropdown-menu"
-                style="position: static; box-shadow: none; min-width: 0"
+                style="position: static; box-shadow: none; min-width: 0; margin-top:10px;"
               >
-                <button data-export="html">HTML (self-contained)</button>
-                <button data-export="pdf">PDF (browser print)</button>
-                <button data-export="screenshot-pdf">PDF (screenshot)</button>
-                <button data-export="pptx">PPTX (Google Slides)</button>
+                <button data-export="html">HTML</button>
                 <button data-export="md">Notes (.md)</button>
-                <button data-export="md-copy">Copy notes to clipboard</button>
+                <button data-export="md-copy">Notes (Clipboard)</button>
+                <button data-export="pdf">PDF (browser print)</button>
                 <a id="export-notes-link" href="#" target="_blank"
                   >Open notes view ↗</a
                 >
