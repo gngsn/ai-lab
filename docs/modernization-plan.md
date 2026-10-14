@@ -373,23 +373,23 @@ export function createClient() {
 - [ ] **P0-2 덱 목록:** 목록에 fixture 덱이 보이고 편집, 발표, 대본 링크가 올바른 URL이다.
 - [x] **P0-3 발표 기본(deck 모드):** `present.html?deck=controller-deck`에서 → 키를 누른다.
   - 기대: `__seDeckController.currentSlide`가 증가한다. fragment는 하나씩 `show`가 붙는다. 그룹 fragment는 한 번에 붙는다. ← 키로 되돌린다.
-- [ ] **P0-4 발표 기본(speakeasy 모드):** `plain-deck`에서 같은 동작. 오버레이 카운터 `#__se_counter`가 `n / total`이다.
-- [ ] **P0-5 재생 상태 제거:** 저장된 `visible`/`show`가 있어도 시작 시 `.slide.visible`은 첫 슬라이드 1개뿐이고 `.fragment.show`는 0개다.
+- [x] **P0-4 발표 기본(speakeasy 모드):** `plain-deck`에서 같은 동작. 오버레이 카운터 `#__se_counter`가 `n / total`이다.
+- [x] **P0-5 재생 상태 제거:** 저장된 `visible`/`show`가 있어도 시작 시 `.slide.visible`은 첫 슬라이드 1개뿐이고 `.fragment.show`는 0개다.
   - 슬라이드를 넘기면 `.reveal` 요소의 opacity가 0에서 1로 **변하는 중간값**이 관찰된다(120ms 간격 샘플).
-- [ ] **P0-6 실시간 따라가기:** 발표자 `present.html?deck=controller-deck&sync=r1` + 관객 `share.html?deck=controller-deck&token=tok&sync=r1`.
+- [x] **P0-6 실시간 따라가기:** 발표자 `present.html?deck=controller-deck&sync=r1` + 관객 `share.html?deck=controller-deck&token=tok&sync=r1`.
   - 발표자가 넘기면 관객의 슬라이드와 fragment 수가 같아진다.
   - 관객이 나중에 들어와도(`hello`) 현재 위치로 맞춰진다.
-- [ ] **P0-7 Stop/Follow:** 관객 페이지 바깥 문서의 `#__se_follow_toggle`.
-  - Stop을 누르면 발표자가 넘겨도 관객은 그대로이고, 관객은 혼자 넘길 수 있다.
+- [x] **P0-7 Pause/Follow:** 관객 페이지 바깥 문서의 `#__se_follow_toggle`.
+  - Pause를 누르면 발표자가 넘겨도 관객은 그대로이고, 관객은 혼자 넘길 수 있다.
   - Follow를 누르면 발표자의 현재 위치로 이동한다.
-  - 상태 문구는 `● Live` / `Paused`, 버튼은 `Stop` / `Follow`.
+  - 상태 문구는 `● Live` / `Paused`, 버튼 라벨(`#__se_follow_toggle .lbl`)은 `Pause` / `Follow`. 라벨 뒤쪽(`.more`: " · manual control" / " the presenter")은 마우스를 올릴 때만 보인다.
   - 안내 문구(`#__se_follow_hint`)는 브라우저 언어가 `ko-KR`이면 한국어, `en-US`이면 영어다.
-- [ ] **P0-8 공유 토큰:** `view.html`에 틀린 token이면 `Invalid or revoked share link.`가 보인다. token이 없는 덱이면 `This deck is not shared.`가 보인다.
+- [x] **P0-8 공유 토큰:** `view.html`에 틀린 token이면 `Invalid or revoked share link.`가 보인다. token이 없는 덱이면 `This deck is not shared.`가 보인다.
 - [ ] **P0-9 폰 레이아웃:** 390×844, `mobile: true`, 터치 켜기.
   - `#__se_stepnav`의 `<` `>` 버튼이 보이고, 누르면 한 단계씩 이동한다. 옆으로 스와이프해도 이동하지 않는다.
   - deck 모드에서 `#__se_phone` 스타일이 있고, `[data-se-near]`가 현재 ±1 슬라이드에만 있다.
   - 데스크톱에서는 `#__se_stepnav`가 `display: none`이고 `#__se_phone`이 없다.
-- [ ] **P0-10 share는 미리 다운로드 안 함:** share의 `<img>` src에 `blob:`이 없다. view는 `blob:`이 있다(미리 다운로드).
+- [x] **P0-10 share는 미리 다운로드 안 함:** share의 `<img>` src에 `blob:`이 없다. view는 `blob:`이 있다(미리 다운로드).
 - [ ] **P0-11 발표자 대본 패널:** present 바깥 문서의 `#__se_panel`.
   - 슬라이드를 넘기면 `.pp-count`, `.pp-title`, `.pp-script`, `.pp-next`가 바뀐다. key message가 있는 슬라이드에서 `.pp-key`가 보인다.
   - fragment를 진행하면 `.cue[data-cue]`가 `done` / `next`로 바뀐다.
