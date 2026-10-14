@@ -7,16 +7,24 @@
     "build": "node scripts/build-config.mjs",
     "build:vendor": "node scripts/build-vendor-modules.mjs",
     "dev": "python3 -m http.server 8000",
-    "import": "node scripts/import.mjs"
+    "import": "node scripts/import.mjs",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "lint": "biome check",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm lint && pnpm typecheck && pnpm test"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.8",
-    "vercel": "^54.13.0"
+    "@supabase/supabase-js": "^2.49.8"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
     "@playwright/test": "^1.64.0",
+    "@types/node": "^26.6.5",
     "esbuild": "^0.25.5",
     "http-server": "^14.1.1",
+    "typescript": "^7.0.2",
+    "vercel": "^54.21.1",
     "vitest": "^5.0.4"
   },
   "packageManager": "pnpm@11.24.0"

@@ -9,3 +9,6 @@ Things found while writing the Phase 0 tests. The tests pin today's behavior; no
 - **Local runs use the working tree.** Someone else's uncommitted edits to `edit.html` (export menu) are present locally; the tests don't touch those parts. CI runs the committed code.
 - **Import redirects:** after a successful import the app navigates to `edit.html?deck=<id>` (it does not stay on the deck list). The plan's P0-17 said "the deck is created"; the test pins both.
 - **PPTX removed:** the export menu no longer offers PPTX or screenshot-PDF, so `exportPptx`, `vendor/pptxgenjs/` and the pdf-export page are gone. `README.md` ("Export to HTML, PDF, Marp, PPTX"), `SPEC.md` and `docs/function.md` still mention PPTX; they are outside this task's scope and need a human edit.
+- **Biome 2:** the config key is `files.includes` (the plan said `include`), and `biome migrate --write` rewrote `"recommended": true` to `"preset": "none"`, which silently turned linting off (checked with a probe file). The config now says `"preset": "recommended"`. `pnpm lint` is plain `biome check` because `src/` does not exist yet.
+- **allowJs types:** with `allowJs`, TypeScript infers types for the legacy JS the tests import, so the `// @ts-expect-error` comments were removed.
+- **vercel CLI:** moved to devDependencies (`^54.x`, kept in the same major).

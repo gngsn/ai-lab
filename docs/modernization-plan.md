@@ -429,20 +429,20 @@ export function createClient() {
 
 ## 6. Phase 1: 개발 도구 정비 (앱 동작 그대로)
 
-- [ ] **P1-1 package.json 정리**
+- [x] **P1-1 package.json 정리**
   - devDependencies 추가: `pnpm add -D typescript @biomejs/biome` (vitest, playwright, http-server는 P0-0에서 설치됨)
   - `vercel`은 `dependencies`에서 빼고 devDependencies로 옮긴다: `pnpm remove vercel && pnpm add -D vercel`. 앱 실행에 필요 없다.
   - scripts:
     ```json
     "test": "vitest run",
     "e2e": "playwright test",
-    "lint": "biome check src tests",
+    "lint": "biome check",
     "typecheck": "tsc --noEmit",
     "check": "pnpm lint && pnpm typecheck && pnpm test"
     ```
   - 완료 조건: `pnpm install --frozen-lockfile && pnpm check && pnpm e2e` 통과
-- [ ] **P1-2 Biome 설정:** `biome.json`에서 `files.include`를 `["src/**", "tests/**"]`로 한다. **레거시 파일은 포맷하지 않는다**(큰 diff 금지).
-- [ ] **P1-3 TypeScript 설정:** `tsconfig.json`
+- [x] **P1-2 Biome 설정:** `biome.json`에서 `files.includes`(Biome 2는 `includes`)를 `["src/**", "tests/**", "!tests/fixtures/**", "playwright.config.ts", "vitest.config.ts"]`로 한다. `rules.preset`은 `"recommended"`여야 한다(`biome migrate`가 `"none"`으로 바꾸면 린트가 꺼진다. 직접 확인함). **레거시 파일은 포맷하지 않는다**(큰 diff 금지).
+- [x] **P1-3 TypeScript 설정:** `tsconfig.json`
   - `strict: true`, `allowJs: true`, `checkJs: false`, `noEmit: true`
   - include: `src`, `tests`, `public/js`(Phase 2 이후)
   - 레거시 JS는 기본으로 검사하지 않는다. 파일 맨 위에 `// @ts-check`를 붙인 파일만 검사된다.
