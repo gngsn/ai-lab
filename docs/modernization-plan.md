@@ -365,12 +365,12 @@ export function createClient() {
 
 각 항목이 테스트 파일 하나다. "기대"를 그대로 단언(assert)한다.
 
-- [ ] **P0-1 인증 차단:** 소유자 페이지 8곳(index, edit, script, script-edit, notes, pronunciation, present, captions)에서 각각 확인한다.
+- [x] **P0-1 인증 차단:** 소유자 페이지 8곳(index, edit, script, script-edit, notes, pronunciation, present, captions)에서 각각 확인한다.
   - 토큰 없이 열고 패스프레이즈 모달에서 취소 버튼, Esc, 바깥 클릭, 틀린 암호를 해 본다.
   - 기대: 페이지 내용이 열리지 않는다. 본문에 `denied`가 보이거나, edit은 `auth failed`가 보인다.
   - 맞는 암호(`test`)를 넣으면 열린다.
   - 모달 DOM: `#__se_prompt_input`, `#__se_prompt_ok`, `#__se_prompt_cancel`. `alert`는 자동 수락한다. present는 모달이 iframe(`#__se_letterbox`) 안에 뜬다.
-- [ ] **P0-2 덱 목록:** 목록에 fixture 덱이 보이고 편집, 발표, 대본 링크가 올바른 URL이다.
+- [x] **P0-2 덱 목록:** 목록에 fixture 덱이 보이고 편집, 발표, 대본 링크가 올바른 URL이다.
 - [x] **P0-3 발표 기본(deck 모드):** `present.html?deck=controller-deck`에서 → 키를 누른다.
   - 기대: `__seDeckController.currentSlide`가 증가한다. fragment는 하나씩 `show`가 붙는다. 그룹 fragment는 한 번에 붙는다. ← 키로 되돌린다.
 - [x] **P0-4 발표 기본(speakeasy 모드):** `plain-deck`에서 같은 동작. 오버레이 카운터 `#__se_counter`가 `n / total`이다.
@@ -385,7 +385,7 @@ export function createClient() {
   - 상태 문구는 `● Live` / `Paused`, 버튼 라벨(`#__se_follow_toggle .lbl`)은 `Pause` / `Follow`. 라벨 뒤쪽(`.more`: " · manual control" / " the presenter")은 마우스를 올릴 때만 보인다.
   - 안내 문구(`#__se_follow_hint`)는 브라우저 언어가 `ko-KR`이면 한국어, `en-US`이면 영어다.
 - [x] **P0-8 공유 토큰:** `view.html`에 틀린 token이면 `Invalid or revoked share link.`가 보인다. token이 없는 덱이면 `This deck is not shared.`가 보인다.
-- [ ] **P0-9 폰 레이아웃:** 390×844, `mobile: true`, 터치 켜기.
+- [x] **P0-9 폰 레이아웃:** 390×844, `mobile: true`, 터치 켜기.
   - `#__se_stepnav`의 `<` `>` 버튼이 보이고, 누르면 한 단계씩 이동한다. 옆으로 스와이프해도 이동하지 않는다.
   - deck 모드에서 `#__se_phone` 스타일이 있고, `[data-se-near]`가 현재 ±1 슬라이드에만 있다.
   - 데스크톱에서는 `#__se_stepnav`가 `display: none`이고 `#__se_phone`이 없다.
