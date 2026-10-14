@@ -1,0 +1,53 @@
+name: speakeasy
+
+# Lint, typecheck, unit and end-to-end tests for speakeasy/. No secrets: the
+# e2e tests run the app against a fake Supabase (speakeasy/tests/fake-backend).
+on:
+  push:
+    paths:
+      - "speakeasy/**"
+      - ".github/workflows/speakeasy.yml"
+  pull_request:
+    paths:
+      - "speakeasy/**"
+      - ".github/workflows/speakeasy.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: speakeasy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: speakeasy
+    steps:
+      - uses: actions/checkout@v4
+
+      # The pnpm version comes from "packageManager" in package.json.
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: speakeasy/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: speakeasy/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: speakeasy/test-results
+          if-no-files-found: ignore

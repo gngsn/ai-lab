@@ -446,10 +446,10 @@ export function createClient() {
   - `strict: true`, `allowJs: true`, `checkJs: false`, `noEmit: true`
   - include: `src`, `tests`, `public/js`(Phase 2 이후)
   - 레거시 JS는 기본으로 검사하지 않는다. 파일 맨 위에 `// @ts-check`를 붙인 파일만 검사된다.
-- [ ] **P1-4 CI:** `.github/workflows/speakeasy.yml`
+- [x] **P1-4 CI:** `.github/workflows/speakeasy.yml`
   - `speakeasy/` 변경 시 실행: `pnpm/action-setup`(버전은 `packageManager` 필드를 따름) → `actions/setup-node`(`cache: pnpm`) → `pnpm install --frozen-lockfile` → `pnpm check` → `pnpm exec playwright install --with-deps chromium` → `pnpm e2e`
   - 비밀 값을 쓰지 않는다(가짜 백엔드만 사용).
-- [ ] **P1-5 마이그레이션 형식 준비 (DB 적용 금지)**
+- [x] **P1-5 마이그레이션 형식 준비 (DB 적용 금지)**
   - `supabase/migrations/`에 `migrations/001~010`을 **내용 그대로** 복사한다. 파일 이름은 Supabase CLI 형식 `<14자리 타임스탬프>_<이름>.sql`로 바꾼다.
     - 타임스탬프 예: `20260101000001_init.sql` … `20260101000010_key_message.sql`. 순서를 유지한다.
   - `migrations/README.md`에 "운영 DB에는 이미 001~010이 적용되어 있음. CLI 연결과 `supabase migration repair`는 사람이 한다"고 적는다.
