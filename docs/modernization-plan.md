@@ -608,7 +608,7 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 |---|---|---|---|
 | 0 | **완료** | 2026-10-14 | P0-0~18 완료. e2e 95개(3회 연속 통과) + 단위 50개. 앱 코드 변경 0건 |
 | 11.2 정리 | **완료** | 2026-10-14 | 내보내기 메뉴 변경이 커밋된 뒤(`feat/slides-editor` 77e6459) PPTX 코드, `vendor/pptxgenjs`, screenshot-PDF 정리 |
-| 1 | 대기 | | |
+| 1 | **완료** | 2026-10-14 | P1-1~5 완료. 깨끗한 clone에서 `pnpm install --frozen-lockfile && pnpm check && pnpm e2e` 통과(CI와 같은 조건). 마이그레이션 CLI 연결·`migration repair`는 사람이 할 일 |
 | 2 | 대기 | | |
 | 3 | 대기 | | |
 | 4 | 대기 | | |
