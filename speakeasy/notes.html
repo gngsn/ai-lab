@@ -161,7 +161,7 @@
       import { ensureAuthed } from "./js/auth.js";
       import { buildNotesMd, exportNotesMd } from "./js/export.js";
 
-      if (!ensureAuthed()) {
+      if (!(await ensureAuthed())) {
         document.body.innerHTML =
           '<p class="err">Access denied — Marp view is owner-only.</p>';
         throw new Error("auth");

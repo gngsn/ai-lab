@@ -309,7 +309,7 @@
         { keys: ["?"], desc: "This help" },
       ]);
 
-      if (!ensureAuthed()) {
+      if (!(await ensureAuthed())) {
         document.body.innerHTML =
           '<p style="padding:2rem;color:var(--se-bad, #b42318);font-family:monospace">' +
           "Access denied — script (notes) view is owner-only.</p>";

@@ -19,7 +19,7 @@ import {
 } from "./training-panel.js";
 
 // ── Auth ──────────────────────────────────────────────────────────
-if (!ensureAuthed()) {
+if (!(await ensureAuthed())) {
   document.body.innerHTML =
     '<p style="color:var(--se-bad, #b42318);padding:2rem;font-family:monospace">Access denied.</p>';
   throw new Error("auth");

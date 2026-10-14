@@ -610,7 +610,7 @@
       import * as slideRepo from "./js/repo/slide-repo.js";
       import * as storageRepo from "./js/repo/storage-repo.js";
 
-      if (!ensureAuthed()) {
+      if (!(await ensureAuthed())) {
         document.body.innerHTML =
           '<p style="padding:2rem;color:#ef4444;font-family:monospace">' +
           "Access denied — deck list is owner-only.</p>";

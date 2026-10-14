@@ -395,7 +395,7 @@
       import { ensureAuthed } from "./js/auth.js";
       import { mountScriptEditView } from "./js/script-edit-view.js";
 
-      if (!ensureAuthed()) {
+      if (!(await ensureAuthed())) {
         document.body.innerHTML =
           '<p style="padding:2rem;color:var(--se-bad, #b42318);font-family:monospace">' +
           "Edit access denied.</p>";
