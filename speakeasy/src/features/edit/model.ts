@@ -51,6 +51,9 @@ export function useEditorModel({
   // The Present link only follows the slide on load and on a click in the list.
   const [navSectionId, setNavSectionId] = useState(currentSectionId);
   const flushers = useRef(new Set<Flusher>());
+  // Raw-HTML mode (7c): while on, the current slide's HTML is shown in the code editor, not the canvas.
+  const htmlModeRef = useRef(false);
+  const htmlEditorRef = useRef<{ load: () => void } | null>(null);
   const titlePending = useRef<{ sid: string; title: string } | null>(null);
   const titleTimer = useRef(0);
 
@@ -137,7 +140,8 @@ export function useEditorModel({
     await flushTitleSave();
     for (const flush of flushers.current) await flush();
     setCurrent(sid);
-    showSlide(sid);
+    if (htmlModeRef.current) htmlEditorRef.current?.load();
+    else showSlide(sid);
     setNavSectionId(sid);
   };
 
@@ -255,7 +259,8 @@ export function useEditorModel({
     try {
       patch(nextContent);
       await updateContent(deckId, sectionId, nextContent);
-      showSlide(currentRef.current);
+      if (htmlModeRef.current) htmlEditorRef.current?.load();
+      else showSlide(currentRef.current);
       chrome.toast(hidden ? "Slide hidden in presentation" : "Slide shown in presentation", "ok");
     } catch (err) {
       patch(prevContent);
@@ -296,6 +301,10 @@ export function useEditorModel({
   return {
     slides,
     slidesRef,
+    setSlides,
+    currentRef,
+    htmlModeRef,
+    htmlEditorRef,
     currentSectionId,
     navSectionId,
     notesRef,

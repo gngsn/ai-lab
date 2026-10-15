@@ -7,12 +7,15 @@ import {
   useRef,
   useState,
 } from "react";
+import { flushSync } from "react-dom";
 import { updateTitle } from "../../data/decks";
 import type { DeckRow } from "../../data/types";
 import { bindShortcutsHelp } from "../../lib/legacy-runtime";
 import { syncRoomFor } from "../../lib/sync-room";
 import { type EditSlide, useEditorModel } from "./model";
 import { SlideList } from "./SlideList";
+import { useCanvas } from "./useCanvas";
+import { useHtmlEditor } from "./useHtmlEditor";
 
 // Chrome shared with the editor features that arrive in later P4-7 steps.
 export type EditChrome = {
@@ -34,6 +37,7 @@ type Props = {
   keyMessages: Map<string, string>;
 };
 type AsideId = "slide-list" | "props";
+type Mode = "aspect-169" | "portrait" | "html" | "stretch";
 
 const SLIDE_LIST_WIDTH_KEY = "slidesEditor.slideListWidth";
 const SLIDE_LIST_WIDTH_MIN = 180;
@@ -175,6 +179,7 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
   const bodyRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLSpanElement>(null);
   const canvasRef = useRef<HTMLIFrameElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const listResizerRef = useRef<HTMLDivElement>(null);
   const propsResizerRef = useRef<HTMLDivElement>(null);
   const collapsedRef = useRef(collapsed);
@@ -195,6 +200,39 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
     canvasRef,
     chrome,
   });
+  const [mode, setMode] = useState<Mode>("aspect-169");
+  const [gridRows, setGridRows] = useState<string | undefined>();
+  const canvas = useCanvas({ canvasRef, stageRef, deckRef, model, chrome });
+  const htmlEditor = useHtmlEditor({ deckId, model, chrome });
+  const formatRef = useRef(htmlEditor.format);
+  formatRef.current = htmlEditor.format;
+
+  // Switches the workspace between canvas presets and the raw <section> editor.
+  // Pending HTML is saved before leaving html mode so nothing is lost.
+  const changeMode = async (next: Mode) => {
+    canvas.setFitEnabled(next !== "stretch");
+    if (model.htmlModeRef.current && next !== "html") await htmlEditor.flush();
+    // The editor needs its container visible before it measures itself.
+    flushSync(() => {
+      setMode(next);
+      setGridRows(
+        next === "portrait"
+          ? `minmax(0, 1fr) ${getStoredPx(PROPS_PANEL_HEIGHT_KEY, 280)}px`
+          : undefined,
+      );
+    });
+    if (next === "html") {
+      model.htmlModeRef.current = true;
+      htmlEditor.ensure();
+      htmlEditor.load();
+      htmlEditor.format();
+      // Focus after the next paint so display:block has actually taken effect.
+      requestAnimationFrame(() => htmlEditor.focus());
+    } else {
+      model.htmlModeRef.current = false;
+      if (model.currentRef.current) model.showSlide(model.currentRef.current);
+    }
+  };
 
   const setAsideCollapsed = useCallback((id: AsideId, value: boolean) => {
     setCollapsedState((prev) => ({ ...prev, [id]: value }));
@@ -215,7 +253,12 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
   const asideTitle = (id: AsideId) =>
     `${collapsed[id] ? "Expand" : "Collapse"} ${id === "slide-list" ? "slide list ([)" : "notes panel (])"}`;
   const bodyClass =
-    [collapsed["slide-list"] && "slide-list-collapsed", collapsed.props && "props-collapsed"]
+    [
+      collapsed["slide-list"] && "slide-list-collapsed",
+      collapsed.props && "props-collapsed",
+      mode === "portrait" && "portrait-mode",
+      mode === "html" && "html-mode",
+    ]
       .filter(Boolean)
       .join(" ") || undefined;
 
@@ -290,6 +333,17 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
     const click = (id: string) => document.getElementById(id)?.click();
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
+      if (
+        document.body.classList.contains("html-mode") &&
+        document.activeElement?.id === "html-editor" &&
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        (e.key === "f" || e.key === "F")
+      ) {
+        e.preventDefault();
+        formatRef.current();
+        return;
+      }
       if (
         target?.tagName === "INPUT" ||
         target?.tagName === "TEXTAREA" ||
@@ -408,10 +462,14 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
             🏠
           </a>
           <span className="title" id="deck-title" ref={titleRef} />
-          <select id="mode-select" className="btn" style={{ width: "auto", minWidth: 80 }}>
-            <option value="aspect-169" selected>
-              16:9
-            </option>
+          <select
+            id="mode-select"
+            className="btn"
+            style={{ width: "auto", minWidth: 80 }}
+            value={mode}
+            onChange={(e) => void changeMode(e.target.value as Mode)}
+          >
+            <option value="aspect-169">16:9</option>
             <option value="portrait">portrait</option>
             <option value="html">html</option>
             <option value="stretch">stretch</option>
@@ -482,7 +540,12 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
             {status.text}
           </span>
         </header>
-        <main id="body" ref={bodyRef} className={bodyClass}>
+        <main
+          id="body"
+          ref={bodyRef}
+          className={bodyClass}
+          style={gridRows ? { gridTemplateRows: gridRows } : undefined}
+        >
           <aside id="slide-list">
             <div id="slide-list-resizer" aria-hidden="true" ref={listResizerRef} />
             <div id="slide-list-scroll">
@@ -504,7 +567,17 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
               />
             </div>
           </aside>
-          <div id="canvas-wrap">
+          <div
+            id="canvas-wrap"
+            className={
+              {
+                "aspect-169": "aspect-169",
+                portrait: "portrait-169",
+                html: "html-mode",
+                stretch: undefined,
+              }[mode]
+            }
+          >
             <div id="canvas-preview-controls">
               <button
                 id="canvas-preview-prev"
@@ -512,6 +585,7 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
                 type="button"
                 title="Previous animation step"
                 aria-label="Previous animation step"
+                onClick={canvas.previewBack}
               >
                 &lt;
               </button>
@@ -521,11 +595,12 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
                 type="button"
                 title="Next animation step"
                 aria-label="Next animation step"
+                onClick={canvas.previewNext}
               >
                 &gt;
               </button>
             </div>
-            <div id="canvas-stage">
+            <div id="canvas-stage" ref={stageRef}>
               <iframe id="canvas" ref={canvasRef} title="Slide canvas" src="about:blank" />
             </div>
             <pre id="html-highlight" aria-hidden="true" />

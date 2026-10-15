@@ -109,3 +109,12 @@ export async function loadPronunciationRuntime(): Promise<PronunciationRuntime> 
     fitSlideFrame: fit.fitSlideFrame,
   };
 }
+
+// Slide-sized canvas scaling (public/js/slide-fit.js).
+export type SlideFit = { setEnabled: (enabled: boolean) => void; disconnect: () => void };
+export async function fitSlideFrame(frame: HTMLIFrameElement, box: HTMLElement): Promise<SlideFit> {
+  const mod = (await import(/* @vite-ignore */ FIT_URL)) as {
+    fitSlideFrame: (frame: HTMLIFrameElement, box: HTMLElement) => SlideFit;
+  };
+  return mod.fitSlideFrame(frame, box);
+}
