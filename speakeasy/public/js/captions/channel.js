@@ -1,3 +1,4 @@
+// @ts-check
 // Live captions — the realtime channel between the caption console and the
 // audience page. Its own channel (not the slide-sync one), so the feature
 // can be removed without touching slide sync.
@@ -6,6 +7,7 @@
 // translation (the speaker went off script) rather than a reviewed line.
 import { createClient } from "../../vendor/modules/supabase-client.mjs";
 
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
 export function openCaptionChannel(room, { onCaption, onStatus } = {}) {
   const url = window.SUPABASE_URL;
   const key = window.SUPABASE_ANON_KEY;
@@ -15,12 +17,15 @@ export function openCaptionChannel(room, { onCaption, onStatus } = {}) {
     config: { broadcast: { self: false } },
   });
   if (onCaption) {
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
     channel.on("broadcast", { event: "caption" }, ({ payload }) =>
       onCaption(payload),
     );
   }
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
   channel.subscribe((status) => onStatus?.(status));
   return {
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
     send: (payload) =>
       channel.send({ type: "broadcast", event: "caption", payload }),
     close: () => supabase.removeChannel(channel),

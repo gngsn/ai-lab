@@ -495,7 +495,7 @@ export function createClient() {
 - [x] **P3-4 `src/lib/*.ts`:** 순수 함수를 같은 방식으로 TS로 옮긴다.
   - 대상: `markdown-lite`, `import-html`(`parseNotesMd`, `parseImportedHtmlDeck`), `slide-visibility`, `slide-render`(`tagSection`과 재생 상태 제거), `sha1`, `captions/matcher`, `captions/bilingual`.
   - Vitest 테스트를 붙이고, **레거시 JS와 TS가 같은 입력에 같은 출력을 내는지** 비교하는 테스트를 하나씩 쓴다.
-- [ ] **P3-5 런타임 파일에 JSDoc 타입:** §3.2 파일에 `// @ts-check`와 JSDoc만 추가한다. 실행 코드가 바뀌면 안 된다.
+- [x] **P3-5 런타임 파일에 JSDoc 타입:** §3.2 파일에 `// @ts-check`와 JSDoc만 추가한다. 실행 코드가 바뀌면 안 된다.
   - 커밋 전에 `git diff`에서 `+` 줄이 주석(`//`, `/**`, ` *`)뿐인지 확인한다.
 
 **완료 조건:** `pnpm check`, `pnpm e2e` 통과

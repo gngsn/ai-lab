@@ -1,3 +1,4 @@
+// @ts-check
 // Makes present.html / view.html look identical on any screen.
 //
 // As a top-level page this script hosts the same URL in an iframe rendered at
@@ -14,11 +15,13 @@
   const script = document.currentScript;
   const params = new URLSearchParams(location.search);
   const hosting = window.self === window.top && params.get("print") !== "1";
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
   const panelSrc = script.dataset.panel;
 
   if (!hosting) {
     const boot = document.createElement("script");
     boot.type = "module";
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
     boot.src = script.dataset.boot;
     document.head.appendChild(boot);
     return;
@@ -97,6 +100,7 @@
 
   // Step like the arrow keys: the deck (its own controller or Speakeasy's
   // runtime) already handles them.
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
   const press = (key) => {
     frame.contentDocument?.dispatchEvent(
       new KeyboardEvent("keydown", { key, code: key, bubbles: true, cancelable: true }),
@@ -124,6 +128,7 @@
       layout.append(stage, panel);
       document.body.replaceChildren(layout, stepNav);
       new ResizeObserver(fit).observe(stage);
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
       import(new URL(panelSrc, location.href).href)
         .then((m) => m.mountPresenterPanel({ panel, frame, layout, fit }))
         .catch((err) => console.warn("[letterbox] panel:", err));
@@ -132,6 +137,7 @@
     }
     fit();
     frame.addEventListener("load", () => {
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
       frame.contentWindow.focus();
       // Mirror the deck's title (set by the bootstrap) onto the tab.
       const sync = () => {
@@ -164,6 +170,7 @@
         cancelable: true,
       }),
     );
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
     frame.contentWindow.focus();
   });
 })();

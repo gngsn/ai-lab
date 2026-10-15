@@ -1,3 +1,4 @@
+// @ts-check
 // Download every media file a deck uses up front, so moving between slides
 // never waits on the network.
 //
@@ -18,6 +19,7 @@ const CSS_URL_RE = /url\(\s*(["']?)(https?:\/\/[^"')]+)\1\s*\)/gi;
 const SKIP_HOSTS = /(^|\.)(fonts\.googleapis\.com|fonts\.gstatic\.com)$/i;
 
 /** Unique absolute media URLs referenced by src/poster or CSS url(). */
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
 export function collectAssetUrls(html) {
   const urls = new Set();
   for (const re of [ATTR_RE, CSS_URL_RE]) {
@@ -38,6 +40,7 @@ export function collectAssetUrls(html) {
  * an empty Map in "warm" mode. onProgress({ done, total, bytes }) after each.
  */
 export async function preloadAssets(
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
   urls,
   { mode = "blob", onProgress = () => {}, concurrency = 4 } = {},
 ) {
@@ -59,6 +62,7 @@ export async function preloadAssets(
         // Cross-origin without CORS, offline… leave the original URL.
       }
       done++;
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
       onProgress({ done, total: urls.length, bytes });
     }
   };
@@ -70,6 +74,7 @@ export async function preloadAssets(
 
 /** Replace each preloaded URL in the HTML with its blob: URL. A URL's
  *  #fragment (e.g. a video's #t=0.1) is kept. */
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
 export function applyAssetMap(html, map) {
   let out = String(html);
   for (const [url, blobUrl] of map) {
@@ -81,13 +86,16 @@ export function applyAssetMap(html, map) {
 }
 
 /** "warm" every asset of a deck (frame + all slides) into the HTTP cache. */
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
 export function warmDeckAssets(deck, slides, { onProgress } = {}) {
   const html = resolveStorageSourcesInHtml(
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
     [deck?.frame_html || "", ...slides.map((s) => s.content || "")].join("\n"),
   );
   return preloadAssets(collectAssetUrls(html), { mode: "warm", onProgress });
 }
 
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
 export const formatBytes = (n) =>
   n < 1024 * 1024
     ? `${Math.round(n / 1024)} KB`

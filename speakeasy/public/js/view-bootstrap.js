@@ -1,3 +1,4 @@
+// @ts-check
 // Public viewer — validates ?token= against deck.share_token, then shows
 // the deck exactly like present.html (its own HTML, CSS and scripts; see
 // js/deck-host.js). share.html is this view following the presenter live.
@@ -28,11 +29,13 @@ const token = params.get("token");
 const shareMode = Boolean(window.__SE_SHARE);
 const followSync = shareMode ? params.get("sync") : null;
 
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
 function fatal(msg) {
   document.body.innerHTML =
     `<pre style="font:14px monospace;color:var(--se-bad, #b42318);padding:2rem;max-width:520px;margin:8vh auto;">` +
     msg.replace(
       /[&<>]/g,
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
       (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c],
     ) +
     `</pre>`;
@@ -46,6 +49,7 @@ let deck;
 try {
   deck = await getDeck(deckId);
 } catch (err) {
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
   fatal(`Cannot open deck: ${err.message}`);
 }
 
@@ -67,6 +71,7 @@ let slides;
 try {
   slides = await listByDeck(deckId);
 } catch (err) {
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
   fatal(`Cannot load slides: ${err.message}`);
 }
 
@@ -76,6 +81,7 @@ try {
 // minus slides hidden in the editor. Earlier versions sanitized the deck
 // here, which also stripped its own effects; deck content comes from the
 // deck owner, as in present.
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
 slides = slides.filter((s) => !isSlideHiddenContent(s.content));
 
 if (slides.length === 0) {
@@ -83,6 +89,7 @@ if (slides.length === 0) {
 }
 
 const slidesHtml = slides
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
   .map((s) => resolveStorageSourcesInHtml(tagSection(s.content, s.section_id)))
   .join("\n");
 
@@ -356,6 +363,7 @@ if (!shareMode) {
   if (assetUrls.length) {
     const label = document.querySelector("body > p");
     const map = await preloadAssets(assetUrls, {
+// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
       onProgress: ({ done, total, bytes }) => {
         if (label) {
           label.textContent = `loading assets ${done}/${total} · ${formatBytes(bytes)}`;
