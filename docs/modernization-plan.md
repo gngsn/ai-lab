@@ -509,7 +509,7 @@ export function createClient() {
 1. [x] P4-1 `captions.html` (자막 콘솔)
 2. [x] P4-2 `notes.html`
 3. [x] P4-3 `script.html`
-4. [ ] P4-4 `script-edit.html`
+4. [x] P4-4 `script-edit.html`
 5. [ ] P4-5 `index.html`
 6. [ ] P4-6 `pronunciation.html`
 7. [ ] P4-7 `edit.html` (가장 큼. 아래 §9.3에 따라 여러 태스크로 나눔)

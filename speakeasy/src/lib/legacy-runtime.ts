@@ -23,3 +23,18 @@ export async function bindShortcutsHelp(pageName: string, shortcuts: Shortcut[])
   };
   mod.bindShortcutsHelp(pageName, shortcuts);
 }
+
+// History drawer (public/js/history-ui.js): shared with the legacy edit.html, so it stays there.
+export type HistoryUIInstance = { refresh: () => Promise<void> };
+export type HistoryUIOptions = {
+  deckId: string;
+  panelEl: HTMLElement;
+  currentSectionGetter: () => string | null;
+  onRestored: (info: { section_id: string; source: string }) => void | Promise<void>;
+};
+const HISTORY_URL = "/js/history-ui.js";
+type HistoryModule = {
+  HistoryUI: new (options: HistoryUIOptions) => HistoryUIInstance;
+  saveVersionPrompt: (deckId: string) => Promise<string | null>;
+};
+export const loadHistoryUi = () => import(/* @vite-ignore */ HISTORY_URL) as Promise<HistoryModule>;

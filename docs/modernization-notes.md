@@ -41,3 +41,12 @@ Things found while writing the Phase 0 tests. The tests pin today's behavior; no
 - localStorage: `speakeasy:notes:fontsize` (legacy `slides-editor:notes:fontsize` migrated). Data: decks, slides, notes (read only). Realtime: `speakeasy-sync-<room>` via the runtime `public/js/sync.js`, loaded by URL through `src/lib/legacy-runtime.ts` (also used for shortcuts-help.js). Both stay in `public/` because present/view still use them.
 - Removed `public/js/script-view.js` (only this page used it).
 - Biome reports 8 CSS warnings (`!important`, specificity order) in `script.css`. The CSS is copied verbatim on purpose; clean up in the Phase 5 pass.
+
+### P4-4 script-edit.html (React + TypeScript)
+- Ids kept: `#toolbar`, `#deck-title`, `#slides-link`, `#read-link`, `#present-link`, `#preview-toggle`, `#save-version`, `#history-toggle`, `#status` (`data-kind`), `#edit-sections .edit-sec` (`data-section-id`, `.active`), `#edit-heading`, `#edit-textarea`, `#edit-preview`, `#hist-drawer`, `#history-panel`.
+- Shortcuts: Cmd/Ctrl+S saves a version (also inside the textarea), H toggles History; list copied ("Notes (script-edit)").
+- Data: notes upsert (800ms debounce, flush on section switch, on Save, on beforeunload), `notes.getOne` after a notes restore. The `sections` array is mutated after a save on purpose (legacy snapshot behaviour).
+- The History drawer stays the legacy `public/js/history-ui.js` (imperative `HistoryUI`, shared with edit.html), loaded by URL via `src/lib/legacy-runtime.ts`. It is rewritten in React with P4-7f.
+- `.hist-drawer.open`, `#history-toggle.active`, `#preview-toggle.active`, `body.hide-preview` are still toggled on the DOM (the legacy HistoryUI also edits those classes), so React does not own them.
+- Removed `public/js/script-edit-view.js` (only this page used it). `markdown-lite.js` stays (edit-bootstrap uses it).
+- Dropped an overridden duplicate `font-weight: 500` in `#toolbar .title`.
