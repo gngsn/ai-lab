@@ -1,3 +1,4 @@
+// @ts-check
 // Live captions — English subtitles on the audience page (share.html).
 // Mounted by js/view-bootstrap.js with one optional import; nothing shows
 // until the first caption arrives, so decks without captions look the same.
@@ -34,6 +35,7 @@ const CSS = `
 `;
 
 /** ui: the document to draw in (the letterbox page around the slide). */
+/** @param {{ room: string, ui?: Document }} options */
 export function mountCaptions({ room, ui = document }) {
   const ko = /^ko(-|$)/i.test(navigator.languages?.[0] || navigator.language || "");
   const style = ui.createElement("style");
@@ -56,6 +58,7 @@ export function mountCaptions({ room, ui = document }) {
   try {
     on = localStorage.getItem(PREF_KEY) !== "0";
   } catch {}
+  /** @type {number | ReturnType<typeof setTimeout>} */
   let hideTimer = 0;
   const render = () => {
     toggle.setAttribute("aria-pressed", String(on));
@@ -71,6 +74,7 @@ export function mountCaptions({ room, ui = document }) {
   render();
 
   return openCaptionChannel(room, {
+    /** @type {(payload?: { en?: string, mt?: boolean }) => void} */
     onCaption: ({ en, mt } = {}) => {
       if (!en) return;
       toggle.style.display = "block"; // captions exist for this talk

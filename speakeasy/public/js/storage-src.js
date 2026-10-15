@@ -1,15 +1,19 @@
+// @ts-check
 const SCHEME_PREFIX = "supabase://slides-images/";
 
+/** @param {unknown} path */
 function normalizePath(path) {
   return String(path || "").replace(/^\/+/, "");
 }
 
+/** @param {unknown} src */
 export function fromStorageSrc(src) {
   const text = String(src || "");
   if (!text.startsWith(SCHEME_PREFIX)) return null;
   return normalizePath(text.slice(SCHEME_PREFIX.length));
 }
 
+/** @param {string} src */
 export function resolveStorageSrc(src) {
   const path = fromStorageSrc(src);
   if (!path) return src;
@@ -18,6 +22,7 @@ export function resolveStorageSrc(src) {
   return `${base}/storage/v1/object/public/slides-images/${encodeURI(path)}`;
 }
 
+/** @param {unknown} html */
 export function resolveStorageSourcesInHtml(html) {
   return String(html || "").replace(
     /supabase:\/\/slides-images\/([^\s"'<>]+)/g,

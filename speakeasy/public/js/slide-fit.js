@@ -1,3 +1,4 @@
+// @ts-check
 // Renders a slide iframe at one fixed design size and scales it to fit its
 // box, so text, images and spacing all shrink/grow together — a slide looks
 // identical on a phone, a laptop or a projector instead of reflowing.
@@ -12,6 +13,8 @@ export const SLIDE_H = 720;
  * centered to fit `box`. `box` should be position:relative; overflow:hidden.
  * Returns { setEnabled(bool), disconnect() } — disabling restores the
  * frame's stylesheet sizing (e.g. the editor's "stretch" mode).
+  * @param {HTMLElement} frame
+  * @param {HTMLElement} box
  */
 export function fitSlideFrame(frame, box) {
   let enabled = true;
@@ -40,6 +43,7 @@ export function fitSlideFrame(frame, box) {
       "position", "left", "top", "width", "height",
       "maxWidth", "maxHeight", "transformOrigin", "transform",
     ]) {
+      // @ts-expect-error — indexing CSSStyleDeclaration by a property name would need a cast
       frame.style[prop] = "";
     }
   };
@@ -49,6 +53,7 @@ export function fitSlideFrame(frame, box) {
   apply();
 
   return {
+    /** @param {boolean} next */
     setEnabled(next) {
       enabled = next;
       if (enabled) apply();

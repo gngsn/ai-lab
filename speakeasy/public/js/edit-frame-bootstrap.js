@@ -1,3 +1,4 @@
+// @ts-check
 // Bootstrap for edit-frame.html — single-slide preview inside the editor iframe.
 // Parallels present-bootstrap.js but renders ONE section (not all) and
 // optionally injects the inline-editor runtime when ?edit=1.
@@ -11,9 +12,11 @@ const deckId = params.get("deck");
 const sectionId = params.get("section");
 const editMode = params.get("edit") === "1";
 
+/** @param {string} msg */
 function fatal(msg) {
   document.body.innerHTML = `<pre style="color:var(--se-bad, #b42318);padding:1rem;font:13px monospace;">${msg.replace(
     /[&<>]/g,
+    // @ts-expect-error — indexing a literal map by the matched character
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c],
   )}</pre>`;
   parent.postMessage({ type: "edit-frame:error", message: msg }, "*");
@@ -34,6 +37,7 @@ function requestDataFromParent() {
       return;
     }
     const reqId = Math.random().toString(36).slice(2);
+    /** @param {MessageEvent} e */
     const onMsg = (e) => {
       const m = e.data;
       if (!m || m.type !== "edit-frame:data" || m.id !== reqId) return;
@@ -68,6 +72,7 @@ try {
       getOne(deckId, sectionId),
     ]);
   } catch (err) {
+    // @ts-expect-error — `err` is unknown in a JS catch clause (casting it would change code)
     fatal(`Load failed: ${err.message}`);
   }
 }
