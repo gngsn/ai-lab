@@ -13,6 +13,7 @@ import type { DeckRow } from "../../data/types";
 import { bindShortcutsHelp } from "../../lib/legacy-runtime";
 import { syncRoomFor } from "../../lib/sync-room";
 import { type EditSlide, useEditorModel } from "./model";
+import { NotesPanel } from "./NotesPanel";
 import { SlideList } from "./SlideList";
 import { useCanvas } from "./useCanvas";
 import { useHtmlEditor } from "./useHtmlEditor";
@@ -612,74 +613,24 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
           </div>
           <aside id="props">
             <div id="props-resizer" aria-hidden="true" ref={propsResizerRef} />
-            <div className="notes-header">
-              <button
-                className="aside-toggle"
-                type="button"
-                data-aside="props"
-                aria-controls="props"
-                aria-expanded={!collapsed.props}
-                title={asideTitle("props")}
-                onClick={() => toggleAside("props")}
-              >
-                {asideArrow("props")}
-              </button>
-              <h3>Notes</h3>
-              <div className="notes-controls">
+            <NotesPanel
+              deckId={deckId}
+              model={model}
+              chrome={chrome}
+              asideToggle={
                 <button
-                  className="btn notes-size-btn"
-                  id="notes-size-down"
+                  className="aside-toggle"
                   type="button"
-                  aria-label="Decrease notes font size"
+                  data-aside="props"
+                  aria-controls="props"
+                  aria-expanded={!collapsed.props}
+                  title={asideTitle("props")}
+                  onClick={() => toggleAside("props")}
                 >
-                  -
+                  {asideArrow("props")}
                 </button>
-                <button
-                  className="btn notes-size-btn"
-                  id="notes-size-up"
-                  type="button"
-                  aria-label="Increase notes font size"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-            <div className="field notes-only">
-              <textarea
-                id="notes-textarea"
-                rows={14}
-                placeholder="이 슬라이드의 발표 노트 (Markdown). 800ms 후 자동 저장."
-                spellCheck="false"
-                disabled
-                style={{ fontFamily: '"IBM Plex Sans KR", sans-serif', lineHeight: 1.6 }}
-              ></textarea>
-            </div>
-            <div className="field key-message">
-              <div className="key-message-head">
-                <label htmlFor="key-message-textarea">Key message</label>
-                <button
-                  className="btn"
-                  id="key-message-import"
-                  type="button"
-                  title="Import key messages for all slides from a Markdown file (same format as the script)"
-                >
-                  Import .md
-                </button>
-                <input
-                  id="key-message-import-file"
-                  type="file"
-                  accept=".md,.markdown,text/markdown"
-                  hidden
-                />
-              </div>
-              <textarea
-                id="key-message-textarea"
-                rows={3}
-                placeholder="이 슬라이드에서 꼭 전할 한 문장. 800ms 후 자동 저장."
-                spellCheck="false"
-                disabled
-              ></textarea>
-            </div>
+              }
+            />
             <div id="training-section" className={trainingCollapsed ? "collapsed" : undefined}>
               <button
                 id="training-toggle"

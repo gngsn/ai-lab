@@ -540,7 +540,7 @@ export function createClient() {
 - [x] P4-7a 페이지 골격(상단 바, 3단 레이아웃, 패널 접기, 너비·높이 조절과 해당 localStorage 키)
 - [x] P4-7b 슬라이드 목록(선택, 드래그 정렬 → `reorder_slides`, 추가, 복제, 숨김)
 - [x] P4-7c 캔버스: `edit-frame.html` iframe과 postMessage 연결(§2.4). `<` `>` 미리보기 버튼, 16:9 / 세로 / HTML 모드
-- [ ] P4-7d 노트 패널(노트, key message, 자동 저장 800ms, Import .md, 글자 크기, TTS)
+- [x] P4-7d 노트 패널(노트, key message, 자동 저장 800ms, Import .md, 글자 크기, TTS)
 - [ ] P4-7e 에셋 라이브러리(업로드, 검색, URL 복사, 삽입, 이름 변경 → `rename_asset_references`, 삭제)
 - [ ] P4-7f 모달: Share(§P0-14), 프레임 편집기(CodeMirror), 히스토리, SVG
 - [ ] P4-7g 내보내기(HTML, PDF 인쇄, 노트 .md 다운로드·복사). PPTX와 screenshot-PDF는 제거됨
