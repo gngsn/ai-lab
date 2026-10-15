@@ -56,3 +56,11 @@ Things found while writing the Phase 0 tests. The tests pin today's behavior; no
 - The Import / Re-import / deck-list logic is a typed port in `src/features/decks/controller.ts` that drives the page by id (same first-pass approach as P4-1). Converting it to React state is later cleanup.
 - Data: decks, slides, notes, history (`appendManualBatch` before a re-import), storage (`uploadImportedAsset`). `public/js/remote-source.js` stays in `public/` and is loaded by URL through `src/lib/legacy-runtime.ts` (edit.html's importers may still use it).
 - localStorage: `speakeasy:github-token`. Token still comes from the typed field or `window.GITHUB_TOKEN`.
+
+### P4-6 pronunciation.html (React + TypeScript)
+- Ids kept: `#toolbar`, `#deck-title`, `#speed-slider`, `#speed-label`, `#tts-engine`, `#export-btn`, `#export-progress(-bar)`, `#export-status`, `#notes-link`, `#main-grid`, `#section-list .sec-item`, `#sec-score-N`, `#script-pane`, `#script-title`, `#script-num`, `#slide-iframe`, `#script-body`, `#training-panel`, `#trn-resizer`, `#training-mount`.
+- The shared training panel (`training-panel.js`, TTS/record/score), `preload-assets.js` and `slide-fit.js` stay in `public/` (edit.html uses the panel too) and are loaded by URL via `src/lib/legacy-runtime.ts`. The panel mounts into the empty `#training-mount`, so React never owns its DOM; `destroy()` runs on unmount.
+- Legacy quirk kept: `#sec-resizer` (left column resizer) is not rendered. The old page created it and then wiped it when it rebuilt the section list, so it never worked. Only `#trn-resizer` works. Decide later whether to make the left one work (behavior change).
+- Markdown/notes loading uses `buildNotesMd` from `src/features/notes/notes-md.ts`. The `edit-frame:request-data` postMessage answer, per-section score badges, and the export (merge to WAV, `<deck>-<speed>x.wav`) are unchanged.
+- Only auth and link tests existed for this page (P0). A throwaway smoke spec (sections, selection, speed label, engine, no page errors) passed and was deleted; add a permanent one in a later pass if wanted.
+- Dropped an overridden duplicate `font-weight: 500` in `#toolbar .title`.

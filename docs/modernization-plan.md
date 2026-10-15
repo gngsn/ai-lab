@@ -511,7 +511,7 @@ export function createClient() {
 3. [x] P4-3 `script.html`
 4. [x] P4-4 `script-edit.html`
 5. [x] P4-5 `index.html`
-6. [ ] P4-6 `pronunciation.html`
+6. [x] P4-6 `pronunciation.html`
 7. [ ] P4-7 `edit.html` (가장 큼. 아래 §9.3에 따라 여러 태스크로 나눔)
 
 ### 9.2 페이지 하나를 옮기는 절차 (매번 동일)
