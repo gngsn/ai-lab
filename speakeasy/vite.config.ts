@@ -13,6 +13,7 @@ export default defineConfig({
         captions: "captions.html",
         notes: "notes.html",
         script: "script.html",
+        index: "index.html",
         "script-edit": "script-edit.html",
       },
     },

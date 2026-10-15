@@ -1,0 +1,348 @@
+:root {
+  --ink: var(--se-ink);
+  --vellum: var(--se-bg);
+  --black: var(--se-strong);
+  --muted: color-mix(in srgb, var(--se-ink) 60%, transparent);
+  --ok: var(--se-ok);
+  --bad: var(--se-bad);
+  --serif: "Fraunces", Georgia, serif;
+  --sans: "Space Grotesk", system-ui, sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--vellum);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 400;
+  line-height: 1.5;
+}
+.wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 6rem;
+}
+.header-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding-bottom: 3rem;
+}
+h1 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(3rem, 9vw, 6rem);
+  line-height: 0.94;
+  letter-spacing: -0.036em;
+  margin: 2rem 0 1.5rem;
+}
+h2 {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  margin: 0;
+  padding: 1.5rem 0 2rem;
+  border-top: 1px solid var(--ink);
+}
+#status {
+  margin: 0;
+  font-size: 15px;
+}
+a {
+  color: var(--ink);
+  text-decoration: none;
+}
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--se-primary);
+  outline-offset: 3px;
+}
+code {
+  font-size: 0.9em;
+  border-bottom: 1px dotted var(--ink);
+}
+ul {
+  padding-left: 1.2rem;
+  margin: 0;
+}
+.ok {
+  color: var(--ok);
+}
+.bad {
+  color: var(--bad);
+}
+.pill {
+  display: inline-block;
+  padding: 0 0.5rem;
+  border: 1px solid var(--ink);
+  font-size: 0.75rem;
+  margin-left: 0.4rem;
+}
+.import-label {
+  font-size: 15px;
+  color: var(--muted);
+}
+.import-panel {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--se-bg) 85%, transparent);
+  z-index: 50;
+  padding: 1rem;
+}
+.modal-bg.show {
+  display: flex;
+}
+.modal {
+  width: min(560px, 100%);
+  background: var(--vellum);
+  border: 1px solid var(--ink);
+  padding: 2rem;
+}
+.modal h2 {
+  font-family: var(--serif);
+  font-size: 2rem;
+  letter-spacing: -0.036em;
+  line-height: 1.1;
+  border-top: none;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+.modal p {
+  margin: 0 0 1.5rem;
+  font-size: 15px;
+}
+.field {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 1.25rem;
+}
+.field label {
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+.field input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  border-radius: 0;
+  padding: 0.5rem 0;
+  font: inherit;
+}
+/* .md-btn sets display, which would beat the hidden attribute. */
+.md-btn[hidden] {
+  display: none;
+}
+/* One dialog, two modes: show only the fields for the chosen import. */
+.modal[data-mode="file"] [data-only="url"],
+.modal[data-mode="url"] [data-only="file"] {
+  display: none;
+}
+
+/* Re-import: deck name, then one row per replaceable part. */
+.modal-eyebrow {
+  margin: 0 0 0.35rem !important;
+  font-size: 12px !important;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.reimport-note {
+  color: var(--muted);
+}
+.reimport-part {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: 0.75rem 1rem;
+  align-items: baseline;
+  padding: 1.1rem 0;
+  border-top: 1px solid var(--ink);
+}
+.reimport-part:last-of-type {
+  border-bottom: 1px solid var(--ink);
+}
+.part-name {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+.part-body {
+  display: grid;
+  gap: 0.6rem;
+  min-width: 0;
+}
+.part-pick {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.part-pick input[type="file"] {
+  display: none;
+}
+.part-url {
+  flex: 1 1 12rem;
+  min-width: 0;
+  border: none;
+  border-bottom: 1px solid var(--muted);
+  background: transparent;
+  color: var(--ink);
+  padding: 0.25rem 0;
+  font: inherit;
+  font-size: 14px;
+}
+.part-url:focus {
+  outline: none;
+  border-bottom-color: var(--ink);
+}
+.part-state {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-size: 13px;
+  color: var(--muted);
+  min-width: 0;
+}
+.part-state span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reimport-part[data-state="ready"] .part-state {
+  color: var(--ok);
+}
+.reimport-part[data-state="error"] .part-state {
+  color: var(--bad);
+}
+.part-clear {
+  font-size: 13px;
+}
+.md-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.field-hint {
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 1em;
+}
+.field input:focus {
+  outline: none;
+  border-bottom-width: 2px;
+}
+.modal .actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+/* Underlined text-link buttons (editorial style) */
+.md-btn {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--black);
+  border-radius: 0;
+  padding: 0 0 2px;
+  cursor: pointer;
+  transition: opacity 0.18s;
+}
+.md-btn:hover {
+  opacity: 0.6;
+}
+.md-btn.md-primary {
+  font-weight: 500;
+  color: var(--se-primary-text);
+  border-bottom-color: var(--se-primary);
+}
+.md-btn.md-text {
+  border-bottom-color: transparent;
+}
+.md-btn.md-danger {
+  color: var(--bad);
+  border-bottom-color: var(--bad);
+}
+#deck-list {
+  list-style: none;
+  padding: 0;
+  border-top: 1px solid var(--ink);
+}
+.deck-item {
+  display: grid;
+  gap: 1rem;
+  padding: 2rem 0;
+  border-bottom: 1px solid var(--ink);
+}
+.deck-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+.deck-title {
+  font-family: var(--serif);
+  font-size: clamp(1.6rem, 3.5vw, 2.25rem);
+  line-height: 1.1;
+  letter-spacing: -0.036em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.deck-time {
+  flex-shrink: 0;
+  font-size: 15px;
+  color: var(--muted);
+}
+.deck-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+}
+.md-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+pre {
+  border: 1px solid var(--ink);
+  padding: 0.8rem 1rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+}
+@media (max-width: 560px) {
+  .deck-row {
+    flex-wrap: wrap;
+  }
+}
+.deck-title {
+  min-width: 0;
+}
+@media (max-width: 560px) {
+  .deck-title {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}

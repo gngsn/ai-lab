@@ -38,3 +38,20 @@ type HistoryModule = {
   saveVersionPrompt: (deckId: string) => Promise<string | null>;
 };
 export const loadHistoryUi = () => import(/* @vite-ignore */ HISTORY_URL) as Promise<HistoryModule>;
+
+// GitHub / remote HTML sources (public/js/remote-source.js).
+export type RemoteMedia = { url: string; path: string };
+export type RemoteSource = {
+  fetchRemoteText: (
+    input: string,
+    opts?: { token?: string },
+  ) => Promise<{ text: string; url: string }>;
+  fetchRemoteBlob: (url: string, opts?: { token?: string }) => Promise<Blob>;
+  remoteFileExists: (url: string, opts?: { token?: string }) => Promise<boolean>;
+  makeSelfContained: (html: string, baseUrl: string, opts?: { token?: string }) => Promise<string>;
+  findRepoMedia: (html: string, baseUrl: string) => RemoteMedia[];
+  nameFromUrl: (input: string) => string;
+};
+const REMOTE_URL = "/js/remote-source.js";
+export const loadRemoteSource = () =>
+  import(/* @vite-ignore */ REMOTE_URL) as Promise<RemoteSource>;

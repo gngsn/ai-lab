@@ -50,3 +50,9 @@ Things found while writing the Phase 0 tests. The tests pin today's behavior; no
 - `.hist-drawer.open`, `#history-toggle.active`, `#preview-toggle.active`, `body.hide-preview` are still toggled on the DOM (the legacy HistoryUI also edits those classes), so React does not own them.
 - Removed `public/js/script-edit-view.js` (only this page used it). `markdown-lite.js` stays (edit-bootstrap uses it).
 - Dropped an overridden duplicate `font-weight: 500` in `#toolbar .title`.
+
+### P4-5 index.html (React + TypeScript)
+- Markup converted mechanically to JSX (`DecksView.tsx`); every id/class/data attribute kept (`#status`, `#deck-list`, `#import-*`, `#reimport-*`, `.reimport-part[data-part]`, `data-reimport-deck`, `data-delete-deck`).
+- The Import / Re-import / deck-list logic is a typed port in `src/features/decks/controller.ts` that drives the page by id (same first-pass approach as P4-1). Converting it to React state is later cleanup.
+- Data: decks, slides, notes, history (`appendManualBatch` before a re-import), storage (`uploadImportedAsset`). `public/js/remote-source.js` stays in `public/` and is loaded by URL through `src/lib/legacy-runtime.ts` (edit.html's importers may still use it).
+- localStorage: `speakeasy:github-token`. Token still comes from the typed field or `window.GITHUB_TOKEN`.
