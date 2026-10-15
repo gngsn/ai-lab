@@ -484,13 +484,13 @@ export function createClient() {
 
 ## 8. Phase 3: 데이터와 순수 로직에 타입 붙이기
 
-- [ ] **P3-1 `src/config.ts`:** `import.meta.env.VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_OWNER_PASSPHRASE`를 읽는다.
+- [x] **P3-1 `src/config.ts`:** `import.meta.env.VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_OWNER_PASSPHRASE`를 읽는다.
   - 값이 없으면 `window.SUPABASE_URL` 등(레거시 config)을 대신 쓴다.
   - **이 세 개 외의 `VITE_*` 변수를 만들지 않는다**(§0.1-6).
-- [ ] **P3-2 DB 타입 `src/data/types.ts`**
+- [x] **P3-2 DB 타입 `src/data/types.ts`**
   - `supabase gen types`는 운영 DB 접근이 필요하므로 STOP. 대신 `migrations/*.sql`을 읽고 **손으로** 작성한다.
   - 테이블 `decks`, `slides`, `notes`(`key_message` 포함), `slide_history`, `notes_history`, `frame_history`의 Row/Insert/Update 타입과 RPC 3개의 인자 타입을 쓴다.
-- [ ] **P3-3 `src/data/*.ts`:** `public/js/repo/*.js`의 함수를 **같은 이름, 같은 동작**으로 TS로 옮긴다(복사 후 타입 추가).
+- [x] **P3-3 `src/data/*.ts`:** `public/js/repo/*.js`의 함수를 **같은 이름, 같은 동작**으로 TS로 옮긴다(복사 후 타입 추가).
   - 레거시 파일은 그대로 둔다. 두 벌이 공존하는 건 의도된 것이다. 레거시 페이지가 사라질 때 함께 지운다.
 - [ ] **P3-4 `src/lib/*.ts`:** 순수 함수를 같은 방식으로 TS로 옮긴다.
   - 대상: `markdown-lite`, `import-html`(`parseNotesMd`, `parseImportedHtmlDeck`), `slide-visibility`, `slide-render`(`tagSection`과 재생 상태 제거), `sha1`, `captions/matcher`, `captions/bilingual`.
@@ -610,7 +610,7 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 | 11.2 정리 | **완료** | 2026-10-14 | 내보내기 메뉴 변경이 커밋된 뒤(`feat/slides-editor` 77e6459) PPTX 코드, `vendor/pptxgenjs`, screenshot-PDF 정리 |
 | 1 | **완료** | 2026-10-14 | P1-1~5 완료. 깨끗한 clone에서 `pnpm install --frozen-lockfile && pnpm check && pnpm e2e` 통과(CI와 같은 조건). 마이그레이션 CLI 연결·`migration repair`는 사람이 할 일 |
 | 2 | 진행 중 | 2026-10-14 | P2-1~5 완료: dist의 레거시 파일이 public과 바이트 단위로 같고(`diff -rq`), 빌드 결과물 대상 e2e 95개·단위 50개 통과. 깨끗한 clone에서 가짜 환경변수로 Vercel식 빌드(`build-config && vite build`)와 `pnpm check`·`pnpm e2e`도 통과(GitHub 토큰은 무시되어 dist에 없음). **남은 것: Vercel 미리보기 배포 확인(사람). 확인할 점은 아래 참고** |
-| 3 | 대기 | | |
+| 3 | 진행 중 | | P3-1~3 완료(config, 손으로 쓴 DB 타입, `src/data/*.ts`). 레거시 repo와 같은 질의·결과·오류·경고를 내는지 비교하는 테스트 100개 |
 | 4 | 대기 | | |
 
 발견한 버그, 애매한 점, 사람에게 물어볼 것은 `docs/modernization-notes.md`에 적는다(파일이 없으면 만든다).
