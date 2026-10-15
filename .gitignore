@@ -36,3 +36,5 @@ supabase/.temp/
 .claude/
 .draft/
 wiki/
+# pnpm store created outside speakeasy/ by a stray install
+.pnpm-store/

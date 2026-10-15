@@ -48,6 +48,7 @@ export const test = base.extend<{ authed: boolean }>({
     });
     await context.addInitScript(
       ({ seed, authed, key, pass }) => {
+        (window as Window & { __SE_E2E_FAKE__?: boolean }).__SE_E2E_FAKE__ = true;
         if (!localStorage.getItem("__fakedb")) {
           localStorage.setItem("__fakedb", JSON.stringify(seed));
         }

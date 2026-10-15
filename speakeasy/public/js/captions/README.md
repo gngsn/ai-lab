@@ -35,8 +35,8 @@ lines over a Supabase realtime channel.
 
 | File | Role |
 |---|---|
-| `captions.html` | Full caption console page |
-| `js/captions/console.js` | Console UI |
+| `captions.html` | React caption console page |
+| `src/features/captions/CaptionConsole.tsx` | Console UI |
 | `js/captions/engine.js` | Mic → match → send (no UI) |
 | `js/captions/matcher.js` | Finds the script line for a heard phrase |
 | `js/captions/bilingual.js` | Parses the bilingual script |

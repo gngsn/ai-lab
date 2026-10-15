@@ -1,8 +1,6 @@
 import { defineConfig } from "vite";
 
-// Phase 2 (docs/modernization-plan.md §7): the app is still the legacy
-// static pages in public/, which Vite copies to dist/ byte for byte. The only
-// entry is a placeholder until the first page moves to React (Phase 4).
+// Legacy pages remain in public/ unchanged; migrated pages are Vite entries.
 export default defineConfig({
   // Plain multi-page site: no single-page fallback to index.html.
   appType: "mpa",
@@ -10,7 +8,10 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
     rollupOptions: {
-      input: "src/pages/_placeholder/index.html",
+      input: {
+        placeholder: "src/pages/_placeholder/index.html",
+        captions: "captions.html",
+      },
     },
   },
 });

@@ -11,5 +11,6 @@ declare global {
     GITHUB_TOKEN?: string;
     // set by the pages
     __SE_SHARE?: boolean;
+    __SE_E2E_FAKE__?: boolean;
   }
 }

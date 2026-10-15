@@ -7,3 +7,7 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_ANON_KEY?: string;
   readonly VITE_OWNER_PASSPHRASE?: string;
 }
+
+declare module "/vendor/modules/supabase-client.mjs" {
+  export function createClient(url: string, key: string): unknown;
+}

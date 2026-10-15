@@ -506,7 +506,7 @@ export function createClient() {
 
 ### 9.1 순서 (작은 것부터. 순서를 바꾸지 말 것)
 
-1. [ ] P4-1 `captions.html` (자막 콘솔)
+1. [x] P4-1 `captions.html` (자막 콘솔)
 2. [ ] P4-2 `notes.html`
 3. [ ] P4-3 `script.html`
 4. [ ] P4-4 `script-edit.html`
@@ -611,6 +611,6 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 | 1 | **완료** | 2026-10-14 | P1-1~5 완료. 깨끗한 clone에서 `pnpm install --frozen-lockfile && pnpm check && pnpm e2e` 통과(CI와 같은 조건). 마이그레이션 CLI 연결·`migration repair`는 사람이 할 일 |
 | 2 | 진행 중 | 2026-10-14 | P2-1~5 완료: dist의 레거시 파일이 public과 바이트 단위로 같고(`diff -rq`), 빌드 결과물 대상 e2e 95개·단위 50개 통과. 깨끗한 clone에서 가짜 환경변수로 Vercel식 빌드(`build-config && vite build`)와 `pnpm check`·`pnpm e2e`도 통과(GitHub 토큰은 무시되어 dist에 없음). **남은 것: Vercel 미리보기 배포 확인(사람). 확인할 점은 아래 참고** |
 | 3 | 진행 중 | | P3-1~4 완료(config, 손으로 쓴 DB 타입, `src/data/*.ts`, `src/lib/*.ts`). 레거시와 같은 결과를 내는지 비교하는 테스트: 데이터 계층 100개 + 순수 로직 997개(무작위 입력 포함, 코드를 바꾸면 실패하는 것 확인) |
-| 4 | 대기 | | |
+| 4 | 진행 중 | | P4-1(자막 콘솔) 완료: `captions.html`이 React + TS 페이지로 바뀜(같은 DOM id, e2e 95개 그대로 통과) |
 
 발견한 버그, 애매한 점, 사람에게 물어볼 것은 `docs/modernization-notes.md`에 적는다(파일이 없으면 만든다).
