@@ -492,7 +492,7 @@ export function createClient() {
   - 테이블 `decks`, `slides`, `notes`(`key_message` 포함), `slide_history`, `notes_history`, `frame_history`의 Row/Insert/Update 타입과 RPC 3개의 인자 타입을 쓴다.
 - [x] **P3-3 `src/data/*.ts`:** `public/js/repo/*.js`의 함수를 **같은 이름, 같은 동작**으로 TS로 옮긴다(복사 후 타입 추가).
   - 레거시 파일은 그대로 둔다. 두 벌이 공존하는 건 의도된 것이다. 레거시 페이지가 사라질 때 함께 지운다.
-- [ ] **P3-4 `src/lib/*.ts`:** 순수 함수를 같은 방식으로 TS로 옮긴다.
+- [x] **P3-4 `src/lib/*.ts`:** 순수 함수를 같은 방식으로 TS로 옮긴다.
   - 대상: `markdown-lite`, `import-html`(`parseNotesMd`, `parseImportedHtmlDeck`), `slide-visibility`, `slide-render`(`tagSection`과 재생 상태 제거), `sha1`, `captions/matcher`, `captions/bilingual`.
   - Vitest 테스트를 붙이고, **레거시 JS와 TS가 같은 입력에 같은 출력을 내는지** 비교하는 테스트를 하나씩 쓴다.
 - [ ] **P3-5 런타임 파일에 JSDoc 타입:** §3.2 파일에 `// @ts-check`와 JSDoc만 추가한다. 실행 코드가 바뀌면 안 된다.
@@ -610,7 +610,7 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 | 11.2 정리 | **완료** | 2026-10-14 | 내보내기 메뉴 변경이 커밋된 뒤(`feat/slides-editor` 77e6459) PPTX 코드, `vendor/pptxgenjs`, screenshot-PDF 정리 |
 | 1 | **완료** | 2026-10-14 | P1-1~5 완료. 깨끗한 clone에서 `pnpm install --frozen-lockfile && pnpm check && pnpm e2e` 통과(CI와 같은 조건). 마이그레이션 CLI 연결·`migration repair`는 사람이 할 일 |
 | 2 | 진행 중 | 2026-10-14 | P2-1~5 완료: dist의 레거시 파일이 public과 바이트 단위로 같고(`diff -rq`), 빌드 결과물 대상 e2e 95개·단위 50개 통과. 깨끗한 clone에서 가짜 환경변수로 Vercel식 빌드(`build-config && vite build`)와 `pnpm check`·`pnpm e2e`도 통과(GitHub 토큰은 무시되어 dist에 없음). **남은 것: Vercel 미리보기 배포 확인(사람). 확인할 점은 아래 참고** |
-| 3 | 진행 중 | | P3-1~3 완료(config, 손으로 쓴 DB 타입, `src/data/*.ts`). 레거시 repo와 같은 질의·결과·오류·경고를 내는지 비교하는 테스트 100개 |
+| 3 | 진행 중 | | P3-1~4 완료(config, 손으로 쓴 DB 타입, `src/data/*.ts`, `src/lib/*.ts`). 레거시와 같은 결과를 내는지 비교하는 테스트: 데이터 계층 100개 + 순수 로직 997개(무작위 입력 포함, 코드를 바꾸면 실패하는 것 확인) |
 | 4 | 대기 | | |
 
 발견한 버그, 애매한 점, 사람에게 물어볼 것은 `docs/modernization-notes.md`에 적는다(파일이 없으면 만든다).
