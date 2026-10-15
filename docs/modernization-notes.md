@@ -64,3 +64,12 @@ Things found while writing the Phase 0 tests. The tests pin today's behavior; no
 - Markdown/notes loading uses `buildNotesMd` from `src/features/notes/notes-md.ts`. The `edit-frame:request-data` postMessage answer, per-section score badges, and the export (merge to WAV, `<deck>-<speed>x.wav`) are unchanged.
 - Only auth and link tests existed for this page (P0). A throwaway smoke spec (sections, selection, speed label, engine, no page errors) passed and was deleted; add a permanent one in a later pass if wanted.
 - Dropped an overridden duplicate `font-weight: 500` in `#toolbar .title`.
+
+### P4-7a edit-next.html shell (React + TypeScript)
+- New page `/edit-next.html` (Vite entry `edit-next.html`, `src/pages/edit/main.tsx`, `src/features/edit/EditShell.tsx`, `edit.css` copied verbatim from edit.html). The legacy `public/edit.html` stays until P4-7h.
+- Done in 7a: auth gate, deck load, toolbar markup, 3-column layout markup, side-panel folding (`speakeasy:edit:collapsed:{slide-list,props,training}`, `[` `]` keys, arrows/titles), panel sizes (`slidesEditor.slideListWidth|propsPanelWidth|propsPanelHeight`, clamped and written back on load), both resizers, in-place deck rename, dropdown closing (outside press, Escape, blur, press inside the canvas iframe), toast and status, the "Edit" shortcuts help.
+- `EditShell` exposes `useEditChrome()` (`setStatus`, `toast`) for the next steps. The body class is built from React state (`slide-list-collapsed`, `props-collapsed`); 7c must add `portrait-mode`/`html-mode` through the same `bodyClass`, and keep `gridTemplateRows` handling (see `applyPropsPanelHeight`).
+- Not yet wired (their buttons exist and do nothing): slide list items, canvas, notes, key message, Save version, History, Frame, Share, SVG, Assets, Export items, mode select.
+- Test strategy: `tests/e2e/p4-7a-edit-shell.spec.ts` runs the same 6 assertions against `/edit.html` (the oracle) and `/edit-next.html`; both pass. A mutation (renaming the collapse key) made the new page fail, so the test can fail. Notes for the test: each resizer handle sticks half outside its clipping panel, so grab the visible half.
+- For the next steps, follow the same method: write assertions that pass on the legacy page first, then run them on `/edit-next.html`.
+- CSS: dropped an overridden duplicate `font-weight: 500` in `#toolbar .title`.

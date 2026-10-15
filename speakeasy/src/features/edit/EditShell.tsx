@@ -1,0 +1,629 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { updateTitle } from "../../data/decks";
+import type { DeckRow } from "../../data/types";
+import { bindShortcutsHelp } from "../../lib/legacy-runtime";
+import { syncRoomFor } from "../../lib/sync-room";
+
+// Chrome shared with the editor features that arrive in later P4-7 steps.
+export type EditChrome = {
+  setStatus: (text: string, kind?: string) => void;
+  toast: (message: string, kind?: string) => void;
+};
+const EditChromeContext = createContext<EditChrome | null>(null);
+export const useEditChrome = () => {
+  const chrome = useContext(EditChromeContext);
+  if (!chrome) throw new Error("useEditChrome outside EditShell");
+  return chrome;
+};
+
+type Props = { deck: DeckRow; deckId: string };
+type AsideId = "slide-list" | "props";
+
+const SLIDE_LIST_WIDTH_KEY = "slidesEditor.slideListWidth";
+const SLIDE_LIST_WIDTH_MIN = 180;
+const SLIDE_LIST_WIDTH_MAX = 520;
+const PROPS_PANEL_WIDTH_KEY = "slidesEditor.propsPanelWidth";
+const PROPS_PANEL_HEIGHT_KEY = "slidesEditor.propsPanelHeight";
+const PROPS_PANEL_WIDTH_MIN = 220;
+const PROPS_PANEL_WIDTH_MAX = 720;
+const PROPS_PANEL_HEIGHT_MIN = 180;
+const PROPS_PANEL_HEIGHT_MAX = 520;
+const TRAINING_COLLAPSED_KEY = "speakeasy:edit:collapsed:training";
+const asideKey = (id: string) => `speakeasy:edit:collapsed:${id}`;
+
+function getStoredPx(key: string, fallback: number) {
+  const parsed = Number.parseInt(localStorage.getItem(key) || "", 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+function setStoredPx(key: string, value: number) {
+  try {
+    localStorage.setItem(key, String(value));
+  } catch {}
+}
+function getCssPx(varName: string, fallback: number) {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(varName);
+  const parsed = Number.parseInt(raw || "", 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+function readFlag(key: string) {
+  try {
+    return localStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
+}
+function writeFlag(key: string, on: boolean) {
+  try {
+    if (on) localStorage.setItem(key, "1");
+    else localStorage.removeItem(key);
+  } catch {}
+}
+
+function applySlideListWidth(px: number, max = SLIDE_LIST_WIDTH_MAX) {
+  const next = Math.min(max, Math.max(SLIDE_LIST_WIDTH_MIN, px));
+  document.documentElement.style.setProperty("--slide-list-width", `${next}px`);
+  setStoredPx(SLIDE_LIST_WIDTH_KEY, next);
+  return next;
+}
+function applyPropsPanelWidth(px: number, max = PROPS_PANEL_WIDTH_MAX) {
+  const next = Math.min(max, Math.max(PROPS_PANEL_WIDTH_MIN, px));
+  document.documentElement.style.setProperty("--props-width", `${next}px`);
+  setStoredPx(PROPS_PANEL_WIDTH_KEY, next);
+  return next;
+}
+function applyPropsPanelHeight(px: number, max = PROPS_PANEL_HEIGHT_MAX) {
+  const next = Math.min(max, Math.max(PROPS_PANEL_HEIGHT_MIN, px));
+  document.documentElement.style.setProperty("--props-height", `${next}px`);
+  const body = document.getElementById("body");
+  if (body?.classList.contains("portrait-mode")) {
+    body.style.gridTemplateRows = `minmax(0, 1fr) ${next}px`;
+  }
+  setStoredPx(PROPS_PANEL_HEIGHT_KEY, next);
+  return next;
+}
+
+// Drag a resizer handle; `onPointer` receives the pointer position.
+function bindResizer(
+  handle: HTMLElement | null,
+  cursor: () => string,
+  onPointer: (clientX: number, clientY: number) => void,
+) {
+  if (!handle) return () => {};
+  let dragging = false;
+  let onMove: ((e: PointerEvent) => void) | null = null;
+  let onUp: (() => void) | null = null;
+  const finish = () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove("dragging");
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    if (onMove) document.removeEventListener("pointermove", onMove);
+    if (onUp) document.removeEventListener("pointerup", onUp);
+    onMove = null;
+    onUp = null;
+  };
+  const onDown = (e: PointerEvent) => {
+    e.preventDefault();
+    dragging = true;
+    handle.classList.add("dragging");
+    document.body.style.cursor = cursor();
+    document.body.style.userSelect = "none";
+    handle.setPointerCapture?.(e.pointerId);
+    onMove = (moveEvent) => {
+      if (dragging) onPointer(moveEvent.clientX, moveEvent.clientY);
+    };
+    onUp = () => finish();
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp, { once: true });
+  };
+  handle.addEventListener("pointerdown", onDown);
+  handle.addEventListener("pointerup", finish);
+  handle.addEventListener("pointercancel", finish);
+  handle.addEventListener("lostpointercapture", finish);
+  window.addEventListener("blur", finish);
+  return () => {
+    finish();
+    handle.removeEventListener("pointerdown", onDown);
+    handle.removeEventListener("pointerup", finish);
+    handle.removeEventListener("pointercancel", finish);
+    handle.removeEventListener("lostpointercapture", finish);
+    window.removeEventListener("blur", finish);
+  };
+}
+
+// Close open dropdown menus (More, Export, per-slide "…") when clicking
+// anywhere outside them. A menu containing the click stays open, so nested
+// menus (Export inside More) keep working and opening one closes the rest.
+function closeDropdowns(except: EventTarget | null = null) {
+  for (const drop of document.querySelectorAll<HTMLDetailsElement>("details.dropdown[open]")) {
+    if (!except || !drop.contains(except as Node)) drop.open = false;
+  }
+}
+
+export function EditShell({ deck, deckId }: Props) {
+  const [status, setStatusState] = useState<{ text: string; kind: string }>({
+    text: "—",
+    kind: "",
+  });
+  const [toastState, setToastState] = useState({ text: "", cls: "" });
+  const toastTimer = useRef<number>(0);
+  const [collapsed, setCollapsedState] = useState<Record<AsideId, boolean>>(() => ({
+    "slide-list": readFlag(asideKey("slide-list")),
+    props: readFlag(asideKey("props")),
+  }));
+  const [trainingCollapsed, setTrainingCollapsedState] = useState(() =>
+    readFlag(TRAINING_COLLAPSED_KEY),
+  );
+  const deckRef = useRef(deck);
+  const bodyRef = useRef<HTMLElement>(null);
+  const titleRef = useRef<HTMLSpanElement>(null);
+  const canvasRef = useRef<HTMLIFrameElement>(null);
+  const listResizerRef = useRef<HTMLDivElement>(null);
+  const propsResizerRef = useRef<HTMLDivElement>(null);
+  const collapsedRef = useRef(collapsed);
+  collapsedRef.current = collapsed;
+
+  const setStatus = useCallback((text: string, kind = "") => setStatusState({ text, kind }), []);
+  const toast = useCallback((message: string, kind = "") => {
+    setToastState({ text: message, cls: `show ${kind}` });
+    window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToastState((t) => ({ ...t, cls: "" })), 2200);
+  }, []);
+  const chrome = useMemo(() => ({ setStatus, toast }), [setStatus, toast]);
+
+  const setAsideCollapsed = useCallback((id: AsideId, value: boolean) => {
+    setCollapsedState((prev) => ({ ...prev, [id]: value }));
+    writeFlag(asideKey(id), value);
+  }, []);
+  const toggleAside = useCallback(
+    (id: AsideId) => setAsideCollapsed(id, !collapsedRef.current[id]),
+    [setAsideCollapsed],
+  );
+  const setTrainingCollapsed = (value: boolean) => {
+    setTrainingCollapsedState(value);
+    writeFlag(TRAINING_COLLAPSED_KEY, value);
+  };
+
+  // Arrow points the way the panel will move: left panel ‹ collapses, › expands;
+  // the right panel mirrors that.
+  const asideArrow = (id: AsideId) => (collapsed[id] === (id === "slide-list") ? "›" : "‹");
+  const asideTitle = (id: AsideId) =>
+    `${collapsed[id] ? "Expand" : "Collapse"} ${id === "slide-list" ? "slide list ([)" : "notes panel (])"}`;
+  const bodyClass =
+    [collapsed["slide-list"] && "slide-list-collapsed", collapsed.props && "props-collapsed"]
+      .filter(Boolean)
+      .join(" ") || undefined;
+
+  const presentUrl = new URL("./present.html", location.href);
+  presentUrl.searchParams.set("deck", deckId);
+  // Broadcast on the deck's room so the Share link's audience follows along.
+  presentUrl.searchParams.set("sync", syncRoomFor(deckId));
+  const presentHref = presentUrl.toString();
+
+  // Panel sizes: restored (and written back clamped) on load, like the legacy page.
+  useEffect(() => {
+    applySlideListWidth(getStoredPx(SLIDE_LIST_WIDTH_KEY, 240));
+    applyPropsPanelWidth(getStoredPx(PROPS_PANEL_WIDTH_KEY, 280));
+    applyPropsPanelHeight(getStoredPx(PROPS_PANEL_HEIGHT_KEY, 280));
+  }, []);
+
+  useEffect(() => {
+    document.title = `Edit · ${deck.title || deckId}`;
+    if (titleRef.current) titleRef.current.textContent = deck.title || deckId;
+  }, [deck, deckId]);
+
+  useEffect(() => {
+    const body = () => document.getElementById("body") as HTMLElement;
+    const stopProps = bindResizer(
+      propsResizerRef.current,
+      () => (body().classList.contains("portrait-mode") ? "row-resize" : "col-resize"),
+      (clientX, clientY) => {
+        if (body().classList.contains("portrait-mode")) {
+          const bodyRect = body().getBoundingClientRect();
+          const max = Math.max(PROPS_PANEL_HEIGHT_MIN, window.innerHeight - 48 - 180);
+          applyPropsPanelHeight(bodyRect.bottom - clientY, max);
+        } else {
+          const max = Math.max(PROPS_PANEL_WIDTH_MIN, window.innerWidth - 240 - 240);
+          applyPropsPanelWidth(window.innerWidth - clientX, max);
+        }
+      },
+    );
+    const stopList = bindResizer(
+      listResizerRef.current,
+      () => "col-resize",
+      (clientX) => {
+        const bodyRect = body().getBoundingClientRect();
+        const propsWidth = getCssPx("--props-width", getStoredPx(PROPS_PANEL_WIDTH_KEY, 280));
+        const landscapeMax = Math.max(SLIDE_LIST_WIDTH_MIN, window.innerWidth - propsWidth - 240);
+        const portraitMax = Math.max(SLIDE_LIST_WIDTH_MIN, window.innerWidth - 240);
+        const max = body().classList.contains("portrait-mode") ? portraitMax : landscapeMax;
+        applySlideListWidth(clientX - bodyRect.left, max);
+      },
+    );
+    return () => {
+      stopProps();
+      stopList();
+    };
+  }, []);
+
+  // Keyboard: [ and ] fold the side panels; H, I and Ctrl/Cmd+S press the
+  // toolbar buttons that later steps wire up. Escape closes menus.
+  useEffect(() => {
+    void bindShortcutsHelp("Edit", [
+      { keys: ["E"], desc: "Toggle edit mode (canvas)" },
+      { keys: ["M"], desc: "Toggle raw HTML mode" },
+      { keys: ["H"], desc: "Toggle history drawer" },
+      { keys: ["I"], desc: "Open asset library (images, video, audio, files)" },
+      { keys: ["["], desc: "Collapse / expand slide list" },
+      { keys: ["]"], desc: "Collapse / expand notes panel" },
+      { keys: ["⌘S", "Ctrl+S"], desc: "Save version (manual snapshot)" },
+      { keys: ["?"], desc: "This help" },
+      { keys: ["Click"], desc: "Select slide in list" },
+      { keys: ["Drag"], desc: "Reorder slides in list" },
+    ]);
+    const click = (id: string) => document.getElementById(id)?.click();
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.getAttribute?.("contenteditable") === "true"
+      )
+        return;
+      if (e.key === "h" || e.key === "H") {
+        e.preventDefault();
+        click("history-toggle");
+      } else if (e.key === "i" || e.key === "I") {
+        e.preventDefault();
+        click("images-btn");
+      } else if (e.key === "[" || e.key === "]") {
+        e.preventDefault();
+        toggleAside(e.key === "[" ? "slide-list" : "props");
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
+        e.preventDefault();
+        click("save-version");
+      }
+    };
+    const onEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeDropdowns();
+    };
+    const onPointerDown = (e: PointerEvent) => closeDropdowns(e.target);
+    const onBlur = () => closeDropdowns();
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onEscape);
+    // Capture-phase pointerdown runs before any handler can stop propagation.
+    document.addEventListener("pointerdown", onPointerDown, true);
+    window.addEventListener("blur", onBlur);
+    // Presses inside the slide iframe never reach this document. It's
+    // same-origin, so listen inside it directly (re-attached per slide load).
+    const canvas = canvasRef.current;
+    const onCanvasLoad = () => {
+      try {
+        canvas?.contentDocument?.addEventListener("pointerdown", () => closeDropdowns(), true);
+      } catch {
+        /* not same-origin (about:blank during switches) — ignore */
+      }
+    };
+    canvas?.addEventListener("load", onCanvasLoad);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("keydown", onEscape);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      window.removeEventListener("blur", onBlur);
+      canvas?.removeEventListener("load", onCanvasLoad);
+    };
+  }, [toggleAside]);
+
+  // Deck title: click to rename. Enter or blur saves, Escape reverts; an empty
+  // title is rejected and the previous one restored.
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    el.contentEditable = "plaintext-only";
+    el.spellcheck = false;
+    el.title = "Click to rename this deck";
+    el.setAttribute("role", "textbox");
+    el.setAttribute("aria-label", "Deck title");
+    let saving = false;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        el.blur();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        el.textContent = deckRef.current.title || deckId;
+        el.blur();
+      }
+      // Keep editor shortcuts (E, ?, arrows…) from firing while typing.
+      e.stopPropagation();
+    };
+    const onBlur = async () => {
+      const next = (el.textContent ?? "").replace(/\s+/g, " ").trim();
+      const prev = deckRef.current.title || deckId;
+      if (saving || next === prev) {
+        el.textContent = prev;
+        return;
+      }
+      if (!next) {
+        el.textContent = prev;
+        chrome.toast("Deck title can't be empty", "err");
+        return;
+      }
+      saving = true;
+      chrome.setStatus("saving title…");
+      try {
+        await updateTitle(deckId, next);
+        deckRef.current = { ...deckRef.current, title: next };
+        el.textContent = next;
+        document.title = `Edit · ${next}`;
+        chrome.setStatus("saved", "ok");
+        chrome.toast("Deck renamed", "ok");
+      } catch (err) {
+        el.textContent = prev;
+        chrome.setStatus("rename failed", "err");
+        chrome.toast(`Rename failed: ${(err as Error).message}`, "err");
+      } finally {
+        saving = false;
+      }
+    };
+    el.addEventListener("keydown", onKeyDown);
+    el.addEventListener("blur", onBlur);
+    return () => {
+      el.removeEventListener("keydown", onKeyDown);
+      el.removeEventListener("blur", onBlur);
+    };
+  }, [deckId, chrome]);
+
+  return (
+    <EditChromeContext.Provider value={chrome}>
+      <div id="app">
+        <header id="toolbar">
+          <a className="btn home" href="./index.html" title="Home">
+            🏠
+          </a>
+          <span className="title" id="deck-title" ref={titleRef} />
+          <select id="mode-select" className="btn" style={{ width: "auto", minWidth: 80 }}>
+            <option value="aspect-169" selected>
+              16:9
+            </option>
+            <option value="portrait">portrait</option>
+            <option value="html">html</option>
+            <option value="stretch">stretch</option>
+          </select>
+
+          <span className="spacer"></span>
+          <a className="btn" id="present-link" href={presentHref} target="_blank" rel="noreferrer">
+            ▶ Present
+          </a>
+          <details className="dropdown" id="more-dropdown">
+            <summary className="btn">⋮ More</summary>
+            <div className="dropdown-menu">
+              <button id="save-version" type="button">
+                ★ Save version
+              </button>
+              <details
+                className="dropdown"
+                id="export-dropdown"
+                style={{ position: "static", display: "block" }}
+              >
+                <summary className="btn" style={{ padding: 0 }}>
+                  ⬇ Export
+                </summary>
+                <div
+                  className="dropdown-menu"
+                  style={{ position: "static", boxShadow: "none", minWidth: 0, marginTop: 10 }}
+                >
+                  <button type="button" data-export="html">
+                    HTML
+                  </button>
+                  <button type="button" data-export="md">
+                    Notes (.md)
+                  </button>
+                  <button type="button" data-export="md-copy">
+                    Notes (Clipboard)
+                  </button>
+                  <button type="button" data-export="pdf">
+                    PDF (browser print)
+                  </button>
+                  <a
+                    id="export-notes-link"
+                    href={`./notes.html?deck=${encodeURIComponent(deckId)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open notes view ↗
+                  </a>
+                </div>
+              </details>
+              <button id="history-toggle" type="button">
+                ⏱ History
+              </button>
+              <button id="frame-edit" type="button">
+                Frame…
+              </button>
+              <button id="share-btn" type="button">
+                🔗 Share
+              </button>
+              <button id="svg-btn" type="button">
+                ✦ SVG
+              </button>
+              <button id="images-btn" type="button">
+                🖼 Assets
+              </button>
+            </div>
+          </details>
+          <span id="status" data-kind={status.kind}>
+            {status.text}
+          </span>
+        </header>
+        <main id="body" ref={bodyRef} className={bodyClass}>
+          <aside id="slide-list">
+            <div id="slide-list-resizer" aria-hidden="true" ref={listResizerRef} />
+            <div id="slide-list-scroll">
+              <div className="slide-list-meta">
+                <div className="slide-list-meta-top">
+                  <h3>Slides</h3>
+                  <span className="slide-list-meta-right">
+                    <span className="slide-list-count" id="slide-list-count">
+                      0
+                    </span>
+                    <button
+                      className="aside-toggle"
+                      type="button"
+                      data-aside="slide-list"
+                      aria-controls="slide-list"
+                      aria-expanded={!collapsed["slide-list"]}
+                      title={asideTitle("slide-list")}
+                      onClick={() => toggleAside("slide-list")}
+                    >
+                      {asideArrow("slide-list")}
+                    </button>
+                  </span>
+                </div>
+                <label className="slide-list-title-label">
+                  Title
+                  <input
+                    id="slide-list-title"
+                    className="slide-list-title-input"
+                    type="text"
+                    placeholder="Select a slide"
+                    autoComplete="off"
+                  />
+                </label>
+                <div className="slide-list-info" id="slide-list-info"></div>
+              </div>
+              <div id="slide-list-items" className="slide-list-items" />
+            </div>
+          </aside>
+          <div id="canvas-wrap">
+            <div id="canvas-preview-controls">
+              <button
+                id="canvas-preview-prev"
+                className="canvas-preview-btn"
+                type="button"
+                title="Previous animation step"
+                aria-label="Previous animation step"
+              >
+                &lt;
+              </button>
+              <button
+                id="canvas-preview-click"
+                className="canvas-preview-btn"
+                type="button"
+                title="Next animation step"
+                aria-label="Next animation step"
+              >
+                &gt;
+              </button>
+            </div>
+            <div id="canvas-stage">
+              <iframe id="canvas" ref={canvasRef} title="Slide canvas" src="about:blank" />
+            </div>
+            <pre id="html-highlight" aria-hidden="true" />
+            <textarea
+              id="html-editor"
+              spellCheck="false"
+              placeholder="<section ...>...</section>"
+            ></textarea>
+          </div>
+          <aside id="props">
+            <div id="props-resizer" aria-hidden="true" ref={propsResizerRef} />
+            <div className="notes-header">
+              <button
+                className="aside-toggle"
+                type="button"
+                data-aside="props"
+                aria-controls="props"
+                aria-expanded={!collapsed.props}
+                title={asideTitle("props")}
+                onClick={() => toggleAside("props")}
+              >
+                {asideArrow("props")}
+              </button>
+              <h3>Notes</h3>
+              <div className="notes-controls">
+                <button
+                  className="btn notes-size-btn"
+                  id="notes-size-down"
+                  type="button"
+                  aria-label="Decrease notes font size"
+                >
+                  -
+                </button>
+                <button
+                  className="btn notes-size-btn"
+                  id="notes-size-up"
+                  type="button"
+                  aria-label="Increase notes font size"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+            <div className="field notes-only">
+              <textarea
+                id="notes-textarea"
+                rows={14}
+                placeholder="이 슬라이드의 발표 노트 (Markdown). 800ms 후 자동 저장."
+                spellCheck="false"
+                disabled
+                style={{ fontFamily: '"IBM Plex Sans KR", sans-serif', lineHeight: 1.6 }}
+              ></textarea>
+            </div>
+            <div className="field key-message">
+              <div className="key-message-head">
+                <label htmlFor="key-message-textarea">Key message</label>
+                <button
+                  className="btn"
+                  id="key-message-import"
+                  type="button"
+                  title="Import key messages for all slides from a Markdown file (same format as the script)"
+                >
+                  Import .md
+                </button>
+                <input
+                  id="key-message-import-file"
+                  type="file"
+                  accept=".md,.markdown,text/markdown"
+                  hidden
+                />
+              </div>
+              <textarea
+                id="key-message-textarea"
+                rows={3}
+                placeholder="이 슬라이드에서 꼭 전할 한 문장. 800ms 후 자동 저장."
+                spellCheck="false"
+                disabled
+              ></textarea>
+            </div>
+            <div id="training-section" className={trainingCollapsed ? "collapsed" : undefined}>
+              <button
+                id="training-toggle"
+                type="button"
+                aria-controls="training-mount"
+                aria-expanded={!trainingCollapsed}
+                onClick={() => setTrainingCollapsed(!trainingCollapsed)}
+              >
+                <span className="chev">▾</span> Training
+              </button>
+              <div id="training-mount"></div>
+            </div>
+          </aside>
+        </main>
+      </div>
+
+      <div id="toast" className={toastState.cls || undefined}>
+        {toastState.text}
+      </div>
+    </EditChromeContext.Provider>
+  );
+}
