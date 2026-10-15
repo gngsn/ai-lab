@@ -11,6 +11,8 @@ import { updateTitle } from "../../data/decks";
 import type { DeckRow } from "../../data/types";
 import { bindShortcutsHelp } from "../../lib/legacy-runtime";
 import { syncRoomFor } from "../../lib/sync-room";
+import { type EditSlide, useEditorModel } from "./model";
+import { SlideList } from "./SlideList";
 
 // Chrome shared with the editor features that arrive in later P4-7 steps.
 export type EditChrome = {
@@ -24,7 +26,13 @@ export const useEditChrome = () => {
   return chrome;
 };
 
-type Props = { deck: DeckRow; deckId: string };
+type Props = {
+  deck: DeckRow;
+  deckId: string;
+  slides: EditSlide[];
+  notes: Map<string, string>;
+  keyMessages: Map<string, string>;
+};
 type AsideId = "slide-list" | "props";
 
 const SLIDE_LIST_WIDTH_KEY = "slidesEditor.slideListWidth";
@@ -149,7 +157,7 @@ function closeDropdowns(except: EventTarget | null = null) {
   }
 }
 
-export function EditShell({ deck, deckId }: Props) {
+export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
   const [status, setStatusState] = useState<{ text: string; kind: string }>({
     text: "—",
     kind: "",
@@ -179,6 +187,14 @@ export function EditShell({ deck, deckId }: Props) {
     toastTimer.current = window.setTimeout(() => setToastState((t) => ({ ...t, cls: "" })), 2200);
   }, []);
   const chrome = useMemo(() => ({ setStatus, toast }), [setStatus, toast]);
+  const model = useEditorModel({
+    deckId,
+    initialSlides: slides,
+    initialNotes: notes,
+    initialKeyMessages: keyMessages,
+    canvasRef,
+    chrome,
+  });
 
   const setAsideCollapsed = useCallback((id: AsideId, value: boolean) => {
     setCollapsedState((prev) => ({ ...prev, [id]: value }));
@@ -207,6 +223,7 @@ export function EditShell({ deck, deckId }: Props) {
   presentUrl.searchParams.set("deck", deckId);
   // Broadcast on the deck's room so the Share link's audience follows along.
   presentUrl.searchParams.set("sync", syncRoomFor(deckId));
+  if (model.navSectionId) presentUrl.searchParams.set("section", model.navSectionId);
   const presentHref = presentUrl.toString();
 
   // Panel sizes: restored (and written back clamped) on load, like the legacy page.
@@ -469,39 +486,22 @@ export function EditShell({ deck, deckId }: Props) {
           <aside id="slide-list">
             <div id="slide-list-resizer" aria-hidden="true" ref={listResizerRef} />
             <div id="slide-list-scroll">
-              <div className="slide-list-meta">
-                <div className="slide-list-meta-top">
-                  <h3>Slides</h3>
-                  <span className="slide-list-meta-right">
-                    <span className="slide-list-count" id="slide-list-count">
-                      0
-                    </span>
-                    <button
-                      className="aside-toggle"
-                      type="button"
-                      data-aside="slide-list"
-                      aria-controls="slide-list"
-                      aria-expanded={!collapsed["slide-list"]}
-                      title={asideTitle("slide-list")}
-                      onClick={() => toggleAside("slide-list")}
-                    >
-                      {asideArrow("slide-list")}
-                    </button>
-                  </span>
-                </div>
-                <label className="slide-list-title-label">
-                  Title
-                  <input
-                    id="slide-list-title"
-                    className="slide-list-title-input"
-                    type="text"
-                    placeholder="Select a slide"
-                    autoComplete="off"
-                  />
-                </label>
-                <div className="slide-list-info" id="slide-list-info"></div>
-              </div>
-              <div id="slide-list-items" className="slide-list-items" />
+              <SlideList
+                model={model}
+                asideToggle={
+                  <button
+                    className="aside-toggle"
+                    type="button"
+                    data-aside="slide-list"
+                    aria-controls="slide-list"
+                    aria-expanded={!collapsed["slide-list"]}
+                    title={asideTitle("slide-list")}
+                    onClick={() => toggleAside("slide-list")}
+                  >
+                    {asideArrow("slide-list")}
+                  </button>
+                }
+              />
             </div>
           </aside>
           <div id="canvas-wrap">
