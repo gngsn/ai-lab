@@ -27,3 +27,10 @@ Things found while writing the Phase 0 tests. The tests pin today's behavior; no
 - **P4-1 (captions console in React):** done in `src/pages/captions` + `src/features/captions`. The component keeps the legacy DOM ids so the Phase 0 tests run unchanged, and fills them imperatively from one `useEffect`; turning that into real React state is a later cleanup.
 - **E2E hook in production code:** `src/data/client.ts` loads the in-browser fake backend when `window.__SE_E2E_FAKE__` is set (the Playwright init script sets it). Harmless in production (the flag is never set and the import is runtime-only: the specifier is a variable with `@vite-ignore`, because that file lives in `public/` and Vite can't bundle it), but a cleaner seam is worth finding before more pages depend on it.
 - **Review fixes before committing this work:** `captions.css` was not Biome-formatted (so `pnpm lint` failed) and the literal `import("/vendor/…")` made `vite build` fail; both fixed.
+
+### P4-2 notes.html (React + TypeScript)
+- Ids kept: `#deck-title`, `#pronunciation-link` (twice), `#script-link`, `#tts-btn`, `#tts-stop-btn`, `#copy-btn`, `#download-btn`, `#content`.
+- Legacy quirk kept on purpose: the header has two "Pronunciation" buttons with the same id; the second is a dead `href="#"`. Decide later whether to drop it (behavior change).
+- `buildNotesMd`/`exportNotesMd` ported to `src/features/notes/notes-md.ts` on the typed data layer. `public/js/export.js` stays: `edit.html` still uses it.
+- Legacy `localStorage`: none. Data calls: decks, slides, notes (read only).
+- Fixed CSS: dropped an overridden duplicate `font-weight: 500` in `.title` (400 already won).

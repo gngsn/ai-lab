@@ -11,6 +11,7 @@ export default defineConfig({
       input: {
         placeholder: "src/pages/_placeholder/index.html",
         captions: "captions.html",
+        notes: "notes.html",
       },
     },
   },

@@ -507,7 +507,7 @@ export function createClient() {
 ### 9.1 순서 (작은 것부터. 순서를 바꾸지 말 것)
 
 1. [x] P4-1 `captions.html` (자막 콘솔)
-2. [ ] P4-2 `notes.html`
+2. [x] P4-2 `notes.html`
 3. [ ] P4-3 `script.html`
 4. [ ] P4-4 `script-edit.html`
 5. [ ] P4-5 `index.html`

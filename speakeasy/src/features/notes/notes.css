@@ -1,0 +1,123 @@
+body {
+  accent-color: var(--se-ink);
+  background: var(--se-bg);
+  color: var(--se-ink);
+  font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--se-bg);
+  border-bottom: 1px solid var(--se-ink);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.title {
+  font-size: 14px;
+  color: var(--se-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 320px;
+  font-family: "Fraunces", "IBM Plex Sans KR", Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+.spacer {
+  flex: 1;
+}
+.btn {
+  background: transparent;
+  border: 1px solid var(--se-ink);
+  color: var(--se-muted);
+  padding: 5px 10px;
+  border-radius: 0;
+  font:
+    12px "Space Grotesk",
+    "IBM Plex Sans KR",
+    system-ui,
+    sans-serif;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
+}
+.btn:hover {
+  background: var(--se-fill);
+  color: var(--se-ink);
+  border-color: var(--se-rule);
+}
+.btn.home {
+  color: var(--se-strong);
+}
+.btn.ok {
+  color: var(--se-ok);
+  border-color: var(--se-ok);
+}
+.btn.warn {
+  color: var(--se-warn);
+  border-color: var(--se-warn);
+}
+main {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+}
+.hint {
+  color: var(--se-muted);
+  font-size: 11px;
+  margin: 12px 0 8px;
+  font-family: "Space Grotesk", "IBM Plex Sans KR", system-ui, sans-serif;
+  line-height: 1.6;
+}
+.hint code {
+  color: var(--se-ink);
+  background: var(--se-bg);
+  padding: 1px 5px;
+  border-radius: 0;
+}
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--se-ink);
+  background: var(--se-bg);
+  border: 1px solid var(--se-ink);
+  border-radius: 0;
+  padding: 16px 18px;
+  margin: 0;
+}
+.err {
+  color: var(--se-bad);
+  padding: 2rem;
+  font-family: monospace;
+}
+@media (max-width: 768px) {
+  /* Toolbar becomes a horizontally scrollable strip instead of
+     widening the page. */
+  header {
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+  header::-webkit-scrollbar {
+    display: none;
+  }
+  header > * {
+    flex-shrink: 0;
+  }
+  .title {
+    max-width: 40vw;
+  }
+}
