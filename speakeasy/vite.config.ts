@@ -12,6 +12,7 @@ export default defineConfig({
         placeholder: "src/pages/_placeholder/index.html",
         captions: "captions.html",
         notes: "notes.html",
+        script: "script.html",
       },
     },
   },

@@ -34,3 +34,10 @@ Things found while writing the Phase 0 tests. The tests pin today's behavior; no
 - `buildNotesMd`/`exportNotesMd` ported to `src/features/notes/notes-md.ts` on the typed data layer. `public/js/export.js` stays: `edit.html` still uses it.
 - Legacy `localStorage`: none. Data calls: decks, slides, notes (read only).
 - Fixed CSS: dropped an overridden duplicate `font-weight: 500` in `.title` (400 already won).
+
+### P4-3 script.html (React + TypeScript)
+- Ids kept: `#progress`, `#header`, `#prevSlide`, `#nextSlide`, `#slide-counter`, `#decreaseFont`, `#increaseFont`, `#toggleHL`, `#editNotesLink`, `#marpLink`, `#sync-badge`, `#sync-label`, `#mode-label`, `#error-banner`, `#script`, `.sec`/`.sec-label`/`.sec-body`.
+- Shortcuts list copied as is (bindShortcutsHelp "Script"), still bound before the auth check.
+- localStorage: `speakeasy:notes:fontsize` (legacy `slides-editor:notes:fontsize` migrated). Data: decks, slides, notes (read only). Realtime: `speakeasy-sync-<room>` via the runtime `public/js/sync.js`, loaded by URL through `src/lib/legacy-runtime.ts` (also used for shortcuts-help.js). Both stay in `public/` because present/view still use them.
+- Removed `public/js/script-view.js` (only this page used it).
+- Biome reports 8 CSS warnings (`!important`, specificity order) in `script.css`. The CSS is copied verbatim on purpose; clean up in the Phase 5 pass.
