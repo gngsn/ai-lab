@@ -12,6 +12,7 @@ import { updateTitle } from "../../data/decks";
 import type { DeckRow } from "../../data/types";
 import { bindShortcutsHelp } from "../../lib/legacy-runtime";
 import { syncRoomFor } from "../../lib/sync-room";
+import { AssetLibrary } from "./AssetLibrary";
 import { type EditSlide, useEditorModel } from "./model";
 import { NotesPanel } from "./NotesPanel";
 import { SlideList } from "./SlideList";
@@ -201,6 +202,7 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
     canvasRef,
     chrome,
   });
+  const [assetsOpen, setAssetsOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("aspect-169");
   const [gridRows, setGridRows] = useState<string | undefined>();
   const canvas = useCanvas({ canvasRef, stageRef, deckRef, model, chrome });
@@ -532,7 +534,7 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
               <button id="svg-btn" type="button">
                 ✦ SVG
               </button>
-              <button id="images-btn" type="button">
+              <button id="images-btn" type="button" onClick={() => setAssetsOpen(true)}>
                 🖼 Assets
               </button>
             </div>
@@ -646,6 +648,14 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
           </aside>
         </main>
       </div>
+
+      <AssetLibrary
+        deckId={deckId}
+        canvasRef={canvasRef}
+        chrome={chrome}
+        open={assetsOpen}
+        onClose={() => setAssetsOpen(false)}
+      />
 
       <div id="toast" className={toastState.cls || undefined}>
         {toastState.text}

@@ -203,3 +203,12 @@ export async function copyAssetForRename(path: string, requestedName: string) {
     name,
   };
 }
+
+/** Point every slide and frame that used `oldUrl` at `newUrl` (migrations/009). */
+export async function renameAssetReferences(oldUrl: string, newUrl: string) {
+  const { error } = await supabase.rpc("rename_asset_references", {
+    p_old_url: oldUrl,
+    p_new_url: newUrl,
+  });
+  if (error) throw error;
+}
