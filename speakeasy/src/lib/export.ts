@@ -1,5 +1,5 @@
 // Export helpers — HTML / PDF (browser print) / Marp Markdown. Port of
-// public/js/export.js. All exports are read-side: they fetch from the data
+// the removed public/js/export.js. All exports are read-side: they fetch from the data
 // layer and either trigger a download, copy to the clipboard, or open a print
 // window.
 import { getConfig } from "../config";

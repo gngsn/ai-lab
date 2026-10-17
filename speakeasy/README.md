@@ -209,7 +209,6 @@ speakeasy/public/
 │  ├─ script-edit-view.js  # Notes editor mount
 │  ├─ inline-editor.js     # Inline editor (iframe)
 │  ├─ history-ui.js        # History drawer
-│  ├─ export.js            # Export logic
 │  ├─ view-bootstrap.js    # Share_token view loader
 │  ├─ auth.js              # Passphrase gate
 │  ├─ present-bootstrap.js # Deck loader
