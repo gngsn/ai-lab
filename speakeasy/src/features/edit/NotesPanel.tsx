@@ -64,7 +64,7 @@ export function NotesPanel({
   useEffect(() => {
     setNotesText(currentSectionId ? (model.notesRef.current.get(currentSectionId) ?? "") : "");
     setKeyText(currentSectionId ? (model.keyMessagesRef.current.get(currentSectionId) ?? "") : "");
-  }, [currentSectionId, reload]);
+  }, [currentSectionId, reload, model.notesRevision]);
 
   const flushKeyMessageSave = useCallback(async () => {
     if (!keyPending.current) return;

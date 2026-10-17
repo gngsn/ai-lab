@@ -13,9 +13,13 @@ import type { DeckRow } from "../../data/types";
 import { bindShortcutsHelp } from "../../lib/legacy-runtime";
 import { syncRoomFor } from "../../lib/sync-room";
 import { AssetLibrary } from "./AssetLibrary";
+import { FrameModal } from "./FrameModal";
+import { HistoryDrawer, useHistoryDrawer } from "./HistoryDrawer";
 import { type EditSlide, useEditorModel } from "./model";
 import { NotesPanel } from "./NotesPanel";
+import { ShareModal, useShare } from "./ShareModal";
 import { SlideList } from "./SlideList";
+import { SvgModal } from "./SvgModal";
 import { useCanvas } from "./useCanvas";
 import { useHtmlEditor } from "./useHtmlEditor";
 
@@ -203,6 +207,10 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
     chrome,
   });
   const [assetsOpen, setAssetsOpen] = useState(false);
+  const [frameOpen, setFrameOpen] = useState(false);
+  const [svgOpen, setSvgOpen] = useState(false);
+  const share = useShare(deckId, deckRef, chrome);
+  const history = useHistoryDrawer({ deckId, deckRef, model, chrome });
   const [mode, setMode] = useState<Mode>("aspect-169");
   const [gridRows, setGridRows] = useState<string | undefined>();
   const canvas = useCanvas({ canvasRef, stageRef, deckRef, model, chrome });
@@ -522,16 +530,21 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
                   </a>
                 </div>
               </details>
-              <button id="history-toggle" type="button">
+              <button
+                id="history-toggle"
+                type="button"
+                className={history.open ? "active" : undefined}
+                onClick={history.toggle}
+              >
                 ⏱ History
               </button>
-              <button id="frame-edit" type="button">
+              <button id="frame-edit" type="button" onClick={() => setFrameOpen(true)}>
                 Frame…
               </button>
-              <button id="share-btn" type="button">
+              <button id="share-btn" type="button" onClick={() => void share.openShare()}>
                 🔗 Share
               </button>
-              <button id="svg-btn" type="button">
+              <button id="svg-btn" type="button" onClick={() => setSvgOpen(true)}>
                 ✦ SVG
               </button>
               <button id="images-btn" type="button" onClick={() => setAssetsOpen(true)}>
@@ -656,6 +669,26 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
         open={assetsOpen}
         onClose={() => setAssetsOpen(false)}
       />
+
+      <HistoryDrawer history={history} />
+
+      <FrameModal
+        deckId={deckId}
+        deckRef={deckRef}
+        chrome={chrome}
+        open={frameOpen}
+        onClose={() => setFrameOpen(false)}
+        onSaved={() => {
+          if (model.currentRef.current) model.showSlide(model.currentRef.current);
+        }}
+      />
+      <SvgModal
+        canvasRef={canvasRef}
+        chrome={chrome}
+        open={svgOpen}
+        onClose={() => setSvgOpen(false)}
+      />
+      <ShareModal share={share} chrome={chrome} />
 
       <div id="toast" className={toastState.cls || undefined}>
         {toastState.text}

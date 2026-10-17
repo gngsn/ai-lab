@@ -21,10 +21,13 @@ for (const path of ["/edit.html", "/edit-next.html"]) {
     // The Assets button lives in the More menu.
     const clickAssets = async (page: Page) => {
       const more = page.locator("#more-dropdown");
-      if ((await more.getAttribute("open")) === null) {
-        await more.locator(":scope > summary").click();
-      }
-      await page.click("#images-btn");
+      // (The menu closes by itself after a click: retry if it closes under us.)
+      await expect(async () => {
+        if ((await more.getAttribute("open")) === null) {
+          await more.locator(":scope > summary").click({ timeout: 1000 });
+        }
+        await page.click("#images-btn", { timeout: 1000 });
+      }).toPass();
     };
     const openLibrary = async (page: Page) => {
       await clickAssets(page);

@@ -28,6 +28,8 @@ for (const path of ["/edit.html", "/edit-next.html"]) {
       await pwExpect(items(page)).toHaveCount(6);
       // Let the canvas finish loading: it takes the focus when it does.
       await page.frameLocator("#canvas").locator("section").first().waitFor();
+      // Its "ready" status arrives late and would overwrite the statuses asserted below.
+      await expect(page.locator("#status")).toHaveText(/^ready · /);
     };
 
     test("lists the slides in order, numbered, with the first one selected", async ({ page }) => {

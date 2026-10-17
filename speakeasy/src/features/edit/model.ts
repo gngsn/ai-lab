@@ -57,6 +57,10 @@ export function useEditorModel({
   const titlePending = useRef<{ sid: string; title: string } | null>(null);
   const titleTimer = useRef(0);
 
+  // Bumped when the notes caches change under the current slide (a history restore).
+  const [notesRevision, setNotesRevision] = useState(0);
+  const reloadNotes = useCallback(() => setNotesRevision((n) => n + 1), []);
+
   const setSlides = useCallback((next: EditSlide[]) => {
     slidesRef.current = next;
     setSlidesState(next);
@@ -298,10 +302,21 @@ export function useEditorModel({
     }
   };
 
+  /** Patch the cached copy of one slide (content/title changed outside the editor). */
+  const patchSlide = useCallback(
+    (sid: string, patch: Partial<Pick<EditSlide, "content" | "title">>) => {
+      setSlides(slidesRef.current.map((s) => (s.section_id === sid ? { ...s, ...patch } : s)));
+    },
+    [setSlides],
+  );
+
   return {
     slides,
     slidesRef,
     setSlides,
+    patchSlide,
+    notesRevision,
+    reloadNotes,
     currentRef,
     htmlModeRef,
     htmlEditorRef,

@@ -9,6 +9,8 @@ for (const path of ["/edit.html", "/edit-next.html"]) {
     const open = async (page: import("@playwright/test").Page) => {
       await page.goto(`${path}?deck=${DECK}`);
       await expect(page.locator("#deck-title")).toHaveText("Controller Deck");
+      // The canvas's "ready" status arrives late and would overwrite the statuses asserted below.
+      await expect(page.locator("#status")).toHaveText(/^ready · /);
     };
 
     test("shows the toolbar, the three columns and the deck title", async ({ page }) => {
