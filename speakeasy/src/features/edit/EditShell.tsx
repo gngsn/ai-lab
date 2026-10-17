@@ -21,6 +21,7 @@ import { NotesPanel } from "./NotesPanel";
 import { ShareModal, useShare } from "./ShareModal";
 import { SlideList } from "./SlideList";
 import { SvgModal } from "./SvgModal";
+import { useTrainingPanel } from "./training";
 import { useCanvas } from "./useCanvas";
 import { useHtmlEditor } from "./useHtmlEditor";
 
@@ -210,6 +211,8 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
   const [assetsOpen, setAssetsOpen] = useState(false);
   const [frameOpen, setFrameOpen] = useState(false);
   const [svgOpen, setSvgOpen] = useState(false);
+  const trainingMountRef = useRef<HTMLDivElement>(null);
+  useTrainingPanel(deckId, model, trainingMountRef);
   const share = useShare(deckId, deckRef, chrome);
   const history = useHistoryDrawer({ deckId, deckRef, model, chrome });
   const [mode, setMode] = useState<Mode>("aspect-169");
@@ -706,7 +709,7 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
               >
                 <span className="chev">▾</span> Training
               </button>
-              <div id="training-mount"></div>
+              <div id="training-mount" ref={trainingMountRef}></div>
             </div>
           </aside>
         </main>
