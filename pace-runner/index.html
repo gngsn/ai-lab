@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <title>Pace Runner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Hanalei+Fill&family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <canvas id="gl"></canvas>
+
+    <!-- Home -->
+    <section class="screen" id="screen-home">
+      <div class="home">
+        <h1 class="logo">Pace<br />Runner</h1>
+        <p class="lead">The route you ran becomes the course.</p>
+        <button class="btn primary big" id="btn-sync">My Runs</button>
+        <button class="btn ghost big" id="btn-stats">My Stats</button>
+        <p class="hint" id="sync-status"></p>
+      </div>
+    </section>
+
+    <!-- Route select -->
+    <section class="screen" id="screen-select">
+      <div class="routes">
+        <header class="routes-head">
+          <button class="back" id="btn-select-back" aria-label="Back">←</button>
+          <p class="eyebrow">Every run you finish becomes a course</p>
+          <h2 class="routes-title">My Routes</h2>
+          <p class="routes-sum" id="routes-sum"></p>
+          <button class="btn ghost small routes-stats" id="btn-routes-stats">My Stats</button>
+        </header>
+        <ul class="route-grid" id="run-list"></ul>
+        <input type="file" id="gpx-input" accept=".gpx,application/gpx+xml" hidden />
+      </div>
+    </section>
+
+    <!-- My stats -->
+    <section class="screen" id="screen-stats">
+      <div class="routes stats-page">
+        <header class="routes-head">
+          <button class="back" id="btn-stats-back" aria-label="Back">←</button>
+          <p class="eyebrow">Your running at a glance</p>
+          <h2 class="routes-title">My Stats</h2>
+        </header>
+        <div class="stats-grid">
+          <section class="stat-card main-card">
+            <h3>Main runner</h3>
+            <p class="hint">Shown on Home and picked first for every race.</p>
+            <div class="char-picker main-picker"></div>
+          </section>
+          <section class="stat-card">
+            <h3>Running summary</h3>
+            <dl class="stats summary" id="st-summary"></dl>
+          </section>
+          <section class="stat-card">
+            <h3>Pace mix</h3>
+            <p class="hint">Share of all your distance in each pace zone.</p>
+            <div class="pace-bar" id="st-pace-bar"></div>
+            <ul class="legend pace-legend" id="st-pace-legend"></ul>
+          </section>
+          <section class="stat-card wide">
+            <h3>Course bests</h3>
+            <p class="hint">🥇 beat past you by 5 %+ · 🥈 beat past you · 🥉 finished</p>
+            <ul class="bests" id="st-bests"></ul>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <!-- Route preview -->
+    <section class="screen" id="screen-preview">
+      <div class="panel preview">
+        <button class="back" id="btn-preview-back" aria-label="Back">←</button>
+        <p class="eyebrow" id="pv-date"></p>
+        <h2 id="pv-name"></h2>
+        <canvas class="map-big" id="pv-map"></canvas>
+        <dl class="stats" id="pv-stats"></dl>
+        <ul class="legend" id="pv-legend"></ul>
+        <p class="hint">Steer with ← → or tap the left/right side of the screen. Blue arrow pads give a turbo, gold coins are for collecting. Grab energy gels (every 5 km), bananas and shine muscats: you can carry 3 and use them with Space / 1–3 or by tapping the slot.<br />Fall too far behind past you (the ghost) and it’s game over.</p>
+        <button class="btn primary big" id="btn-choose-course">Run this course</button>
+      </div>
+    </section>
+
+    <!-- Character select -->
+    <section class="screen" id="screen-character">
+      <div class="panel character">
+        <button class="back" id="btn-character-back" aria-label="Back">←</button>
+        <p class="eyebrow" id="ch-course"></p>
+        <h2>Who’s running?</h2>
+        <div class="char-picker" id="char-picker"></div>
+        <button class="btn primary big" id="btn-start">Start running</button>
+      </div>
+    </section>
+
+    <!-- HUD -->
+    <section class="hud" id="hud">
+      <div class="hud-tl">
+        <div class="hud-row">
+          <div class="chip time" id="hud-time">0:00.00</div>
+          <div class="chip coins" id="hud-coins-chip"><i class="coin-icon"></i><b id="hud-coins">0</b><small id="hud-coins-total"></small></div>
+        </div>
+        <div class="energy" id="hud-energy">
+          <i class="gel-icon"></i><span id="hud-energy-label">Energy boost</span>
+          <div class="energy-bar"><div id="hud-energy-bar"></div></div>
+        </div>
+        <div class="gap">
+          <div class="gap-label" id="hud-gap-label">Side by side with past you</div>
+          <div class="gap-bar"><div class="gap-fill" id="hud-gap"></div><div class="gap-mid"></div></div>
+        </div>
+      </div>
+      <div class="hud-tr">
+        <canvas class="map-small" id="hud-map"></canvas>
+        <div class="progress"><div id="hud-progress"></div></div>
+      </div>
+      <button class="hud-quit" id="btn-quit" aria-label="Quit">✕</button>
+      <div class="hud-items" id="hud-items"></div>
+      <div class="hud-bag" id="hud-bag"></div>
+      <div class="hud-bottom">
+        <div class="chip pace" id="hud-pace"><span class="dot"></span><span id="hud-pace-text"></span></div>
+        <div class="speed"><b id="hud-speed">0</b><small>km/h</small></div>
+      </div>
+      <div class="countdown" id="countdown"></div>
+      <div class="flash" id="flash"></div>
+      <div class="touch-hint" id="touch-hint"><span>◀</span><span>▶</span></div>
+    </section>
+
+    <!-- Result -->
+    <section class="screen" id="screen-result">
+      <div class="panel result">
+        <p class="eyebrow" id="rs-eyebrow">FINISH</p>
+        <h2 id="rs-title">Finished!</h2>
+        <div class="big-time" id="rs-time"></div>
+        <p class="vs" id="rs-vs"></p>
+        <dl class="stats" id="rs-stats"></dl>
+        <div class="row actions">
+          <button class="btn ghost" id="btn-rs-select">Courses</button>
+          <button class="btn primary" id="btn-rs-retry">Run again</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Game over -->
+    <section class="screen" id="screen-over">
+      <div class="panel result">
+        <p class="eyebrow">GAME OVER</p>
+        <h2>Past you got away</h2>
+        <p class="vs" id="ov-text"></p>
+        <div class="row actions">
+          <button class="btn ghost" id="btn-ov-select">Courses</button>
+          <button class="btn primary" id="btn-ov-retry">Try again</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="toast" id="toast"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
