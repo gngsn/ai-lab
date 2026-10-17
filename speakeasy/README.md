@@ -195,8 +195,7 @@ speakeasy/public/
 ├─ index.html              # Setup check + deck list
 ├─ present.html            # Slide read + navigation (?deck=<id>[&sync=<room>])
 ├─ script.html             # Teleprompter + realtime sync
-├─ edit.html               # Inline editor (desktop only)
-├─ edit-frame.html         # Single-slide iframe for edit.html
+├─ edit-frame.html         # Single-slide iframe for the editor (/edit, React: ../edit.html + src/features/edit)
 ├─ script-edit.html        # Fullscreen notes editor (markdown + preview)
 ├─ notes.html              # Marp(.md) read-only view (Copy/Download)
 ├─ view.html               # Public viewer (?token=, slides only)
@@ -214,7 +213,6 @@ speakeasy/public/
 │  ├─ view-bootstrap.js    # Share_token view loader
 │  ├─ auth.js              # Passphrase gate
 │  ├─ present-bootstrap.js # Deck loader
-│  ├─ edit-bootstrap.js    # Editor controller
 │  ├─ edit-frame-bootstrap.js  # Iframe loader
 │  ├─ repo/                # Data access layer
 │  │  ├─ deck-repo.js

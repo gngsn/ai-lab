@@ -512,7 +512,7 @@ export function createClient() {
 4. [x] P4-4 `script-edit.html`
 5. [x] P4-5 `index.html`
 6. [x] P4-6 `pronunciation.html`
-7. [ ] P4-7 `edit.html` (가장 큼. 아래 §9.3에 따라 여러 태스크로 나눔)
+7. [x] P4-7 `edit.html` (가장 큼. 아래 §9.3에 따라 여러 태스크로 나눔)
 
 ### 9.2 페이지 하나를 옮기는 절차 (매번 동일)
 
@@ -544,9 +544,9 @@ export function createClient() {
 - [x] P4-7e 에셋 라이브러리(업로드, 검색, URL 복사, 삽입, 이름 변경 → `rename_asset_references`, 삭제)
 - [x] P4-7f 모달: Share(§P0-14), 프레임 편집기(CodeMirror), 히스토리, SVG
 - [x] P4-7g 내보내기(HTML, PDF 인쇄, 노트 .md 다운로드·복사). PPTX와 screenshot-PDF는 제거됨
-- [ ] P4-7h 발음 연습 패널(`training-panel.js`, 1,190줄. 가장 마지막)
+- [x] P4-7h 발음 연습 패널(`training-panel.js`, 1,190줄. 가장 마지막). 이 파일은 `pronunciation.html`도 쓰므로 `public/`에 두고 React에서 마운트만 한다. 이어서 `/edit-next.html`을 `/edit.html`로 교체함
 
-edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태스크(P4-7h)가 끝날 때까지 지우지 않는다.** 새 edit은 임시 경로 `/edit-next.html`로 만들어 테스트한다. P4-7h가 끝나면 그때 `/edit.html`로 교체한다.
+edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태스크(P4-7h)가 끝날 때까지 지우지 않는다.** 새 edit은 임시 경로 `/edit-next.html`로 만들어 테스트한다. P4-7h가 끝나면 그때 `/edit.html`로 교체한다. (교체 완료: 레거시 `public/edit.html`과 `public/js/edit-bootstrap.js`를 지우고 루트 `edit.html`이 그 자리를 잇는다.)
 
 ---
 
