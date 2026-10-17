@@ -10,7 +10,8 @@ import {
 import { flushSync } from "react-dom";
 import { updateTitle } from "../../data/decks";
 import type { DeckRow } from "../../data/types";
-import { bindShortcutsHelp } from "../../lib/legacy-runtime";
+import { exportHtml, exportNotesMd, exportPdf } from "../../lib/export";
+import { bindShortcutsHelp, loadHistoryUi } from "../../lib/legacy-runtime";
 import { syncRoomFor } from "../../lib/sync-room";
 import { AssetLibrary } from "./AssetLibrary";
 import { FrameModal } from "./FrameModal";
@@ -215,6 +216,39 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
   const [gridRows, setGridRows] = useState<string | undefined>();
   const canvas = useCanvas({ canvasRef, stageRef, deckRef, model, chrome });
   const htmlEditor = useHtmlEditor({ deckId, model, chrome });
+  const runExport = async (kind: "html" | "md" | "md-copy" | "pdf", button: HTMLElement) => {
+    const drop = button.closest("details");
+    try {
+      if (kind === "html") {
+        const r = await exportHtml(deckId);
+        toast(`Saved ${r.filename}`, "ok");
+      } else if (kind === "pdf") {
+        exportPdf(deckId);
+        toast("Print window opened", "ok");
+      } else if (kind === "md") {
+        const r = await exportNotesMd(deckId);
+        toast(`Saved ${r.filename}`, "ok");
+      } else {
+        await exportNotesMd(deckId, { copy: true });
+        toast("Copied notes to clipboard", "ok");
+      }
+    } catch (err) {
+      toast(`Export failed: ${err instanceof Error ? err.message : String(err)}`, "err");
+    } finally {
+      if (drop) drop.open = false;
+    }
+  };
+  const saveVersion = async () => {
+    try {
+      const { saveVersionPrompt } = await loadHistoryUi();
+      const ts = await saveVersionPrompt(deckId);
+      if (ts === null) return;
+      toast("Version saved", "ok");
+      if (history.isOpen()) history.refresh();
+    } catch (err) {
+      toast(`Save version failed: ${err instanceof Error ? err.message : String(err)}`, "err");
+    }
+  };
   const formatRef = useRef(htmlEditor.format);
   formatRef.current = htmlEditor.format;
 
@@ -493,7 +527,7 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
           <details className="dropdown" id="more-dropdown">
             <summary className="btn">⋮ More</summary>
             <div className="dropdown-menu">
-              <button id="save-version" type="button">
+              <button id="save-version" type="button" onClick={() => void saveVersion()}>
                 ★ Save version
               </button>
               <details
@@ -508,16 +542,32 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
                   className="dropdown-menu"
                   style={{ position: "static", boxShadow: "none", minWidth: 0, marginTop: 10 }}
                 >
-                  <button type="button" data-export="html">
+                  <button
+                    type="button"
+                    data-export="html"
+                    onClick={(e) => void runExport("html", e.currentTarget)}
+                  >
                     HTML
                   </button>
-                  <button type="button" data-export="md">
+                  <button
+                    type="button"
+                    data-export="md"
+                    onClick={(e) => void runExport("md", e.currentTarget)}
+                  >
                     Notes (.md)
                   </button>
-                  <button type="button" data-export="md-copy">
+                  <button
+                    type="button"
+                    data-export="md-copy"
+                    onClick={(e) => void runExport("md-copy", e.currentTarget)}
+                  >
                     Notes (Clipboard)
                   </button>
-                  <button type="button" data-export="pdf">
+                  <button
+                    type="button"
+                    data-export="pdf"
+                    onClick={(e) => void runExport("pdf", e.currentTarget)}
+                  >
                     PDF (browser print)
                   </button>
                   <a
