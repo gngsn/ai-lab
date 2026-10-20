@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getOne as getNote, upsert as upsertNote } from "../../data/notes";
 import type { DeckRow } from "../../data/types";
-import { bindShortcutsHelp } from "../../lib/legacy-runtime";
 import { markdownToHtml } from "../../lib/markdown-lite";
+import { bindShortcutsHelp } from "../../lib/shortcuts-help";
 import { syncRoomFor } from "../../lib/sync-room";
 import { HistoryDrawer } from "../history/HistoryDrawer";
 import { saveVersionPrompt } from "../history/save-version";

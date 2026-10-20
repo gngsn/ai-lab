@@ -11,7 +11,7 @@ import { flushSync } from "react-dom";
 import { updateTitle } from "../../data/decks";
 import type { DeckRow } from "../../data/types";
 import { exportHtml, exportNotesMd, exportPdf } from "../../lib/export";
-import { bindShortcutsHelp } from "../../lib/legacy-runtime";
+import { bindShortcutsHelp } from "../../lib/shortcuts-help";
 import { syncRoomFor } from "../../lib/sync-room";
 import { HistoryDrawer } from "../history/HistoryDrawer";
 import { saveVersionPrompt } from "../history/save-version";
