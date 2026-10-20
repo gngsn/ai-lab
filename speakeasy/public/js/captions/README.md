@@ -35,7 +35,7 @@ lines over a Supabase realtime channel.
 
 | File | Role |
 |---|---|
-| `captions.html` | React caption console page |
+| `src/pages/captions/main.tsx` | React caption console page (`/captions`, `/captions.html`) |
 | `src/features/captions/CaptionConsole.tsx` | Console UI |
 | `js/captions/engine.js` | Mic → match → send (no UI) |
 | `js/captions/matcher.js` | Finds the script line for a heard phrase |
@@ -45,7 +45,7 @@ lines over a Supabase realtime channel.
 
 ## Removing the feature
 
-Delete `captions.html` and `js/captions/`, then remove the two lines in
+Delete `src/pages/captions/`, its entry in `src/routes.ts` and `js/captions/`, then remove the two lines in
 `js/view-bootstrap.js` that mention `CAPTIONS_URL` and `mountCaptions` in
 `js/presenter-panel.js`. Both pages already work without the folder (the
 imports fail quietly and the CC controls stay hidden).
