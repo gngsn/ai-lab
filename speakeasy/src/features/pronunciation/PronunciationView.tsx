@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DeckRow, NoteRow, SlideRow } from "../../data/types";
 import type { PronunciationRuntime, TrainingPanel } from "../../lib/legacy-runtime";
+import { fitSlideFrame } from "../../lib/slide-fit";
 
 export type Loaded = { deck: DeckRow; slides: SlideRow[]; notes: NoteRow[] };
 type Props = {
@@ -123,7 +124,7 @@ export function PronunciationView({ deckId, runtime, loaded }: Props) {
     if (!data || !mountRef.current) return;
     if (iframeRef.current && stageRef.current) {
       // Render the preview at the fixed slide size and scale it as a whole.
-      runtime.fitSlideFrame(iframeRef.current, stageRef.current);
+      fitSlideFrame(iframeRef.current, stageRef.current);
     }
     const created = runtime.createTrainingPanel(mountRef.current, {
       deckId,
