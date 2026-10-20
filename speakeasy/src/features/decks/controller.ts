@@ -7,7 +7,10 @@ import { listByDeck as listNotes, upsertKeyMessage, upsert as upsertNote } from 
 import { deleteByDeck, insertSlides, listByDeck as listSlides } from "../../data/slides";
 import { uploadImportedAsset } from "../../data/storage";
 import { parseImportedHtmlDeck, parseNotesMd, slugify } from "../../lib/import-html";
-import type { RemoteMedia, RemoteSource } from "../../lib/legacy-runtime";
+import type { RemoteMedia } from "../../lib/remote-source";
+
+type RemoteSource = typeof import("../../lib/remote-source");
+
 import { syncRoomFor } from "../../lib/sync-room";
 
 // A chosen source: from a local file or a fetched URL.
