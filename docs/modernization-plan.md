@@ -618,7 +618,7 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 - `public/`에는 JS가 아닌 정적 자원(`vendor/`, `css/`, `favicon.svg`, `config.local.js`, 루트 `sync.js` 빈 모듈)만 남긴다.
 
 ### 단계 (각각 별도 커밋. 앞 단계가 끝나야 다음으로 간다)
-- [ ] P6-0 호환 오라클: 덱 실행 동작을 고정하는 e2e. (a) 자체 컨트롤러가 있는 덱(`SlidePresentation`), (b) 평범한 `<section>` 덱, (c) 상대 URL을 부르는 `frame_html`. present/view/share/edit-frame에서 슬라이드 이동, 조각(fragment), 동기화, 인쇄(`?print=1`)를 검증. **이 테스트는 레거시 상태에서 먼저 통과해야 하고, 이후 모든 단계가 이 테스트로 검증한다.**
+- [x] P6-0 호환 오라클: 덱 실행 동작을 고정하는 e2e. (`tests/e2e/p6-0-deck-compat.spec.ts` 9개 + 기존 `p0-3`~`p0-11`) (a) 자체 컨트롤러가 있는 덱(`SlidePresentation`), (b) 평범한 `<section>` 덱, (c) 상대 URL을 부르는 `frame_html`. present/view/share/edit-frame에서 슬라이드 이동, 조각(fragment), 동기화, 인쇄(`?print=1`)를 검증. **이 테스트는 레거시 상태에서 먼저 통과해야 하고, 이후 모든 단계가 이 테스트로 검증한다.**
 - [ ] P6-1 SPA 골격: `index.html` + 라우터로 지금 React인 7개 페이지를 합친다. `.html` URL과 cleanUrls 주소 모두 유지(rewrites), 페이지 단위 코드 분할. 기존 e2e 176개 통과.
 - [ ] P6-2 공용 모듈을 TS로: `auth`, `dom-prompt`, `shortcuts-help`, `sync`, `preload-assets`, `remote-source`, `slide-fit`, `history-ui`(React 컴포넌트). `public/js/repo/*`는 `src/data/*`와 같은 동작인 것을 확인한 뒤 지운다(오라클 단위 테스트는 고정 스냅샷으로 바꾼다).
 - [ ] P6-3 `training-panel.js`(1,187줄)를 React 컴포넌트 + 훅으로. TTS, STT, 점수, IndexedDB, 녹음을 모듈로 나눈다. `pronunciation`과 편집기가 같이 쓴다.

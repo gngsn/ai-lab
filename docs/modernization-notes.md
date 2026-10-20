@@ -127,3 +127,14 @@ Things found while writing the Phase 0 tests. The tests pin today's behavior; no
 - The swap: `public/edit.html` and `public/js/edit-bootstrap.js` deleted, root `edit-next.html` renamed to `edit.html`, `vite.config.ts` input `edit-next` → `edit`. The 7a–7h specs now run against `/edit.html` only (the oracle half is gone), and the older `p0-*` specs (editor, share, import, auth, deck list) pass on the React page unchanged. Full e2e: 176 passed (was 251 with the doubled specs); unit 1151.
 - Left in `public/js` on purpose: `history-ui.js` (script editor), `sha1.js`, `sync-room.js`, `preload-assets.js`, `slide-fit.js`, `import-html.js`, `repo/*` (other pages and the oracle unit tests still use them). `export.js` and `clipboard.js` lost their only user and are removed in a separate `chore` commit.
 
+### P6-0 deck-runtime compatibility oracle
+- Most of the deck runtime was already pinned by `p0-3`..`p0-11` (deck mode and plain mode stepping, playback state, live follow, pause/follow, share token errors, phone layout, preload, presenter panel). `tests/e2e/p6-0-deck-compat.spec.ts` adds what was missing, all green on the legacy pages first:
+  - letterbox geometry (a 1280x720 frame scaled and centred in a square window, side bars in a wide window, the presenter stage beside the panel);
+  - the tab title mirrors the deck's title;
+  - `?print=1`: no letterbox, all slides and fragments revealed, no overlay, the deck's own `<script>`s stripped, `window.print()` called once (stubbed);
+  - relative URLs inside a stored `frame_html` (`./sync.js`, `./css/theme.css`, `./js/deck-host.js` all 200 from the site root), using a deck added to the fake DB;
+  - `view.html` with only a share token (no passphrase): steps with the keys, no presenter panel, plain decks open in speakeasy mode.
+- Mutation checks (each on the legacy file, then reverted): a wrong slide height, no fragment reveal in print mode, no title mirroring, no `cleanFrame`, no root `sync.js`. Each failed only the matching test. Stable over 4 repeats (36 runs).
+- Two test pitfalls: a `class` declaration is a global lexical binding, not a `window` property, so `window.SlidePresentation` is `undefined` with or without the deck script (the first print assertion could not fail; it now looks for the class in the document's scripts); biome forbids `eval` in tests.
+- Not covered (needs a real device, stays on the human list): iOS Safari tab kills, real printing.
+
