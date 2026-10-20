@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DeckRow } from "../../data/types";
-import { createSlideSync } from "../../lib/legacy-runtime";
+import { createSlideSync } from "../../lib/sync";
 
 export type Section = { section_id: string; order: number; title: string; body: string };
 type Props = { deck: DeckRow; sections: Section[]; syncId: string | null; deckId: string };
@@ -70,9 +70,7 @@ export function ScriptView({ deck, sections, syncId, deckId }: Props) {
   useEffect(() => {
     if (!syncId) return;
     const indexById = new Map(sections.map((s, i) => [s.section_id, i]));
-    let closed = false;
-    let sync: { close: () => unknown } | null = null;
-    void createSlideSync(syncId, (payload) => {
+    const sync = createSlideSync(syncId, (payload) => {
       if (manualRef.current) return;
       const fromId =
         payload?.section_id && indexById.has(payload.section_id)
@@ -80,12 +78,8 @@ export function ScriptView({ deck, sections, syncId, deckId }: Props) {
           : null;
       const i = fromId ?? payload?.index ?? null;
       if (i != null && i !== currentRef.current && i >= 0 && i < sections.length) goTo(i);
-    }).then((created) => {
-      if (closed) created?.close();
-      else sync = created;
     });
     return () => {
-      closed = true;
       sync?.close();
     };
   }, [syncId, sections, goTo]);

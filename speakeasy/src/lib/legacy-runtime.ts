@@ -1,20 +1,5 @@
-// Typed access to runtime files that stay in public/ (sync.js, training-panel.js, ...).
+// Typed access to runtime files that stay in public/ (training-panel.js, preload-assets.js, ...).
 // They are loaded by URL at run time, exactly as the legacy pages loaded them.
-type SlidePayload = { section_id?: string; index?: number } | null | undefined;
-type SlideSync = { close: () => unknown } | null;
-
-const SYNC_URL = "/js/sync.js";
-
-export async function createSlideSync(
-  room: string,
-  onSlideChange: (payload: SlidePayload) => void,
-): Promise<SlideSync> {
-  const mod = (await import(/* @vite-ignore */ SYNC_URL)) as {
-    createSlideSync: (room: string, onSlideChange: (payload: SlidePayload) => void) => SlideSync;
-  };
-  return mod.createSlideSync(room, onSlideChange);
-}
-
 // Pronunciation page runtime (shared training panel, asset warm-up, slide fit).
 export type TrainingSection = { sectionId: string | null; title: string; text: string };
 export type TrainingPanel = {
