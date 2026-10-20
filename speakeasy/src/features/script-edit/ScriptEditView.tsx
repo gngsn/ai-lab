@@ -4,6 +4,7 @@ import type { DeckRow } from "../../data/types";
 import { bindShortcutsHelp, type HistoryUIInstance, loadHistoryUi } from "../../lib/legacy-runtime";
 import { markdownToHtml } from "../../lib/markdown-lite";
 import { syncRoomFor } from "../../lib/sync-room";
+import { saveVersionPrompt } from "../history/save-version";
 
 export type Section = { section_id: string; order: number; title: string; body: string };
 type Props = { deck: DeckRow; deckId: string; sections: Section[] };
@@ -66,7 +67,6 @@ export function ScriptEditView({ deck, deckId, sections: initialSections }: Prop
   async function saveVersion() {
     try {
       await flushSave(); // capture in-progress notes into the snapshot
-      const { saveVersionPrompt } = await loadHistoryUi(); // cached after the first load
       const ts = await saveVersionPrompt(deckId);
       if (ts === null) return;
       show("version saved", "ok");

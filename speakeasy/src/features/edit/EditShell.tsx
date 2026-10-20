@@ -11,8 +11,9 @@ import { flushSync } from "react-dom";
 import { updateTitle } from "../../data/decks";
 import type { DeckRow } from "../../data/types";
 import { exportHtml, exportNotesMd, exportPdf } from "../../lib/export";
-import { bindShortcutsHelp, loadHistoryUi } from "../../lib/legacy-runtime";
+import { bindShortcutsHelp } from "../../lib/legacy-runtime";
 import { syncRoomFor } from "../../lib/sync-room";
+import { saveVersionPrompt } from "../history/save-version";
 import { AssetLibrary } from "./AssetLibrary";
 import { FrameModal } from "./FrameModal";
 import { HistoryDrawer, useHistoryDrawer } from "./HistoryDrawer";
@@ -243,7 +244,6 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
   };
   const saveVersion = async () => {
     try {
-      const { saveVersionPrompt } = await loadHistoryUi();
       const ts = await saveVersionPrompt(deckId);
       if (ts === null) return;
       toast("Version saved", "ok");
