@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getOne as getNote, upsert as upsertNote } from "../../data/notes";
 import type { DeckRow } from "../../data/types";
-import { bindShortcutsHelp, type HistoryUIInstance, loadHistoryUi } from "../../lib/legacy-runtime";
+import { bindShortcutsHelp } from "../../lib/legacy-runtime";
 import { markdownToHtml } from "../../lib/markdown-lite";
 import { syncRoomFor } from "../../lib/sync-room";
+import { HistoryDrawer } from "../history/HistoryDrawer";
 import { saveVersionPrompt } from "../history/save-version";
+import { useHistory } from "../history/useHistory";
 
 export type Section = { section_id: string; order: number; title: string; body: string };
 type Props = { deck: DeckRow; deckId: string; sections: Section[] };
@@ -20,12 +22,9 @@ export function ScriptEditView({ deck, deckId, sections: initialSections }: Prop
   const currentRef = useRef(currentSid);
   const pending = useRef<{ sid: string | null; content: string } | null>(null);
   const saveTimer = useRef<number>(0);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const drawerRef = useRef<HTMLElement>(null);
   const historyToggleRef = useRef<HTMLButtonElement>(null);
   const previewToggleRef = useRef<HTMLButtonElement>(null);
   const saveVersionRef = useRef<HTMLButtonElement>(null);
-  const historyUi = useRef<HistoryUIInstance | null>(null);
 
   const show = useCallback(
     (statusText: string, kind = "") => setStatus({ text: statusText, kind }),
@@ -38,6 +37,31 @@ export function ScriptEditView({ deck, deckId, sections: initialSections }: Prop
     },
     [sections],
   );
+
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const historyOpenRef = useRef(false);
+  const history = useHistory({
+    deckId,
+    getSectionId: () => currentRef.current,
+    onRestored: async ({ section_id, source }) => {
+      // Refresh local snapshot for the restored section
+      if (source === "notes") {
+        try {
+          const note = await getNote(deckId, section_id);
+          const sec = sections.find((s) => s.section_id === section_id);
+          if (sec) sec.body = note?.content || "";
+        } catch (e) {
+          console.warn(e);
+        }
+      }
+      if (section_id === currentRef.current) renderEditor(section_id);
+      show("restored", "ok");
+    },
+  });
+  const closeHistory = () => {
+    historyOpenRef.current = false;
+    setHistoryOpen(false);
+  };
 
   async function flushSave() {
     if (!pending.current) return;
@@ -70,7 +94,7 @@ export function ScriptEditView({ deck, deckId, sections: initialSections }: Prop
       const ts = await saveVersionPrompt(deckId);
       if (ts === null) return;
       show("version saved", "ok");
-      if (drawerRef.current?.classList.contains("open")) void historyUi.current?.refresh();
+      if (historyOpenRef.current) void history.refresh();
     } catch (err) {
       show("save version failed", "err");
       console.error(err);
@@ -80,10 +104,10 @@ export function ScriptEditView({ deck, deckId, sections: initialSections }: Prop
   latest.current = { saveVersion, flushSave };
 
   const toggleHistory = () => {
-    const open = drawerRef.current?.classList.toggle("open") ?? false;
-    historyToggleRef.current?.classList.toggle("active", open);
-    // The module may still be loading on a very early click; its handler runs first.
-    if (open) void loadHistoryUi().then(() => historyUi.current?.refresh());
+    const next = !historyOpenRef.current;
+    historyOpenRef.current = next;
+    setHistoryOpen(next);
+    if (next) void history.refresh();
   };
   const toggleHistoryRef = useRef(toggleHistory);
   toggleHistoryRef.current = toggleHistory;
@@ -99,29 +123,6 @@ export function ScriptEditView({ deck, deckId, sections: initialSections }: Prop
   }, [deck]);
 
   useEffect(() => {
-    let cancelled = false;
-    void loadHistoryUi().then(({ HistoryUI }) => {
-      if (cancelled || !panelRef.current) return;
-      historyUi.current = new HistoryUI({
-        deckId,
-        panelEl: panelRef.current,
-        currentSectionGetter: () => currentRef.current,
-        onRestored: async ({ section_id, source }) => {
-          // Refresh local snapshot for the restored section
-          if (source === "notes") {
-            try {
-              const note = await getNote(deckId, section_id);
-              const sec = sections.find((s) => s.section_id === section_id);
-              if (sec) sec.body = note?.content || "";
-            } catch (e) {
-              console.warn(e);
-            }
-          }
-          if (section_id === currentRef.current) renderEditor(section_id);
-          show("restored", "ok");
-        },
-      });
-    });
     void bindShortcutsHelp("Notes (script-edit)", [
       { keys: ["⌘S", "Ctrl+S"], desc: "Save version (manual snapshot)" },
       { keys: ["H"], desc: "Toggle history drawer" },
@@ -153,11 +154,10 @@ export function ScriptEditView({ deck, deckId, sections: initialSections }: Prop
     document.addEventListener("keydown", onKeyDown);
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => {
-      cancelled = true;
       document.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("beforeunload", onBeforeUnload);
     };
-  }, [deckId, sections, show, renderEditor]);
+  }, []);
 
   const q = encodeURIComponent(deckId);
   const sec = sections.find((s) => s.section_id === currentSid);
@@ -220,7 +220,7 @@ export function ScriptEditView({ deck, deckId, sections: initialSections }: Prop
           </button>
           <button
             type="button"
-            className="btn"
+            className={historyOpen ? "btn active" : "btn"}
             id="history-toggle"
             ref={historyToggleRef}
             title="History (H)"
@@ -275,9 +275,7 @@ export function ScriptEditView({ deck, deckId, sections: initialSections }: Prop
           />
         </main>
       </div>
-      <aside className="hist-drawer" id="hist-drawer" ref={drawerRef}>
-        <div id="history-panel" ref={panelRef} />
-      </aside>
+      <HistoryDrawer open={historyOpen} history={history} onClose={closeHistory} />
     </>
   );
 }

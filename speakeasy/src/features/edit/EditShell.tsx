@@ -13,10 +13,10 @@ import type { DeckRow } from "../../data/types";
 import { exportHtml, exportNotesMd, exportPdf } from "../../lib/export";
 import { bindShortcutsHelp } from "../../lib/legacy-runtime";
 import { syncRoomFor } from "../../lib/sync-room";
+import { HistoryDrawer } from "../history/HistoryDrawer";
 import { saveVersionPrompt } from "../history/save-version";
 import { AssetLibrary } from "./AssetLibrary";
 import { FrameModal } from "./FrameModal";
-import { HistoryDrawer, useHistoryDrawer } from "./HistoryDrawer";
 import { type EditSlide, useEditorModel } from "./model";
 import { NotesPanel } from "./NotesPanel";
 import { ShareModal, useShare } from "./ShareModal";
@@ -24,6 +24,7 @@ import { SlideList } from "./SlideList";
 import { SvgModal } from "./SvgModal";
 import { useTrainingPanel } from "./training";
 import { useCanvas } from "./useCanvas";
+import { useHistoryDrawer } from "./useHistoryDrawer";
 import { useHtmlEditor } from "./useHtmlEditor";
 
 // Chrome shared with the editor features that arrive in later P4-7 steps.
@@ -723,7 +724,7 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
         onClose={() => setAssetsOpen(false)}
       />
 
-      <HistoryDrawer history={history} />
+      <HistoryDrawer open={history.open} history={history.history} onClose={history.close} />
 
       <FrameModal
         deckId={deckId}
