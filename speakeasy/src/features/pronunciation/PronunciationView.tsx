@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DeckRow, NoteRow, SlideRow } from "../../data/types";
 import type { PronunciationRuntime, TrainingPanel } from "../../lib/legacy-runtime";
+import { formatBytes, warmDeckAssets } from "../../lib/preload-assets";
 import { fitSlideFrame } from "../../lib/slide-fit";
 
 export type Loaded = { deck: DeckRow; slides: SlideRow[]; notes: NoteRow[] };
@@ -166,14 +167,12 @@ export function PronunciationView({ deckId, runtime, loaded }: Props) {
     // Pull every slide's images/video/audio into the browser cache now, so
     // later slides show without waiting on the network.
     const title = document.title;
-    runtime
-      .warmDeckAssets(data.deck, data.slides, {
-        onProgress: ({ done, total, bytes }) => {
-          document.title =
-            done < total ? `(${done}/${total} · ${runtime.formatBytes(bytes)}) ${title}` : title;
-        },
-      })
-      .catch(() => {});
+    warmDeckAssets(data.deck, data.slides, {
+      onProgress: ({ done, total, bytes }) => {
+        document.title =
+          done < total ? `(${done}/${total} · ${formatBytes(bytes)}) ${title}` : title;
+      },
+    }).catch(() => {});
     return () => {
       stopRight();
       created.destroy();
