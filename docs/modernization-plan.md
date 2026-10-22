@@ -622,7 +622,7 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 - [x] P6-1 SPA 골격: `index.html` + 주소 분기(`src/main.tsx`, `src/routes.ts`)로 지금 React인 7개 페이지를 합친다. 페이지 이동은 지금처럼 전체 로드라 라우터 라이브러리는 쓰지 않는다. `.html` URL과 cleanUrls 주소 모두 유지(rewrites), 페이지 단위 코드 분할. 기존 e2e 176개 통과.
 - [x] P6-2 공용 모듈을 TS로: `auth`, `dom-prompt`, `shortcuts-help`, `sync`, `preload-assets`, `remote-source`, `slide-fit`, `history-ui`(React 컴포넌트). `public/js/repo/*`는 `src/data/*`와 같은 동작인 것을 확인한 뒤 지운다(오라클 단위 테스트는 고정 스냅샷으로 바꾼다).
 - [x] P6-3 `training-panel.js`(1,187줄)를 React 컴포넌트 + 훅으로. TTS, STT, 점수, IndexedDB, 녹음을 모듈로 나눈다. `pronunciation`과 편집기가 같이 쓴다.
-- [ ] P6-4 덱 런타임 TS화: `slide-runtime`, `deck-host`, `slide-render`, `slide-visibility`와 덱 문서 빌더(`srcdoc`), 레터박스 React 컴포넌트.
+- [x] P6-4 덱 런타임 TS화: `slide-runtime`, `deck-host`를 `speakeasy/src/runtime/`로 옮기고 `vite-plugins/deck-runtime.ts`(esbuild)로 고정 URL `/js/deck-host.js`에 번들한다. `slide-render`/`slide-visibility`는 이미 `src/lib`에 있고 레거시 부트스트랩이 쓰는 사본은 P6-5~7에서 함께 지운다. 레터박스와 덱 문서 빌더(`srcdoc`)는 그것을 쓰는 페이지와 같이 가야 해서 P6-5(view/share)에서 한다.
 - [ ] P6-5 `view`와 `share`(`view-bootstrap`, 자막 `audience`).
 - [ ] P6-6 `present`(`present-bootstrap`, `presenter-panel`, 자막 엔진 연결).
 - [ ] P6-7 `edit-frame`(`inline-editor`, `edit-frame-overlay`, `edit-frame-bootstrap`). 편집기 캔버스와의 postMessage 규약(§2.4)은 유지.
