@@ -52,7 +52,8 @@ const NOTES = "Hello everyone, and welcome. Slide {n} is a short talk about spea
 
 async function open(page: Page, init: Partial<Stub> = {}, notes: string = NOTES) {
   await page.addInitScript(
-    ({ deck, text }) => {
+    ({ deck, text: initial }) => {
+      const text = sessionStorage.getItem("__notes") ?? initial;
       const db = JSON.parse(localStorage.getItem("__fakedb") || "{}");
       const order = new Map(
         (db.slides as { deck_id: string; section_id: string; order: number }[])
@@ -306,6 +307,32 @@ test.describe("engine and speed", () => {
     await expect
       .poll(() => page.locator("#section-audio").evaluate((a: HTMLAudioElement) => a.playbackRate))
       .toBeCloseTo(0.8, 5);
+  });
+});
+
+test.describe("the take list", () => {
+  test("numbers takes newest first, and picking one swaps the player without a request", async ({
+    page,
+  }) => {
+    const stub = await open(page, {}, "First version of the notes.");
+    await page.locator("#listen-btn").click();
+    await expect(options(page, "history-select")).toHaveCount(1);
+    const firstSrc = await page.locator("#section-audio").getAttribute("src");
+    await page.evaluate(() => sessionStorage.setItem("__notes", "Second version of the notes."));
+    await load(page);
+    await page.locator("#listen-btn").click();
+    await expect(options(page, "history-select")).toHaveCount(2);
+    expect(stub.tts).toHaveLength(2);
+    await expect(options(page, "history-select").nth(0)).toHaveText(/^v2 · /);
+    await expect(options(page, "history-select").nth(1)).toHaveText(/^v1 · /);
+    await expect(options(page, "history-select").nth(0)).toHaveJSProperty("selected", true);
+    const secondSrc = await page.locator("#section-audio").getAttribute("src");
+    expect(secondSrc).not.toBe(firstSrc);
+    const older = await options(page, "history-select").nth(1).getAttribute("value");
+    await page.locator("#history-select").selectOption(older as string);
+    await expect(page.locator("#section-audio")).not.toHaveAttribute("src", secondSrc as string);
+    await expect(options(page, "history-select").nth(1)).toHaveJSProperty("selected", true);
+    expect(stub.tts).toHaveLength(2);
   });
 });
 
@@ -568,6 +595,49 @@ test.describe("Record and score", () => {
       await page.locator("#record-btn").click(); // stop the retry's recording
       await expect(page.locator("#score-big")).not.toHaveText("—");
     }
+  });
+
+  test("shows ⟳ checking MLX… and ⟳ transcribing… while it waits", async ({ page }) => {
+    const stub = await open(page, { transcript: "hello" });
+    let releaseModels: () => void = () => {};
+    const modelsGate = new Promise<void>((r) => {
+      releaseModels = r;
+    });
+    let releaseStt: () => void = () => {};
+    const sttGate = new Promise<void>((r) => {
+      releaseStt = r;
+    });
+    await page.unroute(MLX_MODELS);
+    await page.route(MLX_MODELS, async (route) => {
+      await modelsGate;
+      await route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+    });
+    await page.unroute(MLX_STT);
+    await page.route(MLX_STT, async (route) => {
+      stub.sttCalls++;
+      await sttGate;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ text: "hello" }),
+      });
+    });
+    await page.locator("#record-btn").click();
+    await expect(status(page)).toHaveText("⟳ checking MLX…");
+    await expect(status(page)).toHaveClass(/processing/);
+    await expect(page.locator("#record-btn")).toHaveText("⏹ Stop");
+    releaseModels();
+    await expect(status(page)).toHaveText("● recording…");
+    await expect(status(page)).toHaveClass(/listening/);
+    await expect(status(page)).not.toHaveClass(/processing/);
+    await page.waitForTimeout(300);
+    await page.locator("#record-btn").click();
+    await expect(status(page)).toHaveText("⟳ transcribing…");
+    await expect(status(page)).toHaveClass(/processing/);
+    releaseStt();
+    await expect(page.locator("#score-big")).toHaveText(/%$/);
+    await expect(status(page)).toHaveText("");
+    await expect(status(page)).not.toHaveClass(/processing|listening/);
   });
 
   test("the transcript is shown as text, not as markup", async ({ page }) => {

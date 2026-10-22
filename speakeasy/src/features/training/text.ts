@@ -1,5 +1,5 @@
 // Pure text helpers of the pronunciation training panel (port of the helpers in
-// public/js/training-panel.js, same output).
+// the legacy training-panel.js, same output).
 
 export type DiffStatus = "hit" | "extra" | "near" | "miss";
 export type DiffItem = { word: string; status: DiffStatus };

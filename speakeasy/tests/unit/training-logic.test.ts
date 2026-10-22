@@ -1,14 +1,15 @@
-// P6-3: the training panel's pure logic in TypeScript (src/features/training)
-// against the legacy panel (public/js/training-panel.js): the exported helpers
-// must give identical output, byte for byte for the WAV files. The helpers the
-// legacy file keeps private are pinned by hand-checked cases.
+// P6-3: the training panel's pure logic in TypeScript (src/features/training).
+// The expected values of cleanForSpeech, silenceWav and mergeBlobs are what the
+// legacy panel (public/js/training-panel.js, since removed) produced for the
+// same inputs, byte for byte for the WAV files (as SHA-1 digests); the helpers
+// it kept private are pinned by hand-checked cases.
+import { createHash } from "node:crypto";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 const { stubAudio } = vi.hoisted(() => {
-  // The legacy file reads window.* at load time.
-  (globalThis as unknown as { window: unknown }).window = globalThis;
   // A fake decoder: every blob "decodes" to the samples its bytes spell, so
-  // both mergeBlobs implementations see the same audio without a browser.
+  // mergeBlobs runs without a browser.
+  (globalThis as unknown as { window: unknown }).window = globalThis;
   class FakeAudioContext {
     async decodeAudioData(buf: ArrayBuffer) {
       const bytes = new Uint8Array(buf);
@@ -23,9 +24,7 @@ const { stubAudio } = vi.hoisted(() => {
     },
   };
 });
-vi.mock("../../public/js/repo/audio-repo.js", () => ({}));
 
-import * as legacy from "../../public/js/training-panel.js";
 import {
   cleanForSpeech,
   diffTokens,
@@ -43,50 +42,56 @@ import { mergeBlobs, silenceWav } from "../../src/features/training/wav";
 
 beforeAll(stubAudio);
 
-const bytesOf = async (b: Blob) => new Uint8Array(await b.arrayBuffer());
+const digest = async (b: Blob) =>
+  createHash("sha1")
+    .update(Buffer.from(await b.arrayBuffer()))
+    .digest("hex");
 
 describe("cleanForSpeech", () => {
-  const cases = [
-    "",
-    "plain",
-    "# Title\n## Sub\n###### six\n####### seven",
-    "---\ntext\n---   \nmore",
-    "[Next] go on\n[Next]second",
-    "**bold** and *em* and `code` and ***both***",
-    "a   \nb\n\n\n\nc\n\n\n\n\nd   ",
-    "  padded  ",
-    "one *two\nthree* four",
-    "x\r\ny\r\n\r\n\r\nz",
-    "한국어 **굵게** 와 `코드`",
+  // [input, what the legacy panel returned]
+  const cases: [string, string][] = [
+    ["", ""],
+    ["plain", "plain"],
+    ["# Title\n## Sub\n###### six\n####### seven", "Title\nSub\nsix\n####### seven"],
+    ["---\ntext\n---   \nmore", "text\nmore"],
+    ["[Next] go on\n[Next]second", "Next. go on\nNext. second"],
+    ["**bold** and *em* and `code` and ***both***", "bold and em and code and both"],
+    ["a   \nb\n\n\n\nc\n\n\n\n\nd   ", "a\nb\nc\nd"],
+    ["  padded  ", "padded"],
+    ["one *two\nthree* four", "one *two\nthree* four"],
+    ["x\r\ny\r\n\r\n\r\nz", "x\ny\nz"],
+    ["한국어 **굵게** 와 `코드`", "한국어 굵게 와 코드"],
   ];
-  for (const input of cases) {
-    it(`same as the legacy for ${JSON.stringify(input)}`, () => {
-      expect(cleanForSpeech(input)).toBe(legacy.cleanForSpeech(input));
+  for (const [input, want] of cases) {
+    it(`${JSON.stringify(input)}`, () => {
+      expect(cleanForSpeech(input)).toBe(want);
     });
   }
   it("coerces non-strings like the legacy", () => {
-    expect(cleanForSpeech(null)).toBe(legacy.cleanForSpeech(null));
-    expect(cleanForSpeech(12)).toBe(legacy.cleanForSpeech(12));
+    expect(cleanForSpeech(null)).toBe("null");
+    expect(cleanForSpeech(12)).toBe("12");
   });
 });
 
 describe("silenceWav", () => {
-  for (const [sec, sr] of [
-    [0, undefined],
-    [0.5, undefined],
-    [1.5, undefined],
-    [0.001, 8000],
-    [2, 44100],
-  ] as const) {
+  // [seconds, sample rate, size in bytes, SHA-1 of the legacy file]
+  const cases: [number, number | undefined, number, string][] = [
+    [0, undefined, 44, "b8000eada705cf56630266b151564d054d3e2a06"],
+    [0.5, undefined, 22094, "5f8152f49034fff563e91ed43cd01de8abc5ac4b"],
+    [1.5, undefined, 66194, "61d6459f7246b9175253ef718351b39953b15750"],
+    [0.001, 8000, 60, "58ee6e71a06e953e82062dddb2606be8bd4cdf10"],
+    [2, 44100, 176444, "6a85dc96625ced9f7bf0d3d1ca3bad41bd1f8315"],
+  ];
+  for (const [sec, sr, size, sha] of cases) {
     it(`${sec}s @ ${sr ?? "default"} is byte-identical`, async () => {
-      const a = silenceWav(sec, sr);
-      const b = legacy.silenceWav(sec, sr);
-      expect(a.type).toBe("audio/wav");
-      expect(await bytesOf(a)).toEqual(await bytesOf(b));
+      const wav = silenceWav(sec, sr);
+      expect(wav.type).toBe("audio/wav");
+      expect(wav.size).toBe(size);
+      expect(await digest(wav)).toBe(sha);
     });
   }
   it("writes a 44-byte header plus 16-bit samples", async () => {
-    const wav = await bytesOf(silenceWav(1, 1000));
+    const wav = new Uint8Array(await silenceWav(1, 1000).arrayBuffer());
     expect(wav.length).toBe(44 + 2000);
     expect(String.fromCharCode(...wav.slice(0, 4))).toBe("RIFF");
     expect(String.fromCharCode(...wav.slice(8, 12))).toBe("WAVE");
@@ -96,24 +101,21 @@ describe("silenceWav", () => {
 describe("mergeBlobs", () => {
   const blob = (...values: number[]) => new Blob([Uint8Array.from(values)]);
   it("joins decoded audio into the same 16-bit WAV as the legacy", async () => {
-    const parts = [blob(0, 128, 255, 200), blob(100, 50), blob(128)];
-    const a = await mergeBlobs(parts);
-    const b = await legacy.mergeBlobs(parts);
-    expect(a.type).toBe("audio/wav");
-    expect(await bytesOf(a)).toEqual(await bytesOf(b));
+    const merged = await mergeBlobs([blob(0, 128, 255, 200), blob(100, 50), blob(128)]);
+    expect(merged.type).toBe("audio/wav");
+    expect(merged.size).toBe(58);
+    expect(await digest(merged)).toBe("3de9ff581070bcd49aa1ceed1391e044fb80b0a9");
   });
   it("clips samples outside -1..1 the same way", async () => {
-    const parts = [blob(0, 255, 128)];
-    expect(await bytesOf(await mergeBlobs(parts))).toEqual(
-      await bytesOf(await legacy.mergeBlobs(parts)),
-    );
+    const merged = await mergeBlobs([blob(0, 255, 128)]);
+    expect(merged.size).toBe(50);
+    expect(await digest(merged)).toBe("0bbc71dfd1f5f70a2056b67804dd0e996ac3fbd4");
   });
   it("fails the same way without an AudioContext", async () => {
     const saved = (globalThis as unknown as { AudioContext: unknown }).AudioContext;
     (globalThis as unknown as { AudioContext: unknown }).AudioContext = undefined;
     try {
       await expect(mergeBlobs([blob(1)])).rejects.toThrow("AudioContext not supported");
-      await expect(legacy.mergeBlobs([blob(1)])).rejects.toThrow("AudioContext not supported");
     } finally {
       (globalThis as unknown as { AudioContext: unknown }).AudioContext = saved;
     }

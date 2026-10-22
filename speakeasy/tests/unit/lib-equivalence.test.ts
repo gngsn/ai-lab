@@ -8,7 +8,6 @@ import * as legacyBilingual from "../../public/js/captions/bilingual.js";
 import * as legacyMatcher from "../../public/js/captions/matcher.js";
 import * as legacyImport from "../../public/js/import-html.js";
 import * as legacyMarkdown from "../../public/js/markdown-lite.js";
-import * as legacySha1 from "../../public/js/sha1.js";
 import * as legacyRender from "../../public/js/slide-render.js";
 import * as legacyVisibility from "../../public/js/slide-visibility.js";
 import * as tsBilingual from "../../src/lib/captions/bilingual";
@@ -242,14 +241,12 @@ describe("sha1Hex", () => {
   it.each(texts.map((t) => [t.slice(0, 12), t]))("native crypto · %j", async (_n, text) => {
     const want = createHash("sha1").update(text).digest("hex");
     expect(await tsSha1.sha1Hex(text)).toBe(want);
-    expect(await legacySha1.sha1Hex(text)).toBe(want);
   });
 
   it.each(texts.map((t) => [t.slice(0, 12), t]))("pure-JS fallback · %j", async (_n, text) => {
     vi.stubGlobal("crypto", undefined); // as on a plain-HTTP page
     const want = createHash("sha1").update(text).digest("hex");
     expect(await tsSha1.sha1Hex(text)).toBe(want);
-    expect(await legacySha1.sha1Hex(text)).toBe(want);
   });
 });
 

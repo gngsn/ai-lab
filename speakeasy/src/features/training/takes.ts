@@ -1,7 +1,7 @@
 // The panel's two take histories in IndexedDB: generated speech ("history",
 // newest first, up to ten, reused while text and engine stay the same) and the
 // user's own recordings ("recordings"). Port of the history code in
-// public/js/training-panel.js; the record layout is unchanged.
+// the legacy training-panel.js; the record layout is unchanged.
 import { sha1Hex } from "../../lib/sha1";
 import { MAX_HISTORY, trainingConfig } from "./config";
 import { idbStore, type KeyValueStore } from "./db";
