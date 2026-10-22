@@ -6,6 +6,7 @@
 // state. They pass on the legacy files first and must keep passing on the port.
 import type { Frame, Page } from "@playwright/test";
 import { deckFrame, expect, press, slideState, test } from "../support/app";
+import { DECK, TOKEN } from "../support/seed";
 
 const RT = "runtime-deck";
 
@@ -16,7 +17,7 @@ const SLIDES = [
      <div class="card" id="c1"><span class="item">b</span></div>
      <div class="card" id="c2"><span class="item">c</span></div></section>`,
   `<section class="slide" data-title="Custom" data-stepper=".pick" data-stepper-active-class="on"><h1>Custom</h1>
-     <p class="pick" id="p0">x</p><p class="pick" id="p1">y</p></section>`,
+     <div class="card" id="w0"><p class="pick" id="p0">x</p></div><div class="card" id="w1"><p class="pick" id="p1">y</p></div></section>`,
   `<section data-title="Groups"><h1>Groups</h1>
      <p class="fragment" id="f0">solo</p>
      <p class="fragment" data-fragment-group="g" id="f1">g1</p>
@@ -143,11 +144,12 @@ test("the stepper marks the closest .card, and data-stepper-active-class names t
   expect(await frame.evaluate(() => document.getElementById("c0")?.className)).toContain("mint");
   await press(page, "ArrowRight", 3); // → Custom
   await expect.poll(() => slideState(frame)).toMatchObject({ index: 2 });
-  expect(await active(frame, "on")).toEqual(["p0"]);
+  // the marked element is the .card around the item, not the item itself
+  expect(await active(frame, "on")).toEqual(["w0"]);
   // leaving a slide does not clear its marks (legacy behavior)
   expect(await active(frame, "mint")).toEqual(["c2"]);
   await press(page, "ArrowRight");
-  expect(await active(frame, "on")).toEqual(["p1"]);
+  expect(await active(frame, "on")).toEqual(["w1"]);
 });
 
 test("slidechange carries the slide, the shown fragments and the stepper index", async ({
@@ -320,4 +322,33 @@ test("a deck with its own controller is hosted without Speakeasy's layout", asyn
       () => typeof (window as unknown as { __seDeckController?: unknown }).__seDeckController,
     ),
   ).toBe("object");
+});
+
+test("following the presenter tells a deck's own controller to skip its sync", async ({
+  page,
+  context,
+}) => {
+  await page.goto(`/present.html?deck=${DECK}&sync=rt`);
+  await deckFrame(page);
+  const audiencePage = await context.newPage();
+  await audiencePage.goto(`/share.html?deck=${DECK}&token=${TOKEN}&sync=rt`);
+  const audience = await deckFrame(audiencePage);
+  await expect(audiencePage.locator("#__se_status")).toHaveText(/Waiting|Live/);
+  // a deck controller that has a _syncSkip switch (the v5 decks do)
+  await audience.evaluate(() => {
+    (
+      window as unknown as { __seDeckController: { _syncSkip: boolean } }
+    ).__seDeckController._syncSkip = false;
+  });
+  await page.bringToFront();
+  await press(page, "ArrowRight", 3);
+  await expect
+    .poll(() =>
+      audience.evaluate(
+        () =>
+          (window as unknown as { __seDeckController: { _syncSkip: boolean } }).__seDeckController
+            ._syncSkip,
+      ),
+    )
+    .toBe(true);
 });

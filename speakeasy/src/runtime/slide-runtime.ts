@@ -1,30 +1,41 @@
-// @ts-check
 // Port of personal-log/Kprintf2026/v4/controller.js :: SlidePresentation.
 // Stripped down to the runtime concerns (nav + fragments + scroll).
-// InlineEditor / SpeakerNotes will land in M3 / M4 as separate modules.
+import type { SlideChangeDetail, StepState } from "./types";
+
+type StepperConfig = { selector: string; activeClass: string };
+type Options = {
+  onSlideChange?: (detail: SlideChangeDetail) => void;
+  // Take keyboard / wheel / touch navigation exclusively (window, capture
+  // phase) so a deck's own slide controller — kept running in present.html for
+  // its effects — never also reacts to the same input.
+  captureInput?: boolean;
+};
 
 export class SlidePresentation {
-  // captureInput: take keyboard / wheel / touch navigation exclusively
-  // (window, capture phase) so a deck's own slide controller — kept running
-  // in present.html for its effects — never also reacts to the same input.
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-  constructor({ onSlideChange, captureInput = false } = {}) {
+  captureInput: boolean;
+  slides: HTMLElement[];
+  currentSlide = 0;
+  mainEl: HTMLElement | null;
+  mobileMedia: MediaQueryList;
+  touchStartY: number | null = null;
+  wheelLock = false;
+  // True while `goTo()` is animating a programmatic scroll. The intersection
+  // observer must NOT update currentSlide while we're mid-flight, otherwise
+  // passing through intermediate slides fires extra emitSlideChange events
+  // (= sync broadcast spam) and the runtime ends up resolving to whichever
+  // slide the viewport last crossed instead of the requested target.
+  navLock = false;
+  _navLockTimer: ReturnType<typeof setTimeout> | undefined;
+  onSlideChange?: (detail: SlideChangeDetail) => void;
+  _activeStepperSlide: HTMLElement | null = null;
+
+  constructor({ onSlideChange, captureInput = false }: Options = {}) {
     this.captureInput = captureInput;
-    this.slides = Array.from(document.querySelectorAll("section.slide"));
-    this.currentSlide = 0;
+    this.slides = Array.from(document.querySelectorAll<HTMLElement>("section.slide"));
     this.mainEl = document.querySelector("main");
     this.mobileMedia = window.matchMedia(
       "(max-width: 900px), (max-width: 1024px) and (orientation: landscape)",
     );
-    this.touchStartY = null;
-    this.wheelLock = false;
-    // True while `goTo()` is animating a programmatic scroll. The intersection
-    // observer must NOT update currentSlide while we're mid-flight, otherwise
-    // passing through intermediate slides fires extra emitSlideChange events
-    // (= sync broadcast spam) and the runtime ends up resolving to whichever
-    // slide the viewport last crossed instead of the requested target.
-    this.navLock = false;
-    this._navLockTimer = 0;
     this.onSlideChange = onSlideChange;
 
     this.setupIntersectionObserver();
@@ -34,49 +45,42 @@ export class SlidePresentation {
     this.setupWheelNav();
 
     this.slides[0]?.classList.add("visible");
-    this._activeStepperSlide = null;
     this.syncStepperState(this.slides[0]);
     this.emitSlideChange();
   }
 
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-  getStepperConfig(slide) {
+  getStepperConfig(slide: HTMLElement | undefined): StepperConfig | null {
     if (!slide) return null;
-
     const activeClass = slide.dataset.stepperActiveClass || "mint";
     const explicitSelector = slide.dataset.stepper?.trim();
     if (!explicitSelector) return null;
     return { selector: explicitSelector, activeClass };
   }
 
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-  getStepperItems(slide) {
+  getStepperItems(slide: HTMLElement): Element[] {
     const config = this.getStepperConfig(slide);
     if (!config) return [];
     return Array.from(slide.querySelectorAll(config.selector));
   }
 
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-  getStepperTarget(item) {
+  getStepperTarget(item: Element | undefined): Element | undefined {
     return item?.closest?.(".card") || item;
   }
 
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-  getActiveStepperIndex(slide) {
+  getActiveStepperIndex(slide: HTMLElement | undefined): number {
     const config = this.getStepperConfig(slide);
-    if (!config) return -1;
+    if (!slide || !config) return -1;
 
     const items = Array.from(slide.querySelectorAll(config.selector));
     if (!items.length) return -1;
     return items.findIndex((item) =>
-      this.getStepperTarget(item).classList.contains(config.activeClass),
+      this.getStepperTarget(item)?.classList.contains(config.activeClass),
     );
   }
 
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-  syncStepperState(slide) {
+  syncStepperState(slide: HTMLElement | undefined) {
     const config = this.getStepperConfig(slide);
-    if (!config) {
+    if (!slide || !config) {
       this._activeStepperSlide = null;
       return;
     }
@@ -86,17 +90,14 @@ export class SlidePresentation {
     const items = Array.from(slide.querySelectorAll(config.selector));
     if (!items.length) return;
 
-    items.forEach((item) =>
-      this.getStepperTarget(item).classList.remove(config.activeClass),
-    );
+    for (const item of items) this.getStepperTarget(item)?.classList.remove(config.activeClass);
     this.getStepperTarget(items[0])?.classList.add(config.activeClass);
     this._activeStepperSlide = slide;
   }
 
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-  stepStepper(slide, direction) {
+  stepStepper(slide: HTMLElement | undefined, direction: number): boolean {
     const config = this.getStepperConfig(slide);
-    if (!config) return false;
+    if (!slide || !config) return false;
 
     const items = Array.from(slide.querySelectorAll(config.selector));
     if (!items.length) return false;
@@ -105,9 +106,7 @@ export class SlidePresentation {
     const nextIdx = activeIdx === -1 ? 0 : activeIdx + direction;
     if (nextIdx < 0 || nextIdx >= items.length) return false;
 
-    this.getStepperTarget(items[activeIdx])?.classList.remove(
-      config.activeClass,
-    );
+    this.getStepperTarget(items[activeIdx])?.classList.remove(config.activeClass);
     this.getStepperTarget(items[nextIdx])?.classList.add(config.activeClass);
     this._activeStepperSlide = slide;
     return true;
@@ -120,37 +119,37 @@ export class SlidePresentation {
     const isMobile = this.mobileMedia.matches;
     const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
+        for (const entry of entries) {
           if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
             entry.target.classList.add("visible");
-            // Skip when goTo() is mid-flight — see navLock comment in ctor.
-            if (this.navLock) return;
+            // Skip when goTo() is mid-flight — see navLock comment above.
+            if (this.navLock) continue;
             if (!this.mobileMedia.matches) {
-              const idx = this.slides.indexOf(entry.target);
+              const idx = this.slides.indexOf(entry.target as HTMLElement);
               if (idx !== -1 && idx !== this.currentSlide) {
                 this.currentSlide = idx;
                 this.emitSlideChange();
               }
             }
           }
-        });
+        }
       },
       { root: isMobile ? this.mainEl : null, threshold: [0, 0.5, 0.9] },
     );
-    this.slides.forEach((s) => observer.observe(s));
+    for (const s of this.slides) observer.observe(s);
   }
 
   setupMobileScrollSync() {
     // On mobile, `currentSlide` is driven by `main`'s scrollTop (not by
     // intersection ratio). v4 mobile shrinks layout to 720px-tall slides.
-    if (!this.mainEl) return;
+    const main = this.mainEl;
+    if (!main) return;
     let raf = 0;
     const SLIDE_H = 720;
     const sync = () => {
       raf = 0;
       if (!this.mobileMedia.matches) return;
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-      const idx = Math.round(this.mainEl.scrollTop / SLIDE_H);
+      const idx = Math.round(main.scrollTop / SLIDE_H);
       const clamped = Math.max(0, Math.min(this.slides.length - 1, idx));
       if (clamped !== this.currentSlide) {
         this.currentSlide = clamped;
@@ -158,7 +157,7 @@ export class SlidePresentation {
         this.emitSlideChange();
       }
     };
-    this.mainEl.addEventListener(
+    main.addEventListener(
       "scroll",
       () => {
         if (raf) return;
@@ -170,10 +169,13 @@ export class SlidePresentation {
 
   // Where navigation listeners go: document normally; window in the capture
   // phase with captureInput, so they run before any deck handler.
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-  listen(type, handler, options = {}) {
+  listen<K extends keyof DocumentEventMap>(
+    type: K,
+    handler: (e: DocumentEventMap[K]) => void,
+    options: AddEventListenerOptions = {},
+  ) {
     if (this.captureInput) {
-      window.addEventListener(type, handler, { ...options, capture: true });
+      window.addEventListener(type, handler as EventListener, { ...options, capture: true });
     } else {
       document.addEventListener(type, handler, options);
     }
@@ -181,20 +183,25 @@ export class SlidePresentation {
 
   // With captureInput, keep handled navigation events from reaching the
   // deck's own controller.
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-  claim(e) {
+  claim(e: Event) {
     if (this.captureInput) e.stopImmediatePropagation();
   }
 
   setupKeyboardNav() {
     const NAV_KEYS = [
-      "ArrowDown", "ArrowRight", "PageDown", " ",
-      "ArrowUp", "ArrowLeft", "PageUp", "Home", "End",
+      "ArrowDown",
+      "ArrowRight",
+      "PageDown",
+      " ",
+      "ArrowUp",
+      "ArrowLeft",
+      "PageUp",
+      "Home",
+      "End",
     ];
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
     this.listen("keydown", (e) => {
       // Skip when editing text inline (M3+).
-      if (e.target?.getAttribute?.("contenteditable") === "true") return;
+      if ((e.target as Element | null)?.getAttribute?.("contenteditable") === "true") return;
       if (NAV_KEYS.includes(e.key)) this.claim(e);
       // Ignore OS autorepeat — holding ↓ otherwise skips through slides.
       if (e.repeat) return;
@@ -227,7 +234,6 @@ export class SlidePresentation {
   setupTouchNav() {
     this.listen(
       "touchstart",
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
       (e) => {
         this.claim(e);
         this.touchStartY = e.touches[0].clientY;
@@ -236,12 +242,14 @@ export class SlidePresentation {
     );
     this.listen(
       "touchend",
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
       (e) => {
         this.claim(e);
         if (this.touchStartY === null) return;
         const dy = e.changedTouches[0].clientY - this.touchStartY;
-        if (Math.abs(dy) > 50) dy < 0 ? this.next() : this.prev();
+        if (Math.abs(dy) > 50) {
+          if (dy < 0) this.next();
+          else this.prev();
+        }
         this.touchStartY = null;
       },
       { passive: true },
@@ -266,7 +274,6 @@ export class SlidePresentation {
 
     this.listen(
       "wheel",
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
       (e) => {
         this.claim(e);
         const now = Date.now();
@@ -287,14 +294,12 @@ export class SlidePresentation {
     );
   }
 
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-  goTo(idx) {
+  goTo(idx: number) {
     if (idx < 0 || idx >= this.slides.length) return;
     // Lock the intersection observer for the duration of the smooth scroll
     // so it doesn't reset currentSlide to an in-between slide.
     this.navLock = true;
     clearTimeout(this._navLockTimer);
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
     this._navLockTimer = setTimeout(() => {
       this.navLock = false;
     }, 700);
@@ -311,16 +316,14 @@ export class SlidePresentation {
   next() {
     // Reveal next .fragment (or group) in place rather than advancing pages.
     const slide = this.slides[this.currentSlide];
-    const pending = slide?.querySelector(".fragment:not(.show)");
+    const pending = slide?.querySelector<HTMLElement>(".fragment:not(.show)");
     if (pending) {
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
       const group = pending.dataset.fragmentGroup;
       if (group) {
-        slide
-          .querySelectorAll(
-            `.fragment[data-fragment-group="${group}"]:not(.show)`,
-          )
-          .forEach((el) => el.classList.add("show"));
+        for (const el of slide.querySelectorAll(
+          `.fragment[data-fragment-group="${group}"]:not(.show)`,
+        ))
+          el.classList.add("show");
       } else {
         pending.classList.add("show");
       }
@@ -339,15 +342,13 @@ export class SlidePresentation {
   prev() {
     // Hide last revealed .fragment (or group) before going back a page.
     const slide = this.slides[this.currentSlide];
-    const revealed = [...(slide?.querySelectorAll(".fragment.show") || [])];
+    const revealed = [...(slide?.querySelectorAll<HTMLElement>(".fragment.show") || [])];
     if (revealed.length > 0) {
       const last = revealed[revealed.length - 1];
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
       const group = last.dataset.fragmentGroup;
       if (group) {
-        slide
-          .querySelectorAll(`.fragment[data-fragment-group="${group}"].show`)
-          .forEach((el) => el.classList.remove("show"));
+        for (const el of slide.querySelectorAll(`.fragment[data-fragment-group="${group}"].show`))
+          el.classList.remove("show");
       } else {
         last.classList.remove("show");
       }
@@ -364,31 +365,27 @@ export class SlidePresentation {
   // In-slide progress: which .fragment elements are shown (by position) and
   // which stepper item is active. Sent with every slide change so followers
   // (share.html) can mirror step-by-step reveals, not just the slide.
-  getStepState(slide = this.slides[this.currentSlide]) {
+  getStepState(slide: HTMLElement | undefined = this.slides[this.currentSlide]): StepState {
     const fragments = [...(slide?.querySelectorAll(".fragment") || [])]
       .map((el, i) => (el.classList.contains("show") ? i : -1))
       .filter((i) => i >= 0);
     return { fragments, stepper: this.getActiveStepperIndex(slide) };
   }
 
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-  applyStepState({ fragments = [], stepper = -1 } = {}) {
+  applyStepState({ fragments = [], stepper = -1 }: Partial<StepState> = {}) {
     const slide = this.slides[this.currentSlide];
     if (!slide) return;
     slide.classList.add("visible");
     const shown = new Set(fragments);
     slide
       .querySelectorAll(".fragment")
-      .forEach((el, i) => el.classList.toggle("show", shown.has(i)));
+      .forEach((el, i) => void el.classList.toggle("show", shown.has(i)));
     const config = this.getStepperConfig(slide);
     if (config && stepper >= 0) {
       const items = this.getStepperItems(slide);
-      items.forEach((item, i) =>
-        this.getStepperTarget(item).classList.toggle(
-          config.activeClass,
-          i === stepper,
-        ),
-      );
+      items.forEach((item, i) => {
+        this.getStepperTarget(item)?.classList.toggle(config.activeClass, i === stepper);
+      });
       this._activeStepperSlide = slide;
     }
   }
@@ -396,9 +393,8 @@ export class SlidePresentation {
   emitSlideChange() {
     const slide = this.slides[this.currentSlide];
     this.syncStepperState(slide);
-    const detail = {
+    const detail: SlideChangeDetail = {
       index: this.currentSlide,
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
       section_id: slide?.dataset?.sectionId || null,
       total: this.slides.length,
       ...this.getStepState(slide),

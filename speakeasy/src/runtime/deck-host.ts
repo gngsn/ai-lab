@@ -1,5 +1,5 @@
-// @ts-check
-// Runs a deck inside present.html / view.html.
+// Runs a deck inside present.html / view.html. Bundled to /js/deck-host.js,
+// the URL stored decks and the page bootstraps load it from.
 //
 // Decks that bring their own slide controller (a global `SlidePresentation`
 // class started on DOMContentLoaded, like the v5 deck format) are shown
@@ -11,16 +11,25 @@
 // Decks without a controller (plain <section>s) get Speakeasy's runtime,
 // its scroll layout CSS and the data-hl / data-hr / data-page chrome.
 //
-// Either way the caller gets the same small interface:
-//   { mode: "deck" | "speakeasy", slides, index(), goTo(i),
-//     getStepState(), applyStepState(state), onChange(cb) }
-import { SlidePresentation } from "./slide-runtime.js";
+// Either way the caller gets the same small interface (see DeckHost).
+import { SlidePresentation } from "./slide-runtime";
+import type { DeckHost, SlideChangeDetail, StepState } from "./types";
+
+// What a deck's own controller is expected to look like.
+type DeckController = {
+  slides?: HTMLElement[];
+  currentSlide?: number;
+  goTo(i: number): void;
+  _syncSkip?: boolean;
+};
+type DeckWindow = Window & { __seDeckController?: DeckController };
 
 // Must run before the deck's DOMContentLoaded handlers, i.e. at module top
-// level. Wraps the deck's global class (via global-scope eval: our imported
-// SlidePresentation shadows the name in this module) to capture the
-// instance the deck creates.
+// level. Wraps the deck's global class (via global-scope eval: it has to
+// reassign the deck's own global binding) to capture the instance the deck
+// creates.
 try {
+  // biome-ignore lint/security/noGlobalEval: a deck's `class SlidePresentation` is a global lexical binding, not a window property; only global-scope code can reassign it
   (0, eval)(
     "if (typeof SlidePresentation === 'function') {" +
       " SlidePresentation = class extends SlidePresentation {" +
@@ -33,7 +42,7 @@ try {
 }
 
 const afterDeckSetup = () =>
-  new Promise((resolve) => {
+  new Promise<void>((resolve) => {
     // The deck's own DOMContentLoaded handlers were registered while its
     // script was parsed — before ours — so by the time this runs (plus a
     // tick) the deck has created its controller.
@@ -42,22 +51,19 @@ const afterDeckSetup = () =>
     else document.addEventListener("DOMContentLoaded", done, { once: true });
   });
 
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-function fragmentState(slide) {
+function fragmentState(slide: HTMLElement | undefined): number[] {
   return [...(slide?.querySelectorAll(".fragment") || [])]
     .map((el, i) => (el.classList.contains("show") ? i : -1))
     .filter((i) => i >= 0);
 }
 
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-function applyFragments(slide, fragments = []) {
+function applyFragments(slide: HTMLElement | undefined, fragments: number[] = []) {
   if (!slide) return;
   slide.classList.add("visible");
   const shown = new Set(fragments);
   slide
     .querySelectorAll(".fragment")
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-    .forEach((el, i) => el.classList.toggle("show", shown.has(i)));
+    .forEach((el, i) => void el.classList.toggle("show", shown.has(i)));
 }
 
 // Phones can't hold what these decks ask the GPU for: <main> (every slide
@@ -67,8 +73,7 @@ function applyFragments(slide, fragments = []) {
 // and only render the current slide and its neighbours. Neighbours stay
 // rendered so a slide's reveal transitions still play when it arrives.
 const PHONE = "(hover: none) and (pointer: coarse)";
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-function lightenForPhones(slides, index) {
+function lightenForPhones(slides: HTMLElement[], index: () => number) {
   if (!window.matchMedia?.(PHONE).matches) return;
   const style = document.createElement("style");
   style.id = "__se_phone";
@@ -81,23 +86,21 @@ function lightenForPhones(slides, index) {
   document.head.appendChild(style);
   const mark = () => {
     const i = index();
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-    slides.forEach((slide, k) =>
-      slide.toggleAttribute("data-se-near", Math.abs(k - i) <= 1),
-    );
+    slides.forEach((slide, k) => {
+      slide.toggleAttribute("data-se-near", Math.abs(k - i) <= 1);
+    });
   };
   mark();
   document.addEventListener("slidechange", mark);
 }
 
 // Host over the deck's own controller: it owns input and rendering.
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-function deckHost(ctl) {
+function deckHost(ctl: DeckController): DeckHost {
   const slides = Array.isArray(ctl.slides)
     ? ctl.slides
-    : [...document.querySelectorAll(".slide")];
-  const index = () => (Number.isInteger(ctl.currentSlide) ? ctl.currentSlide : 0);
-  const listeners = new Set();
+    : [...document.querySelectorAll<HTMLElement>(".slide")];
+  const index = () => (Number.isInteger(ctl.currentSlide) ? (ctl.currentSlide as number) : 0);
+  const listeners = new Set<(detail: SlideChangeDetail) => void>();
   let applying = false;
   let queued = false;
   const emit = () => {
@@ -106,39 +109,35 @@ function deckHost(ctl) {
     queueMicrotask(() => {
       queued = false;
       const i = index();
-      const detail = {
+      const detail: SlideChangeDetail = {
         index: i,
         section_id: slides[i]?.dataset?.sectionId || null,
         total: slides.length,
         fragments: fragmentState(slides[i]),
         stepper: -1,
       };
-      listeners.forEach((cb) => cb(detail));
+      for (const cb of listeners) cb(detail);
     });
   };
   document.addEventListener("slidechange", emit);
   lightenForPhones(slides, index);
   // Fragment reveals don't fire slidechange; watch their class changes.
   const watcher = new MutationObserver(emit);
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-  slides.forEach((slide) =>
-    slide
-      .querySelectorAll(".fragment")
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-      .forEach((el) => watcher.observe(el, { attributeFilter: ["class"] })),
-  );
+  for (const slide of slides) {
+    for (const el of slide.querySelectorAll(".fragment")) {
+      watcher.observe(el, { attributeFilter: ["class"] });
+    }
+  }
   return {
     mode: "deck",
     slides,
     index,
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
     goTo(i) {
       if (i < 0 || i >= slides.length || i === index()) return;
       if (ctl._syncSkip !== undefined) ctl._syncSkip = true; // deck's own sync
       ctl.goTo(i);
     },
-    getStepState: () => ({ fragments: fragmentState(slides[index()]), stepper: -1 }),
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
+    getStepState: (): StepState => ({ fragments: fragmentState(slides[index()]), stepper: -1 }),
     applyStepState({ fragments = [] } = {}) {
       applying = true;
       try {
@@ -147,7 +146,6 @@ function deckHost(ctl) {
         applying = false;
       }
     },
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
     onChange(cb) {
       listeners.add(cb);
     },
@@ -157,60 +155,48 @@ function deckHost(ctl) {
 // Slide chrome Speakeasy adds for plain decks: header from data-hl/data-hr
 // (class "reveal", so it animates in) and a page footer from data-page.
 function decorateSlides() {
-  document.querySelectorAll(".slide").forEach((slide) => {
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
+  for (const slide of document.querySelectorAll<HTMLElement>(".slide")) {
     const { hl, hr, page } = slide.dataset;
     if ((hl || hr) && !slide.querySelector(":scope > .slide-header")) {
       const header = document.createElement("div");
       header.className = "slide-header reveal";
       header.dataset.seGenerated = "slide-header";
-      header.innerHTML =
-        '<div class="left"><span class="spike"></span>' +
-        (hl || "") +
-        "</div><div>" +
-        (hr || "") +
-        "</div>";
+      header.innerHTML = `<div class="left"><span class="spike"></span>${hl || ""}</div><div>${hr || ""}</div>`;
       slide.prepend(header);
     }
     if (page && !slide.querySelector(":scope > .slide-footer")) {
       const footer = document.createElement("div");
       footer.className = "slide-footer";
       footer.dataset.seGenerated = "slide-footer";
-      footer.innerHTML =
-        '<span class="slide-page">' + page.replace("/", " / ") + "</span>";
+      footer.innerHTML = `<span class="slide-page">${page.replace("/", " / ")}</span>`;
       slide.append(footer);
     }
-  });
+  }
 }
 
-function speakeasyHost() {
+function speakeasyHost(): DeckHost {
   // Turn on the scroll layout CSS the page injected disabled.
-  const fallback = document.getElementById("__se_fallback");
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
+  const fallback = document.getElementById("__se_fallback") as HTMLStyleElement | null;
   if (fallback) fallback.media = "all";
   decorateSlides();
-  const listeners = new Set();
+  const listeners = new Set<(detail: SlideChangeDetail) => void>();
   const runtime = new SlidePresentation({
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-    onSlideChange: (detail) => listeners.forEach((cb) => cb(detail)),
+    onSlideChange: (detail) => {
+      for (const cb of listeners) cb(detail);
+    },
   });
   return {
     mode: "speakeasy",
-    runtime,
     slides: runtime.slides,
     index: () => runtime.currentSlide,
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
     goTo: (i) => runtime.goTo(i),
     getStepState: () => runtime.getStepState(),
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
     applyStepState: (state) => runtime.applyStepState(state),
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
     onChange(cb) {
       listeners.add(cb);
       // Report the current slide right away, like the runtime did at start.
       cb({
         index: runtime.currentSlide,
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
         section_id: runtime.slides[runtime.currentSlide]?.dataset.sectionId || null,
         total: runtime.slides.length,
         ...runtime.getStepState(),
@@ -220,10 +206,9 @@ function speakeasyHost() {
 }
 
 /** Resolves once the deck is set up, with the host interface above. */
-export async function hostDeck() {
+export async function hostDeck(): Promise<DeckHost> {
   await afterDeckSetup();
-// @ts-expect-error — preserve this legacy runtime behavior without changing executable code.
-  const ctl = window.__seDeckController;
+  const ctl = (window as DeckWindow).__seDeckController;
   if (ctl && typeof ctl.goTo === "function") return deckHost(ctl);
   return speakeasyHost();
 }

@@ -9,6 +9,7 @@
     "allowJs": true,
     "checkJs": false,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -16,6 +17,7 @@
   },
   "include": [
     "src",
+    "vite-plugins",
     "tests",
     "public/js",
     "playwright.config.ts",

@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import { deckRuntime } from "./vite-plugins/deck-runtime.ts";
 
 // One entry (index.html) serves every React page; src/main.tsx picks the page
 // from the URL. The deck runtime pages (present, view, share, edit-frame) are
@@ -6,6 +7,7 @@ import { defineConfig } from "vite";
 // and preview servers answer /edit, /edit.html, ... with index.html.
 export default defineConfig({
   appType: "spa",
+  plugins: [deckRuntime()],
   build: {
     outDir: "dist",
     emptyOutDir: true,
