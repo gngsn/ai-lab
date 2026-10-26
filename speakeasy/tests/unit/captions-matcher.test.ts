@@ -1,6 +1,6 @@
 // P0-18: which script line is being said? (js/captions/matcher.js)
 import { describe, expect, it } from "vitest";
-import { createMatcher } from "../../public/js/captions/matcher.js";
+import { createMatcher } from "../../src/lib/captions/matcher";
 
 const line = (ko: string) => ({ ko, en: `EN: ${ko}` });
 const slides = [
@@ -29,7 +29,7 @@ describe("matcher", () => {
     const m = createMatcher(slides);
     const r = m.match("요즘은긴콘텐츠보다짧은콘텐츠가", 1);
     expect(r).toMatchObject({ slide: 1, line: 1 });
-    expect(r.score).toBeGreaterThan(0.5);
+    expect(r?.score).toBeGreaterThan(0.5);
   });
 
   it("tolerates wrong and missing characters", () => {
@@ -61,7 +61,7 @@ describe("matcher", () => {
     const r = m.match("전체파이프라인을여덟개의노드로나누고", 1);
     expect(r).toMatchObject({ slide: 2, line: 0 });
     const same = m.match("전체파이프라인을여덟개의노드로나누고", 2);
-    expect(same.score).toBeGreaterThan(r.score);
+    expect(same?.score).toBeGreaterThan(r?.score ?? 0);
   });
 
   it("favours the line after the last accepted one when two lines are alike", () => {

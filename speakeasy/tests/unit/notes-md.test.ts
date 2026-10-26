@@ -1,6 +1,6 @@
 // P0-18: parseNotesMd — notes / key-message Markdown, one section per slide.
 import { describe, expect, it } from "vitest";
-import { parseNotesMd, slugify } from "../../public/js/import-html.js";
+import { parseNotesMd, slugify } from "../../src/lib/import-html";
 
 describe("parseNotesMd", () => {
   it("splits on --- and reads an optional ## title", () => {

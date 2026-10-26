@@ -3,7 +3,7 @@
 // a real import would store them.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { parseImportedHtmlDeck, parseNotesMd } from "../../public/js/import-html.js";
+import { parseImportedHtmlDeck, parseNotesMd } from "../../src/lib/import-html";
 
 const fixture = (name: string) =>
   readFileSync(fileURLToPath(new URL(`../fixtures/${name}`, import.meta.url)), "utf8");

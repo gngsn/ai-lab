@@ -40,9 +40,11 @@ test("keys step through fragments, groups and slides, and back", async ({ page }
 test("Home and End jump to the first and last slide", async ({ page }) => {
   await page.goto(`/present.html?deck=${DECK}`);
   const frame = await deckFrame(page);
+  // the page is fully up once the panel has read the deck
+  await expect(page.locator("#__se_panel .pp-count")).toHaveText("1 / 6");
 
   await press(page, "End");
-  expect(await slideState(frame)).toMatchObject({ index: 5, title: "Closing" });
+  await expect.poll(() => slideState(frame)).toMatchObject({ index: 5, title: "Closing" });
   await press(page, "Home");
-  expect(await slideState(frame)).toMatchObject({ index: 0, title: "Opening" });
+  await expect.poll(() => slideState(frame)).toMatchObject({ index: 0, title: "Opening" });
 });
