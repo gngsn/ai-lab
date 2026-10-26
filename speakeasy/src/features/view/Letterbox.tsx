@@ -1,9 +1,10 @@
-// Makes the view and share pages look identical on any screen. This page hosts
-// its own URL in an iframe rendered at the fixed slide size and scales that
-// iframe to fit the window, letterboxed — so fonts, images and spacing scale
-// together instead of reflowing. Inside the iframe the same URL runs the deck
-// (see bootDeck). Keys that land on the bars are forwarded to the slides.
-import { useEffect, useRef } from "react";
+// Makes the view, share and present pages look identical on any screen. The
+// page hosts its own URL in an iframe rendered at the fixed slide size and
+// scales that iframe to fit its area (the window, or the presenter stage),
+// letterboxed — so fonts, images and spacing scale together instead of
+// reflowing. Inside the iframe the same URL runs the deck (see bootDeck /
+// bootPresent). Keys that land on the bars are forwarded to the slides.
+import { type RefObject, useEffect, useRef } from "react";
 
 // Same design size as SLIDE_W/SLIDE_H in lib/slide-fit.
 const SLIDE_W = 1280;
@@ -17,16 +18,21 @@ function press(frame: HTMLIFrameElement, key: string) {
   frame.contentWindow?.focus();
 }
 
-export function Letterbox({ src }: { src: string }) {
-  const frameRef = useRef<HTMLIFrameElement>(null);
-  const ko = /^ko(-|$)/i.test(navigator.languages?.[0] || navigator.language || "");
-
+/** Scales the frame into `area` (the window when there is none). `refit` re-runs the fit
+ *  when the area changes size by other means than a window resize. */
+function useFit(
+  frameRef: RefObject<HTMLIFrameElement | null>,
+  areaRef: RefObject<HTMLElement | null> | undefined,
+  refit: unknown,
+) {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `refit` only re-runs the fit
   useEffect(() => {
     const frame = frameRef.current;
     if (!frame) return;
+    const area = areaRef?.current ?? null;
     const fit = () => {
-      const w = document.documentElement.clientWidth;
-      const h = document.documentElement.clientHeight;
+      const w = area ? area.clientWidth : document.documentElement.clientWidth;
+      const h = area ? area.clientHeight : document.documentElement.clientHeight;
       const scale = Math.min(w / SLIDE_W, h / SLIDE_H);
       const x = (w - SLIDE_W * scale) / 2;
       const y = (h - SLIDE_H * scale) / 2;
@@ -34,7 +40,25 @@ export function Letterbox({ src }: { src: string }) {
     };
     fit();
     window.addEventListener("resize", fit);
+    const observer = area ? new ResizeObserver(fit) : null;
+    if (area) observer?.observe(area);
+    return () => {
+      window.removeEventListener("resize", fit);
+      observer?.disconnect();
+    };
+  }, [frameRef, areaRef, refit]);
+}
 
+/** Scales the frame into `area` and wires focus, keys and the tab title. */
+export function useLetterbox(
+  frameRef: RefObject<HTMLIFrameElement | null>,
+  areaRef?: RefObject<HTMLElement | null>,
+  refit?: unknown,
+) {
+  useFit(frameRef, areaRef, refit);
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
     let titleTimer = 0;
     const onLoad = () => {
       frame.contentWindow?.focus();
@@ -73,28 +97,39 @@ export function Letterbox({ src }: { src: string }) {
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
     return () => {
-      window.removeEventListener("resize", fit);
       frame.removeEventListener("load", onLoad);
       window.clearInterval(titleTimer);
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, []);
+  }, [frameRef]);
+}
 
+/** The < > buttons for touch screens (no arrow keys there). */
+export function StepNav({ frameRef }: { frameRef: RefObject<HTMLIFrameElement | null> }) {
+  const ko = /^ko(-|$)/i.test(navigator.languages?.[0] || navigator.language || "");
   const step = (key: string) => () => {
     if (frameRef.current) press(frameRef.current, key);
   };
   return (
+    <div id="__se_stepnav">
+      <button type="button" aria-label={ko ? "이전" : "Previous"} onClick={step("ArrowLeft")}>
+        &lt;
+      </button>
+      <button type="button" aria-label={ko ? "다음" : "Next"} onClick={step("ArrowRight")}>
+        &gt;
+      </button>
+    </div>
+  );
+}
+
+export function Letterbox({ src }: { src: string }) {
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  useLetterbox(frameRef);
+  return (
     <>
       <iframe id="__se_letterbox" ref={frameRef} title="Slides" src={src} />
-      <div id="__se_stepnav">
-        <button type="button" aria-label={ko ? "이전" : "Previous"} onClick={step("ArrowLeft")}>
-          &lt;
-        </button>
-        <button type="button" aria-label={ko ? "다음" : "Next"} onClick={step("ArrowRight")}>
-          &gt;
-        </button>
-      </div>
+      <StepNav frameRef={frameRef} />
     </>
   );
 }

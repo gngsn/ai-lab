@@ -14,6 +14,7 @@ type Entry = { entry: string; format: "esm" | "iife" };
 export const DECK_RUNTIME_ENTRIES: Record<string, Entry> = {
   "js/deck-host.js": { entry: "src/runtime/deck-host.ts", format: "esm" },
   "js/view-runtime.js": { entry: "src/runtime/view-runtime.ts", format: "esm" },
+  "js/present-runtime.js": { entry: "src/runtime/present-runtime.ts", format: "esm" },
   "js/sync.js": { entry: "src/runtime/sync.ts", format: "esm" },
   "js/shortcuts-help.js": { entry: "src/lib/shortcuts-help.ts", format: "esm" },
   "js/captions/channel.js": { entry: "src/runtime/captions-channel.ts", format: "esm" },

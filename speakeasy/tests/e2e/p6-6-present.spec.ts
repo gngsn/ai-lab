@@ -118,7 +118,13 @@ test.describe("the overlay of a plain deck", () => {
     });
     await expect(nav).toHaveCSS("opacity", "1");
     await expect(nav).toHaveCSS("pointer-events", "auto");
+    // in the middle (between 30% and 62% of the width) it stays away
     await frame.locator("body").evaluate(() => {
+      document.dispatchEvent(new MouseEvent("mousemove", { clientX: 500, bubbles: true }));
+    });
+    await expect(nav).toHaveCSS("opacity", "0");
+    await frame.locator("body").evaluate(() => {
+      document.dispatchEvent(new MouseEvent("mousemove", { clientX: 1100, bubbles: true }));
       document.dispatchEvent(new MouseEvent("mousemove", { clientX: 200, bubbles: true }));
     });
     await expect(nav).toHaveCSS("opacity", "0");
@@ -459,6 +465,91 @@ test.describe("the caption button in the panel", () => {
     await expect(page.locator(".pp-cap-en")).toHaveText("This slide is split into two steps.");
     await expect(page.locator(".pp-cap-en")).not.toHaveClass(/\bmt\b/);
     await expect(page.locator(".pp-cap-meta")).toHaveText(/^CC · line \d+ · \d\.\d\d$/);
+  });
+});
+
+test.describe("print mode and the deck's own scripts", () => {
+  const withScript = (page: Page) =>
+    page.addInitScript(() => {
+      const db = JSON.parse(localStorage.getItem("__fakedb") || "{}");
+      const d = db.decks.find((x: { deck_id: string }) => x.deck_id === "plain-deck");
+      if (d.frame_html.includes('id="probe"')) return; // the script runs in every document
+      d.frame_html = d.frame_html.replace(
+        /<\/body>/i,
+        '<script>window.__deckScript = 1;</script><div id="probe" onclick="window.__clicked = 1">x</div></body>',
+      );
+      localStorage.setItem("__fakedb", JSON.stringify(db));
+    });
+
+  test("the deck's own scripts and handlers run as written when presenting", async ({ page }) => {
+    await withScript(page);
+    await page.goto(`/present.html?deck=${PLAIN}`);
+    const frame = await deckFrame(page);
+    expect(
+      await frame.evaluate(() => (window as unknown as { __deckScript?: number }).__deckScript),
+    ).toBe(1);
+    await expect(frame.locator("#probe")).toHaveAttribute("onclick", /__clicked/);
+  });
+
+  test("print mode strips them", async ({ page }) => {
+    await withScript(page);
+    await page.addInitScript(() => {
+      window.print = () => {};
+    });
+    await page.goto(`/present.html?deck=${PLAIN}&print=1`);
+    await expect(page.locator("[data-section-id]").first()).toBeAttached();
+    expect(
+      await page.evaluate(() => (window as unknown as { __deckScript?: number }).__deckScript),
+    ).toBeUndefined();
+    await expect(page.locator("#probe")).not.toHaveAttribute("onclick", /.*/);
+  });
+});
+
+test.describe("live captions with a microphone", () => {
+  test("Shift-click while listening stops instead of loading another script", async ({
+    page,
+    context,
+  }) => {
+    await context.addInitScript(({ md, key }) => localStorage.setItem(key, md), {
+      md: BILINGUAL,
+      key: `speakeasy:captions:script:${DECK}`,
+    });
+    await page.addInitScript(() => {
+      class FakeRecognition {
+        lang = "";
+        continuous = false;
+        interimResults = false;
+        onresult: unknown = null;
+        onerror: unknown = null;
+        onend: (() => void) | null = null;
+        start() {}
+        stop() {
+          this.onend?.();
+        }
+      }
+      Object.assign(window, {
+        webkitSpeechRecognition: FakeRecognition,
+        SpeechRecognition: FakeRecognition,
+      });
+    });
+    await open(page, DECK);
+    const cc = page.locator(".pp-cc");
+    await expect(cc).toHaveAttribute("data-state", "ready");
+    await cc.click();
+    await expect(cc).toHaveAttribute("data-state", "live");
+    await expect(cc).toHaveText("● CC");
+    await expect(cc).toHaveAttribute("title", "Stop live captions");
+    await expect(page.locator(".pp-cap-meta")).toHaveText("Listening (ko-KR)…");
+    let chooser = false;
+    page.once("filechooser", () => {
+      chooser = true;
+    });
+    await cc.click({ modifiers: ["Shift"] });
+    await expect(cc).toHaveAttribute("data-state", "ready");
+    await expect(cc).toHaveText("CC");
+    await expect(page.locator(".pp-cap-meta")).toHaveText("Stopped");
+    await page.waitForTimeout(300);
+    expect(chooser).toBe(false);
   });
 });
 

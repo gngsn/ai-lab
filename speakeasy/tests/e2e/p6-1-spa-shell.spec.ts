@@ -170,10 +170,8 @@ test("one page's own stylesheet does not leak into another", async ({ page }) =>
   expect(new Set(hrefs).size).toBe(hrefs.length);
 });
 
-test("the deck runtime pages are still plain files, not the app shell", async ({ page }) => {
-  await page.goto(`/present.html?deck=${DECK}`);
-  await deckFrame(page);
-  await expect(page.locator("#__se_letterbox")).toHaveCount(1);
+test("the edit frame is still a plain file, not the app shell", async ({ page }) => {
+  await page.goto(`/edit-frame.html?deck=${DECK}`);
   await expect(page.locator("script[src*='/src/main'], script[src*='/assets/index-']")).toHaveCount(
     0,
   );

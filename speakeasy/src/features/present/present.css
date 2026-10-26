@@ -1,0 +1,214 @@
+/* The presenter layout: slide stage | side panel. */
+/* Presenter layout (data-panel): slide stage | side panel. */
+#__se_presenter {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--se-panel-w, 38%);
+}
+#__se_presenter.panel-hidden {
+  grid-template-columns: minmax(0, 1fr) 0;
+}
+#__se_stage {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+}
+#__se_stage #__se_letterbox {
+  position: absolute;
+}
+#__se_panel {
+  min-width: 0;
+  overflow: hidden;
+}
+@media (max-width: 760px), (orientation: portrait) {
+  #__se_presenter {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 45%) minmax(0, 1fr);
+  }
+  #__se_presenter.panel-hidden {
+    grid-template-rows: 1fr 0;
+  }
+}
+
+/* The panel. */
+#__se_panel {
+  --pp-bg: #151516;
+  --pp-fg: #ececec;
+  --pp-muted: #8d8d92;
+  --pp-rule: #2a2a2d;
+  --pp-accent: #ff8d70;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--pp-bg);
+  color: var(--pp-fg);
+  border-left: 1px solid var(--pp-rule);
+  font:
+    15px / 1.6 "Pretendard",
+    "IBM Plex Sans KR",
+    system-ui,
+    sans-serif;
+}
+#__se_presenter.panel-hidden #__se_panel {
+  border: 0;
+}
+.pp-resize {
+  position: absolute;
+  left: -4px;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  z-index: 2;
+}
+.pp-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--pp-rule);
+  flex: 0 0 auto;
+  font:
+    12px ui-monospace,
+    monospace;
+  color: var(--pp-muted);
+}
+.pp-bar .pp-count {
+  color: var(--pp-fg);
+  font-weight: 600;
+}
+.pp-bar .pp-spacer {
+  flex: 1;
+}
+.pp-bar button {
+  font: inherit;
+  color: var(--pp-fg);
+  background: transparent;
+  cursor: pointer;
+  border: 1px solid var(--pp-rule);
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+.pp-bar button:hover {
+  border-color: var(--pp-muted);
+}
+.pp-timer {
+  font-variant-numeric: tabular-nums;
+}
+.pp-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 16px 18px 24px;
+}
+.pp-title {
+  font-size: 0.8em;
+  color: var(--pp-muted);
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+.pp-key {
+  border-left: 3px solid var(--pp-accent);
+  padding: 6px 10px;
+  margin: 0 0 16px;
+  background: rgba(255, 141, 112, 0.08);
+  white-space: pre-wrap;
+}
+.pp-key::before {
+  content: "KEY MESSAGE";
+  display: block;
+  font:
+    10px ui-monospace,
+    monospace;
+  letter-spacing: 0.08em;
+  color: var(--pp-accent);
+  margin-bottom: 2px;
+}
+.pp-script p {
+  margin: 0 0 0.9em;
+}
+.pp-script .cue {
+  color: var(--pp-muted);
+  font-size: 0.85em;
+}
+.pp-script .cue.done {
+  opacity: 0.45;
+}
+.pp-script .cue.next {
+  color: var(--pp-accent);
+  font-weight: 600;
+}
+.pp-script .memo {
+  color: var(--pp-muted);
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+.pp-script code {
+  font-size: 0.9em;
+}
+.pp-empty {
+  color: var(--pp-muted);
+  font-style: italic;
+}
+.pp-bar .pp-cc[data-state="ready"] {
+  color: var(--pp-fg);
+}
+.pp-bar .pp-cc[data-state="live"] {
+  color: #fff;
+  background: #d14b3a;
+  border-color: #d14b3a;
+}
+.pp-bar .pp-cc[data-state="none"] {
+  color: var(--pp-muted);
+}
+.pp-caption {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border-top: 1px solid var(--pp-rule);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.pp-caption .pp-cap-en {
+  color: var(--pp-fg);
+}
+.pp-caption .pp-cap-en.mt {
+  font-style: italic;
+  color: var(--pp-muted);
+}
+.pp-caption .pp-cap-meta {
+  font:
+    11px ui-monospace,
+    monospace;
+  color: var(--pp-muted);
+  margin-top: 2px;
+}
+.pp-next {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border-top: 1px solid var(--pp-rule);
+  font-size: 13px;
+  color: var(--pp-muted);
+}
+.pp-next b {
+  color: var(--pp-fg);
+  font-weight: 500;
+}
+.pp-show {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  display: none;
+  font:
+    12px ui-monospace,
+    monospace;
+  color: #f0f0f0;
+  cursor: pointer;
+  background: rgba(20, 20, 20, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  padding: 5px 10px;
+}
+#__se_presenter.panel-hidden .pp-show {
+  display: block;
+}

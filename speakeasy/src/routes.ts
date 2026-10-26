@@ -106,6 +106,20 @@ export const ROUTES: Record<RouteName, Route> = {
     css: () => import("./features/view/letterbox.css"),
     page: () => import("./pages/view/main"),
   },
+  // The presenter: the same letterbox with the side panel next to it.
+  present: {
+    lang: "ko",
+    title: "loading…",
+    mount: "app",
+    styles: [],
+    googleFonts: false,
+    scripts: [],
+    css: async () => {
+      await import("./features/view/letterbox.css");
+      await import("./features/present/present.css");
+    },
+    page: () => import("./pages/present/main"),
+  },
   edit: {
     lang: "ko",
     title: "Edit",

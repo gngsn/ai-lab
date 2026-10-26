@@ -2,8 +2,8 @@
 // box, so text, images and spacing all shrink/grow together: a slide looks
 // identical on a phone, a laptop or a projector instead of reflowing.
 // (Port of public/js/slide-fit.js, same math. 1280x720 matches the print/PDF
-// page size; js/letterbox.js, a classic script, inlines the same numbers for
-// present/view.)
+// page size; features/view/Letterbox.tsx uses the same numbers for
+// present/view/share.)
 export const SLIDE_W = 1280;
 export const SLIDE_H = 720;
 

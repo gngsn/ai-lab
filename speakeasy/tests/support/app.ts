@@ -65,7 +65,7 @@ export const test = base.extend<{ authed: boolean }>({
 });
 export { expect };
 
-/** The slide frame of present / view / share (js/letterbox.js), once the
+/** The slide frame of present / view / share (features/view/Letterbox.tsx), once the
  *  deck has been written into it. */
 export async function deckFrame(page: Page): Promise<Frame> {
   const handle = await page.waitForSelector("#__se_letterbox");

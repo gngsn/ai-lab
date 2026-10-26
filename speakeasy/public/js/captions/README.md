@@ -37,15 +37,16 @@ lines over a Supabase realtime channel.
 |---|---|
 | `src/pages/captions/main.tsx` | React caption console page (`/captions`, `/captions.html`) |
 | `src/features/captions/CaptionConsole.tsx` | Console UI |
-| `js/captions/engine.js` | Mic → match → send (no UI) |
+| `src/features/captions/engine.ts` | Mic → match → send (no UI); used by the console and the presenter panel |
 | `js/captions/matcher.js` | Finds the script line for a heard phrase |
 | `js/captions/bilingual.js` | Parses the bilingual script |
-| `js/captions/channel.js` | Realtime channel `speakeasy-captions-<room>` |
-| `js/captions/audience.js` | Subtitles + CC toggle on `share.html` |
+| `src/runtime/captions-channel.ts` → `/js/captions/channel.js` | Realtime channel `speakeasy-captions-<room>` |
+| `src/runtime/captions-audience.ts` → `/js/captions/audience.js` | Subtitles + CC toggle on `share.html` |
 
 ## Removing the feature
 
-Delete `src/pages/captions/`, its entry in `src/routes.ts` and `js/captions/`, then remove the two lines in
-`js/view-bootstrap.js` that mention `CAPTIONS_URL` and `mountCaptions` in
-`js/presenter-panel.js`. Both pages already work without the folder (the
-imports fail quietly and the CC controls stay hidden).
+Delete `src/pages/captions/`, its entry in `src/routes.ts`, `src/features/captions/`, the two
+`captions-*` entries in `src/runtime/` and `vite-plugins/deck-runtime.ts`, then the caption
+controls in `src/features/present/PresenterPanel.tsx` and the `import("/js/captions/audience.js")`
+in `src/runtime/view-runtime.ts`. The audience page already works without them (the import
+fails quietly and the CC controls stay hidden).

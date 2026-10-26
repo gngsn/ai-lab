@@ -12,6 +12,7 @@ export const ROUTE_NAMES = [
   "captions",
   "view",
   "share",
+  "present",
 ] as const;
 export type RouteName = (typeof ROUTE_NAMES)[number];
 

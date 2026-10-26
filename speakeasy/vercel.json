@@ -97,6 +97,14 @@
     {
       "source": "/share.html",
       "destination": "/index.html"
+    },
+    {
+      "source": "/present",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/present.html",
+      "destination": "/index.html"
     }
   ]
 }
