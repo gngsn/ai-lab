@@ -624,7 +624,7 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 - [x] P6-3 `training-panel.js`(1,187줄)를 React 컴포넌트 + 훅으로. TTS, STT, 점수, IndexedDB, 녹음을 모듈로 나눈다. `pronunciation`과 편집기가 같이 쓴다.
 - [x] P6-4 덱 런타임 TS화: `slide-runtime`, `deck-host`를 `speakeasy/src/runtime/`로 옮기고 `vite-plugins/deck-runtime.ts`(esbuild)로 고정 URL `/js/deck-host.js`에 번들한다. `slide-render`/`slide-visibility`는 이미 `src/lib`에 있고 레거시 부트스트랩이 쓰는 사본은 P6-5~7에서 함께 지운다. 레터박스와 덱 문서 빌더(`srcdoc`)는 그것을 쓰는 페이지와 같이 가야 해서 P6-5(view/share)에서 한다.
 - [x] P6-5 `view`와 `share`: 레터박스(React `Letterbox`), 덱 문서 빌더(`features/view/document.ts`), 덱 안에서 도는 `view-runtime`/`sync`/`captions` 모듈을 TS로. `view-bootstrap`과 `view.html`, `share.html` 삭제, `/view`·`/share`는 `index.html`로 rewrite. 덱 문서는 `srcdoc`이 아니라 iframe이 같은 URL을 다시 열고 `document.write`하는 방식을 유지했다(아래 노트).
-- [ ] P6-6 `present`(`present-bootstrap`, `presenter-panel`, 자막 엔진 연결).
+- [x] P6-6 `present`: 발표자 레이아웃(`PresenterLayout`), 패널(`PresenterPanel`), 스크립트 렌더러, 덱 문서 빌더(`features/present/document.ts`), 덱 안에서 도는 `present-runtime`, 자막 엔진은 TS 콘솔 엔진에 `follow:false` 옵션을 추가해 재사용. `present.html`, `present-bootstrap`, `presenter-panel`, `letterbox.js`, `captions/engine.js` 삭제.
 - [ ] P6-7 `edit-frame`(`inline-editor`, `edit-frame-overlay`, `edit-frame-bootstrap`). 편집기 캔버스와의 postMessage 규약(§2.4)은 유지.
 - [ ] P6-8 정리: `public/*.html`, `public/js/*` 삭제(§11.6 규칙: 사용처 0건 + e2e 통과), 문서와 README 갱신.
 
