@@ -10,6 +10,8 @@ export const ROUTE_NAMES = [
   "script-edit",
   "pronunciation",
   "captions",
+  "view",
+  "share",
 ] as const;
 export type RouteName = (typeof ROUTE_NAMES)[number];
 

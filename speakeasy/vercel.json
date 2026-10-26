@@ -81,6 +81,22 @@
     {
       "source": "/captions.html",
       "destination": "/index.html"
+    },
+    {
+      "source": "/view",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/view.html",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/share",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/share.html",
+      "destination": "/index.html"
     }
   ]
 }

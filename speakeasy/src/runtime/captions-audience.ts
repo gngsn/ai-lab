@@ -1,8 +1,8 @@
-// @ts-check
-// Live captions — English subtitles on the audience page (share.html).
-// Mounted by js/view-bootstrap.js with one optional import; nothing shows
-// until the first caption arrives, so decks without captions look the same.
-import { openCaptionChannel } from "./channel.js";
+// Live captions — English subtitles on the audience page (share). Bundled to
+// /js/captions/audience.js and mounted by the view runtime with one optional
+// import; nothing shows until the first caption arrives, so decks without
+// captions look the same.
+import { openCaptionChannel } from "./captions-channel";
 
 const PREF_KEY = "speakeasy:captions:on";
 const HIDE_AFTER_MS = 12000; // clear a caption the speaker has moved past
@@ -29,14 +29,13 @@ const CSS = `
 }
 #__se_cc_toggle[aria-pressed="false"] { color: #8a8a8a; text-decoration: line-through; }
 @media (hover: none) and (pointer: coarse) {
-  /* Sit above the < > step buttons (js/letterbox.js). */
+  /* Sit above the < > step buttons (the letterbox page). */
   #__se_cc_box { --se-cc-lift: 56px; }
 }
 `;
 
 /** ui: the document to draw in (the letterbox page around the slide). */
-/** @param {{ room: string, ui?: Document }} options */
-export function mountCaptions({ room, ui = document }) {
+export function mountCaptions({ room, ui = document }: { room: string; ui?: Document }) {
   const ko = /^ko(-|$)/i.test(navigator.languages?.[0] || navigator.language || "");
   const style = ui.createElement("style");
   style.textContent = CSS;
@@ -58,8 +57,7 @@ export function mountCaptions({ room, ui = document }) {
   try {
     on = localStorage.getItem(PREF_KEY) !== "0";
   } catch {}
-  /** @type {number | ReturnType<typeof setTimeout>} */
-  let hideTimer = 0;
+  let hideTimer: ReturnType<typeof setTimeout> | undefined;
   const render = () => {
     toggle.setAttribute("aria-pressed", String(on));
     if (!on) box.classList.remove("show");
@@ -74,7 +72,6 @@ export function mountCaptions({ room, ui = document }) {
   render();
 
   return openCaptionChannel(room, {
-    /** @type {(payload?: { en?: string, mt?: boolean }) => void} */
     onCaption: ({ en, mt } = {}) => {
       if (!en) return;
       toggle.style.display = "block"; // captions exist for this talk

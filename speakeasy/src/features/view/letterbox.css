@@ -1,0 +1,53 @@
+/* The slide is a fixed 1280x720 document, scaled into the window. */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+#__se_letterbox {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 1280px;
+  height: 720px;
+  border: 0;
+  display: block;
+  background: #000;
+  transform-origin: 0 0;
+}
+/* < > step buttons for touch screens (no arrow keys there). */
+#__se_stepnav {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 10;
+  display: none;
+  gap: 10px;
+}
+@media (hover: none) and (pointer: coarse) {
+  #__se_stepnav {
+    display: flex;
+  }
+}
+#__se_stepnav button {
+  width: 52px;
+  height: 44px;
+  border-radius: 999px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(20, 20, 20, 0.8);
+  color: #f0f0f0;
+  font:
+    20px ui-monospace,
+    monospace;
+  line-height: 1;
+  touch-action: manipulation; /* no double-tap zoom on quick taps */
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+#__se_stepnav button:active {
+  background: rgba(255, 255, 255, 0.2);
+}

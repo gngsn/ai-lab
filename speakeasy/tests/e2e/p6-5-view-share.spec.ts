@@ -143,6 +143,14 @@ test.describe("what the page shows", () => {
     );
   });
 
+  test("the view page ignores ?sync: no follow control, no captions", async ({ page }) => {
+    await page.goto(`/view.html?deck=${DECK}&token=${TOKEN}&sync=${room}`);
+    await deckFrame(page);
+    await page.waitForTimeout(500);
+    await expect(page.locator("#__se_follow")).toHaveCount(0);
+    await expect(page.locator("#__se_cc_box")).toHaveCount(0);
+  });
+
   test("the follow control is not on the view page", async ({ page }) => {
     await page.goto(`/view.html?deck=${DECK}&token=${TOKEN}`);
     await deckFrame(page);

@@ -84,6 +84,28 @@ export const ROUTES: Record<RouteName, Route> = {
     css: () => import("./features/pronunciation/pronunciation.css"),
     page: () => import("./pages/pronunciation/main"),
   },
+  // The deck pages: the letterbox around an iframe that runs the deck. They
+  // have no page of their own to style, so no CSS besides the letterbox.
+  view: {
+    lang: "ko",
+    title: "loading…",
+    mount: "app",
+    styles: [],
+    googleFonts: false,
+    scripts: [],
+    css: () => import("./features/view/letterbox.css"),
+    page: () => import("./pages/view/main"),
+  },
+  share: {
+    lang: "ko",
+    title: "loading…",
+    mount: "app",
+    styles: [],
+    googleFonts: false,
+    scripts: [],
+    css: () => import("./features/view/letterbox.css"),
+    page: () => import("./pages/view/main"),
+  },
   edit: {
     lang: "ko",
     title: "Edit",

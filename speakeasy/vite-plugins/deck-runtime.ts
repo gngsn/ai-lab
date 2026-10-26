@@ -8,9 +8,18 @@ import type { Plugin } from "vite";
 
 type Entry = { entry: string; format: "esm" | "iife" };
 
-/** Published path (no leading slash) → source entry. */
+/** Published path (no leading slash) → source entry. Bundles import each other
+ *  by URL (`/js/deck-host.js`), never by inlining, so a deck document runs one
+ *  copy of each. */
 export const DECK_RUNTIME_ENTRIES: Record<string, Entry> = {
   "js/deck-host.js": { entry: "src/runtime/deck-host.ts", format: "esm" },
+  "js/view-runtime.js": { entry: "src/runtime/view-runtime.ts", format: "esm" },
+  "js/sync.js": { entry: "src/runtime/sync.ts", format: "esm" },
+  "js/shortcuts-help.js": { entry: "src/lib/shortcuts-help.ts", format: "esm" },
+  "js/captions/channel.js": { entry: "src/runtime/captions-channel.ts", format: "esm" },
+  "js/captions/audience.js": { entry: "src/runtime/captions-audience.ts", format: "esm" },
+  // what a stored deck gets for `import("./sync.js")`
+  "sync.js": { entry: "src/runtime/sync-stub.ts", format: "esm" },
 };
 
 async function bundle({ entry, format }: Entry, minify: boolean): Promise<string> {
@@ -20,6 +29,8 @@ async function bundle({ entry, format }: Entry, minify: boolean): Promise<string
     format,
     platform: "browser",
     target: "es2022",
+    // served as they are: the Supabase client, and the other bundles
+    external: ["/vendor/*", "/js/*"],
     write: false,
     minify,
     legalComments: "none",
