@@ -120,6 +120,18 @@ export const ROUTES: Record<RouteName, Route> = {
     },
     page: () => import("./pages/present/main"),
   },
+  // The one-slide document inside the editor's canvas iframe: loads its slide
+  // and replaces itself with it, so it has nothing of its own to style.
+  "edit-frame": {
+    lang: "ko",
+    title: "loading…",
+    mount: "app",
+    styles: [],
+    googleFonts: false,
+    scripts: [],
+    css: async () => {},
+    page: () => import("./pages/edit-frame/main"),
+  },
   edit: {
     lang: "ko",
     title: "Edit",

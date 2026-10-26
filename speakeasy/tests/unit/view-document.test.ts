@@ -80,3 +80,13 @@ describe("visibleSlides", () => {
     ]);
   });
 });
+
+describe("scriptJson", () => {
+  it("escapes < and the line separators", async () => {
+    const { scriptJson } = await import("../../src/lib/script-json");
+    expect(scriptJson({ a: "</script>\u2028\u2029" })).toBe(
+      '{"a":"\\u003c/script>\\u2028\\u2029"}',
+    );
+    expect(scriptJson(null)).toBe("null");
+  });
+});

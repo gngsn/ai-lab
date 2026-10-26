@@ -3,6 +3,7 @@
 // page, the layout fallback style, and the module that hosts the deck). The
 // view and share pages write this into their iframe's document.
 
+import { scriptJson } from "../../lib/script-json";
 import { tagSection } from "../../lib/slide-render";
 import { isSlideHiddenContent } from "../../lib/slide-visibility";
 import { resolveStorageSourcesInHtml } from "../../lib/storage-src";
@@ -55,12 +56,6 @@ export function fallbackStyleHtml(noFallback: boolean): string {
 </style>
 `;
 }
-
-/** JSON that is safe inside an inline <script> (no `</script>` break-out). */
-const scriptJson = (value: unknown) =>
-  JSON.stringify(value)
-    .replace(/</g, "\\u003c")
-    .replace(/\u2028|\u2029/g, (c) => (c === "\u2028" ? "\\u2028" : "\\u2029"));
 
 /** Slides the viewer must not see. */
 export const visibleSlides = <T extends { content: string }>(slides: T[]) =>

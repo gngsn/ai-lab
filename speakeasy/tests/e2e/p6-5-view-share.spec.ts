@@ -237,6 +237,9 @@ test.describe("captions on the audience page", () => {
     const audience = await context.newPage();
     await audience.goto(`/share.html?deck=${DECK}&token=${TOKEN}&sync=${room}`);
     await deckFrame(audience);
+    // the caption box is drawn once the audience page has loaded its caption module;
+    // a line sent before that has nobody listening
+    await expect(audience.locator("#__se_cc_box")).toBeAttached();
     await page.bringToFront();
     return audience;
   }

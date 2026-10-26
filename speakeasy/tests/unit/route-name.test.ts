@@ -21,12 +21,14 @@ describe("routeNameFor", () => {
     ["/share.html", "share"],
     ["/present", "present"],
     ["/present.html", "present"],
+    ["/edit-frame", "edit-frame"],
+    ["/edit-frame.html", "edit-frame"],
     ["/edit/", "edit"],
   ])("%s opens %s", (path, name) => {
     expect(routeNameFor(path)).toBe(name);
   });
 
-  it.each(["/edit-frame.html", "/nope", "/decks", "/a/edit"])("%s is not one of ours", (path) => {
+  it.each(["/nope", "/decks", "/a/edit"])("%s is not one of ours", (path) => {
     expect(routeNameFor(path)).toBeNull();
   });
 });

@@ -4,6 +4,7 @@
 // writes this into its iframe's document — or into the page itself in
 // ?print=1 mode.
 
+import { scriptJson } from "../../lib/script-json";
 import { tagSection } from "../../lib/slide-render";
 import { isSlideHiddenContent } from "../../lib/slide-visibility";
 import { resolveStorageSourcesInHtml } from "../../lib/storage-src";
@@ -76,12 +77,6 @@ export const cleanFrame = (html: string) =>
     .replace(/<script\b[^>]*\/\s*>/gi, "")
     .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
     .replace(/javascript:/gi, "");
-
-/** JSON that is safe inside an inline <script> (no `</script>` break-out). */
-const scriptJson = (value: unknown) =>
-  JSON.stringify(value)
-    .replace(/</g, "\\u003c")
-    .replace(/\u2028|\u2029/g, (c) => (c === "\u2028" ? "\\u2028" : "\\u2029"));
 
 // Print CSS is always injected (only applies on @media print). In ?print=1
 // mode the same rules also apply on screen so the page renders as a vertical

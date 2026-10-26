@@ -15,6 +15,8 @@ const SLIDES: Record<string, string> = {
   "ef-1": `<section class="slide" data-title="First slide"><h1>Heading</h1><p>Body text</p><div><span>Inline</span></div></section>`,
   // marked editables, a visible class and shown fragment saved by an older editor
   "ef-2": `<section class="slide visible" data-title="Second" data-stepper=".card"><h2 data-editable="true">Marked</h2><p>Not marked</p><div class="card" id="c0">a</div><div class="card" id="c1">b</div><p class="fragment show" id="f0">shown</p><p class="fragment" data-fragment-group="g" id="f1">g1</p><p class="fragment" data-fragment-group="g" id="f2">g2</p></section>`,
+  // chrome marked only by data-se-generated (no data-hl / data-page on the slide)
+  "ef-4": `<section class="slide" data-title="Marked chrome"><div data-se-generated="x">generated</div><h1 data-editable="true">Keep me</h1></section>`,
   // persisted presentation chrome that must be cleaned on load
   "ef-3": `<section class="slide" data-title="Chrome" data-hl="Left" data-page="3/9"><div class="slide-header reveal" data-se-generated="slide-header">old</div><h1 data-editable="true">Has chrome</h1><div class="slide-footer" data-se-generated="slide-footer">old</div></section>`,
 };
@@ -160,7 +162,9 @@ test.describe("loading", () => {
     const frame = await mount(page, `deck=${EF}&section=ef-1&edit=1`, "none");
     await ready(frame);
     await expect(frame.locator("h1")).toHaveText("Heading");
-    expect(Date.now() - start).toBeGreaterThan(700); // it waited for the editor first
+    const waited = Date.now() - start;
+    expect(waited).toBeGreaterThan(700); // it waited for the editor first…
+    expect(waited).toBeLessThan(3000); // …but not for long
   });
 
   test("missing ids are reported to the editor and shown", async ({ page }) => {
@@ -258,11 +262,13 @@ test.describe("saving", () => {
     const frame = await mount(page, `deck=${EF}&section=ef-1&edit=1`);
     await ready(frame);
     await frame.waitForSelector("[contenteditable]");
+    const typedAt = Date.now();
     await type(frame, "h1", "!");
     await expect.poll(() => msgs(page, "edit:dirty")).not.toHaveLength(0);
     expect((await msgs(page, "edit:dirty"))[0]).toEqual({ type: "edit:dirty", section_id: "ef-1" });
     expect(await msgs(page, "edit:save")).toHaveLength(0); // not yet
     await expect.poll(() => msgs(page, "edit:save"), { timeout: 5000 }).toHaveLength(1);
+    expect(Date.now() - typedAt).toBeLessThan(2200); // the debounce is 800 ms, not seconds
     const [save] = (await msgs(page, "edit:save")) as {
       content: string;
       deck_id: string;
@@ -333,6 +339,15 @@ test.describe("saving", () => {
     expect(save.content).toContain("Has chrome");
     const order = (await msgs(page)).map((m) => m.type);
     expect(order.indexOf("edit:ready")).toBeLessThan(order.indexOf("edit:save"));
+  });
+
+  test("chrome marked data-se-generated is cleaned too", async ({ page }) => {
+    const frame = await mount(page, `deck=${EF}&section=ef-4&edit=1`);
+    await ready(frame);
+    await expect.poll(() => msgs(page, "edit:save")).toHaveLength(1);
+    const [save] = (await msgs(page, "edit:save")) as { content: string }[];
+    expect(save.content).not.toContain("generated");
+    expect(save.content).toContain("Keep me");
   });
 
   test("a slide that is already clean is not re-saved on load", async ({ page }) => {

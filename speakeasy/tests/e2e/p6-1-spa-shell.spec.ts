@@ -169,10 +169,3 @@ test("one page's own stylesheet does not leak into another", async ({ page }) =>
   );
   expect(new Set(hrefs).size).toBe(hrefs.length);
 });
-
-test("the edit frame is still a plain file, not the app shell", async ({ page }) => {
-  await page.goto(`/edit-frame.html?deck=${DECK}`);
-  await expect(page.locator("script[src*='/src/main'], script[src*='/assets/index-']")).toHaveCount(
-    0,
-  );
-});

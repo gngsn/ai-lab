@@ -105,6 +105,14 @@
     {
       "source": "/present.html",
       "destination": "/index.html"
+    },
+    {
+      "source": "/edit-frame",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/edit-frame.html",
+      "destination": "/index.html"
     }
   ]
 }
