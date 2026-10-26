@@ -626,7 +626,7 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 - [x] P6-5 `view`와 `share`: 레터박스(React `Letterbox`), 덱 문서 빌더(`features/view/document.ts`), 덱 안에서 도는 `view-runtime`/`sync`/`captions` 모듈을 TS로. `view-bootstrap`과 `view.html`, `share.html` 삭제, `/view`·`/share`는 `index.html`로 rewrite. 덱 문서는 `srcdoc`이 아니라 iframe이 같은 URL을 다시 열고 `document.write`하는 방식을 유지했다(아래 노트).
 - [x] P6-6 `present`: 발표자 레이아웃(`PresenterLayout`), 패널(`PresenterPanel`), 스크립트 렌더러, 덱 문서 빌더(`features/present/document.ts`), 덱 안에서 도는 `present-runtime`, 자막 엔진은 TS 콘솔 엔진에 `follow:false` 옵션을 추가해 재사용. `present.html`, `present-bootstrap`, `presenter-panel`, `letterbox.js`, `captions/engine.js` 삭제.
 - [x] P6-7 `edit-frame`: `/edit-frame`도 `index.html` 라우트가 되었고(편집기 iframe이 같은 URL을 그대로 연다), 부트스트랩은 `features/edit-frame/boot-edit-frame.ts`, 프레임 안에서 도는 `inline-editor`/`edit-frame-overlay`는 `src/runtime/`(→ `/js/edit-frame-overlay.js`). postMessage 규약(§2.4)은 그대로.
-- [ ] P6-8 정리: `public/*.html`, `public/js/*` 삭제(§11.6 규칙: 사용처 0건 + e2e 통과), 문서와 README 갱신.
+- [x] P6-8 정리: `public/` 에는 `css/`, `vendor/`, `favicon.svg`, `js/config.local.js(.example)`만 남았다. 레거시 `public/js/*`와 이를 기준으로 삼던 동등성 테스트(`lib-equivalence`, `data-equivalence`)를 삭제했고, 남은 단위 테스트는 TS 포트를 직접 검증한다. README 구조 설명과 SPEC.md 머리말을 갱신했다.
 
 ### 위험과 대응
 - 덱 문서 생명주기(전역 클래스 가로채기, `document.write`): 안쪽 문서를 그대로 두고 TS로 같은 순서를 재현한다. P6-0 테스트가 안전망이다.
