@@ -1,5 +1,5 @@
-// P4-7d: the notes panel — notes and key message with autosave, the notes font
-// size, and importing key messages.
+// The notes panel — notes and key message with autosave, the notes font size, and importing key
+// messages.
 import { type Page, expect as pwExpect } from "@playwright/test";
 import { dbRow, expect, test } from "../support/app";
 import { DECK, KEY_MESSAGE } from "../support/seed";

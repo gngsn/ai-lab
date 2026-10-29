@@ -7,7 +7,7 @@ type Model = ReturnType<typeof useEditorModel>;
 /**
  * The section the Training panel works on: the selected slide's title and its notes as last
  * loaded. It changes with the slide and when notes are reloaded (a history restore) — not while
- * typing, exactly as the legacy panel was only handed a section on those events.
+ * typing.
  */
 export function useTrainingSection(model: Model): TrainingSection {
   const { currentSectionId, notesRevision } = model;

@@ -77,8 +77,8 @@ export function NotesView({ deck, deckId, content }: Props) {
         <a className="btn" id="pronunciation-link" href={`./pronunciation.html?deck=${q}`}>
           🔊 Pronunciation
         </a>
-        {/* Legacy quirk kept as is: a second, dead Pronunciation button with the same id. */}
-        {/* biome-ignore lint/a11y/useValidAnchor: preserved legacy markup */}
+        {/* A second link with the same id as the one above; the e2e tests pin the duplicate. */}
+        {/* biome-ignore lint/a11y/useValidAnchor: pointer-only control by design */}
         <a className="btn" id="pronunciation-link" href="#">
           🔊 Pronunciation
         </a>

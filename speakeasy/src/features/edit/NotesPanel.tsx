@@ -33,8 +33,6 @@ function applyNotesFontSize(size: number) {
 }
 
 // The notes and key-message fields for the current slide, with debounced saves.
-// (The legacy page also carried "Listen" (ElevenLabs) code for these notes, but
-// its buttons are not in the page, so it never ran and is not ported.)
 export function NotesPanel({
   deckId,
   model,

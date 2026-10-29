@@ -1,8 +1,7 @@
 // Runs inside the letterbox iframe (and in ?print=1 mode, which needs the plain
 // document): loads the deck, checks the share token, and replaces this document
-// with the deck's own. The old page's `document.write` is kept on purpose — the
-// deck's scripts then run in a document whose URL, window and config globals
-// are the page's own (see the relative-URL tests).
+// with the deck's own. It uses `document.write` on purpose: the deck's scripts then run in a
+// document whose URL, window and config globals are the page's own (see the relative-URL tests).
 import { getDeck } from "../../data/decks";
 import { listByDeck } from "../../data/slides";
 import type { DeckRow } from "../../data/types";

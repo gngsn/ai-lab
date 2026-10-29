@@ -46,7 +46,6 @@ export function useCanvas({
     };
   }, [canvasRef, stageRef]);
 
-  // IPC with the iframe.
   useEffect(() => {
     const onMessage = async (e: MessageEvent) => {
       const m = e.data;

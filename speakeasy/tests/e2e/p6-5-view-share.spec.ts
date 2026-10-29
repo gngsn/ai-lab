@@ -1,9 +1,7 @@
-// P6-5: the public pages (view, share). The older specs pin the happy paths
-// (p0-6/7 follow, p0-8 token checks, p0-10 preload, p0-12 captions, p6-0 print
-// mode and letterbox geometry). These add what they leave open: the error
-// pages, hidden slides, the speakeasy-mode chrome, the keyboard help, the
-// follow control's labels, the CC preference and key forwarding. They pass on
-// the legacy pages first and must keep passing on the port.
+// The public pages (view, share). The older specs pin the happy paths (p0-6/7 follow, p0-8 token
+// checks, p0-10 preload, p0-12 captions, p6-0 print mode and letterbox geometry). These add what
+// they leave open: the error pages, hidden slides, the speakeasy-mode chrome, the keyboard help, the
+// follow control's labels, the CC preference and key forwarding.
 import type { Page } from "@playwright/test";
 import { deckFrame, expect, press, slideState, test } from "../support/app";
 import { BILINGUAL, DECK, PLAIN, TOKEN } from "../support/seed";

@@ -17,8 +17,7 @@ type Options = {
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 /**
- * The history timeline's state (port of the HistoryUI class in
- * public/js/history-ui.js): a merged slide / notes / frame list, an optional
+ * The history timeline's state: a merged slide / notes / frame list, an optional
  * filter to the current section, one row's content open at a time, and
  * restoring a row through the live data layer.
  */
@@ -29,8 +28,7 @@ export function useHistory({ deckId, getSectionId, onRestored }: Options) {
   const [error, setError] = useState<string | null>(null);
   const [filterCurrent, setFilterCurrent] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
-  // The label follows the section as of the last render of the list, like the
-  // legacy drawer, which only redrew itself on these events.
+  // The label follows the section as of the last render of the list, not the live selection.
   const [sectionId, setSectionId] = useState<string | null>(null);
 
   const latest = useRef({ deckId, getSectionId, onRestored, entries, filterCurrent });

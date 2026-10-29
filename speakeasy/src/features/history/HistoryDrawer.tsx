@@ -43,9 +43,8 @@ function Row({ entry, history }: { entry: HistoryEntry; history: History }) {
 }
 
 /**
- * The slide-in history drawer (port of the HistoryUI class in
- * public/js/history-ui.js), shared by the editor and the script editor.
- * Keeps the old ids, classes and `data-act` hooks.
+ * The slide-in history drawer, shared by the editor and the script editor. The ids, classes and
+ * `data-act` hooks are what history-ui.css and the tests use.
  */
 export function HistoryDrawer({
   open,

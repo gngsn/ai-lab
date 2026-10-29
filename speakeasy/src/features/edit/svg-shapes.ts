@@ -1,6 +1,5 @@
 // The shapes of the SVG picker. Each draws into a 100×100 viewBox from the
-// fill colour, stroke colour and stroke width. Port of SVG_SHAPES in
-// public/js/edit-bootstrap.js.
+// fill colour, stroke colour and stroke width.
 export type SvgShape = {
   id: string;
   label: string;

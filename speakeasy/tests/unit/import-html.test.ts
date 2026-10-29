@@ -1,4 +1,4 @@
-// P0-18: parseImportedHtmlDeck — turns a deck's HTML into frame + slides.
+// ParseImportedHtmlDeck — turns a deck's HTML into frame + slides.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parseImportedHtmlDeck } from "../../src/lib/import-html";

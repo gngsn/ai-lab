@@ -1,5 +1,4 @@
-// Pretty-printer for the editor's HTML mode (port of formatHtmlSource in
-// public/js/edit-bootstrap.js, same output). Needs a DOM (<template>).
+// Pretty-printer for the editor's HTML mode. Needs a DOM (<template>).
 const INDENT = "  ";
 const SELF_CLOSING = new Set([
   "area",

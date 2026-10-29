@@ -1,6 +1,5 @@
-// Export helpers — HTML / PDF (browser print) / Marp Markdown. Port of
-// the removed public/js/export.js. All exports are read-side: they fetch from the data
-// layer and either trigger a download, copy to the clipboard, or open a print
+// Export helpers — HTML / PDF (browser print) / Marp Markdown. All exports are read-side: they
+// fetch from the data layer and either trigger a download, copy to the clipboard, or open a print
 // window.
 import { getDeck } from "../data/decks";
 import { listByDeck as listNotes } from "../data/notes";

@@ -1,4 +1,3 @@
-// The `slides` table (port of public/js/repo/slide-repo.js, same behavior).
 import { supabase } from "./client";
 import * as history from "./history";
 import type { SlideInsert, SlideRow, SlideUpdate } from "./types";

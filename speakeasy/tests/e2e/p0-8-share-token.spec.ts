@@ -1,4 +1,4 @@
-// P0-8: the public pages check the share token.
+// The public pages check the share token.
 import { expect, test } from "../support/app";
 import { DECK, PLAIN } from "../support/seed";
 

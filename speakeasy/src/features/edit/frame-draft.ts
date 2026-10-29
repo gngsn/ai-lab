@@ -1,6 +1,5 @@
 // The frame_html editor works on three parts — the document HTML, all <style>
 // blocks, all inline <script> blocks — and puts them back together on save.
-// Port of the draft helpers in public/js/edit-bootstrap.js.
 export type FramePart = "html" | "css" | "js";
 export type FrameDraft = { html: string; css: string; js: string; jsType: "" | "module" };
 

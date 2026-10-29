@@ -1,4 +1,4 @@
-// The page table: everything each old `<name>.html` put in its <head> and
+// The page table: everything each page needs in its <head> and
 // <body> besides the shared bits that index.html keeps (theme.css, the fonts
 // preconnects, config.local.js).
 import type { RouteName } from "./lib/route-name";
@@ -6,7 +6,7 @@ import type { RouteName } from "./lib/route-name";
 export type Route = {
   lang: string;
   title: string;
-  /** id of the element the page renders into (the old pages differed). */
+  /** id of the element the page renders into. */
   mount: "app" | "root";
   /** Stylesheets from public/, before the page's own CSS. */
   styles: { href: string; media?: string }[];
@@ -106,7 +106,6 @@ export const ROUTES: Record<RouteName, Route> = {
     css: () => import("./features/view/letterbox.css"),
     page: () => import("./pages/view/main"),
   },
-  // The presenter: the same letterbox with the side panel next to it.
   present: {
     lang: "ko",
     title: "loading…",

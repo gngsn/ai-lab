@@ -1,6 +1,5 @@
-// P6-2: the "?" keyboard-help modal (src/lib/shortcuts-help.ts), bound by the
-// editor, the script editor and the script reader. Passes on the legacy
-// public/js/shortcuts-help.js first.
+// The "?" keyboard-help modal (src/lib/shortcuts-help.ts), bound by the editor, the script editor
+// and the script reader.
 import type { Page } from "@playwright/test";
 import { expect, test } from "../support/app";
 import { DECK } from "../support/seed";

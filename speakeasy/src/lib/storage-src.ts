@@ -1,5 +1,5 @@
 // supabase://slides-images/<path> links, as older slides stored them, to the
-// public https URL (port of public/js/storage-src.js).
+// public https URL.
 import { getConfig } from "../config";
 
 const SCHEME_PREFIX = "supabase://slides-images/";

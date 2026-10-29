@@ -1,4 +1,4 @@
-// P4-7f (part 1): the Share dialog and the frame_html editor.
+// The Share dialog and the frame_html editor.
 import type { Page } from "@playwright/test";
 import { dbRow, expect, test } from "../support/app";
 import { DECK, PLAIN, TOKEN } from "../support/seed";

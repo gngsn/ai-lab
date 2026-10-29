@@ -1,4 +1,3 @@
-// The numbers the legacy public/js/slide-fit.js produced.
 import { describe, expect, it } from "vitest";
 import { fitStyle } from "../../src/lib/slide-fit";
 

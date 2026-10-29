@@ -1,5 +1,4 @@
-// The `notes` table: speaker notes and the key message, one row per slide
-// (port of public/js/repo/notes-repo.js, same behavior).
+// The `notes` table: speaker notes and the key message, one row per slide.
 import { supabase } from "./client";
 import * as history from "./history";
 import type { NoteRow } from "./types";

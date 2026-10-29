@@ -1,8 +1,6 @@
-// P6-3: the pronunciation training panel (Generate / Upload / Record / score /
-// take histories) on /pronunciation.html. The panel is shared with the editor
-// (pinned by p4-7h); this spec pins everything else it does so that the move
-// from public/js/training-panel.js to React keeps every behaviour. The local
-// TTS and speech servers are stubbed; the microphone is Chrome's fake device.
+// The pronunciation training panel (Generate / Upload / Record / score / take histories) on
+// /pronunciation.html. The local TTS and speech servers are stubbed; the microphone is Chrome's fake
+// device.
 import type { Page } from "@playwright/test";
 import { expect, readDb, test } from "../support/app";
 import { DECK } from "../support/seed";
@@ -119,7 +117,7 @@ async function load(page: Page) {
   await expect(page.locator("#training-mount .training-panel")).toHaveCount(1);
 }
 
-// The legacy markup has two #stt-status spans (one per action row); only the first is ever written.
+// The panel markup has two #stt-status spans (one per action row); only the first is ever written.
 const status = (page: Page) => page.locator("#stt-status").first();
 const panel = (page: Page) => page.locator("#training-mount .training-panel");
 const options = (page: Page, id: string) => page.locator(`#${id} option`);
@@ -688,8 +686,7 @@ test.describe("Record and score", () => {
     const stub = await open(page, { sttStatus: 500 });
     await recordFor(page);
     await expect.poll(() => stub.sttCalls).toBe(1);
-    // the legacy panel writes "MLX failed (recording saved) → record again" and clears it
-    // again in the same step (resetRecordBtn), so nothing is left on screen
+    // the failure is cleared in the same step (resetRecordBtn), so nothing is left on screen
     await expect(status(page)).toHaveText("");
     await expect(status(page)).not.toHaveClass(/processing|listening/);
     await expect(page.locator("#record-btn")).toHaveText("🎙 Record");

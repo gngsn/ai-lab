@@ -84,8 +84,7 @@ async function loadConfig() {
 }
 
 // ── HTML parsing ─────────────────────────────────────────────────
-// Sections in v4/v5 slides.html are flat (no nesting). The non-greedy match
-// safely stops at the first </section>.
+// Sections are flat (no nesting), so the non-greedy match safely stops at the first </section>.
 function extractSections(html) {
   const sections = [];
   const re = /<section\b([^>]*)>([\s\S]*?)<\/section>/gi;

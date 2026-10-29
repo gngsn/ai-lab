@@ -1,5 +1,5 @@
-// P0-14: the editor's Share dialog — audience link, QR, open link, copy,
-// new link (rotate) and stop sharing (revoke).
+// The editor's Share dialog — audience link, QR, open link, copy, new link (rotate) and stop sharing
+// (revoke).
 import type { Page } from "@playwright/test";
 import { dbRow, expect, test } from "../support/app";
 import { DECK, PLAIN, TOKEN } from "../support/seed";

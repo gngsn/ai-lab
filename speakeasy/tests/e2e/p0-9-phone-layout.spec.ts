@@ -1,7 +1,6 @@
-// P0-9: touch screens get < > step buttons (swiping does nothing) and a
-// lighter rendering path (no sliding transition, only the current slide and
-// its neighbours rendered) so iOS Safari doesn't run out of memory. Desktop
-// gets neither.
+// Touch screens get < > step buttons (swiping does nothing) and a lighter rendering path (no sliding
+// transition, only the current slide and its neighbours rendered) so iOS Safari doesn't run out of
+// memory. Desktop gets neither.
 import { deckFrame, expect, slideState, test } from "../support/app";
 import { DECK, TOKEN } from "../support/seed";
 

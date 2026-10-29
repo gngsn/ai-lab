@@ -1,6 +1,4 @@
 // Deck list page: the deck list, the Import modal and the Re-import modal.
-// A direct, typed port of the legacy index.html script. It drives the page by
-// element id, so the markup in DecksView.tsx keeps every legacy id and class.
 import { deleteDeck, getDeck, listDecks, upsertDeck } from "../../data/decks";
 import { appendManualBatch } from "../../data/history";
 import { listByDeck as listNotes, upsertKeyMessage, upsert as upsertNote } from "../../data/notes";
@@ -251,7 +249,7 @@ export async function mountDeckList(remote: RemoteSource): Promise<() => void> {
   }
 
   // Copy a GitHub deck's repo images/video into storage and point the HTML at
-  // the copies, so it no longer depends on GitHub access.
+  // the copies, so it does not depend on GitHub access.
   async function copyRepoMedia(
     html: string,
     deckId: string,
@@ -323,7 +321,6 @@ export async function mountDeckList(remote: RemoteSource): Promise<() => void> {
     }
   }
 
-  // ── Re-import ────────────────────────────────────────────────────
   // Replace an existing deck's slides (frame + all slides) and/or its script
   // (all notes) from new whole files. The deck ID and title stay, so links
   // keep working; whatever is replaced is saved to History first.

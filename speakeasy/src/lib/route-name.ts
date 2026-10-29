@@ -1,4 +1,4 @@
-// Which page a URL path opens. Every page keeps its old addresses: the
+// Which page a URL path opens. Every page has two addresses: the
 // `.html` form (`/edit.html`, used by links already shared) and the clean form
 // (`/edit`, what cleanUrls serves). The deck list is `/`, `/index` and
 // `/index.html`.

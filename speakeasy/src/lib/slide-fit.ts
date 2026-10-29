@@ -1,9 +1,7 @@
 // Renders a slide iframe at one fixed design size and scales it to fit its
 // box, so text, images and spacing all shrink/grow together: a slide looks
 // identical on a phone, a laptop or a projector instead of reflowing.
-// (Port of public/js/slide-fit.js, same math. 1280x720 matches the print/PDF
-// page size; features/view/Letterbox.tsx uses the same numbers for
-// present/view/share.)
+// 1280x720 matches the print/PDF page size; features/view/Letterbox.tsx uses the same numbers.
 export const SLIDE_W = 1280;
 export const SLIDE_H = 720;
 

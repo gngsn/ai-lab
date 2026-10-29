@@ -1,9 +1,6 @@
-// P6-0: the deck-runtime compatibility oracle for Phase 6. These tests pin
-// behaviour that decks and shared links already depend on and that the older
-// p0 specs do not cover: letterbox geometry, the tab title, print mode, the
-// relative URLs a stored frame_html can use, and the token-only view page.
-// They pass on the legacy pages first and must keep passing after each
-// Phase 6 step.
+// Deck-runtime compatibility. These tests pin behaviour that decks and shared
+// links already depend on and that the older p0 specs do not cover: letterbox geometry, the tab
+// title, print mode, the relative URLs a stored frame_html can use, and the token-only view page.
 import { deckFrame, expect, press, readDb, slideState, test } from "../support/app";
 import { DECK, PLAIN, TOKEN } from "../support/seed";
 
@@ -139,7 +136,7 @@ test.describe("print mode (?print=1)", () => {
 });
 
 test.describe("relative URLs in a stored frame_html", () => {
-  // A deck that loads root-relative files the way old decks do.
+  // A deck that loads root-relative files the way stored decks do.
   const addRelativeDeck = (page: import("@playwright/test").Page) =>
     page.addInitScript((id) => {
       const db = JSON.parse(localStorage.getItem("__fakedb") || "{}");

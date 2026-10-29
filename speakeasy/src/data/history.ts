@@ -1,5 +1,4 @@
-// `slide_history`, `notes_history` and `frame_history` (port of
-// public/js/repo/history-repo.js, same behavior).
+// `slide_history`, `notes_history` and `frame_history`.
 // - `appendAuto*` insert one `kind='auto'` row, with content dedup against
 //   the most recent row for that (deck, section) to avoid noise from
 //   repeated saves of unchanged content.

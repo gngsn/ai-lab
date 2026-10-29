@@ -1,7 +1,6 @@
 // The one entry point. It picks the page from the URL, prepares the document
-// the way that page's own HTML used to (language, title, mount element,
-// stylesheets, classic scripts) and then loads the page module, which renders
-// itself. Navigation between pages is still a full page load.
+// (language, title, mount element, stylesheets, classic scripts) and then loads
+// the page module, which renders itself. Navigation between pages is a full page load.
 import { loadScript, loadStylesheet } from "./lib/load-assets";
 import { routeNameFor } from "./lib/route-name";
 import { ROUTES } from "./routes";

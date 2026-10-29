@@ -1,5 +1,4 @@
-// Live captions — the bilingual script format (port of
-// public/js/captions/bilingual.js, same behavior).
+// Live captions — the bilingual script format.
 //
 // The same `---`-separated, slide-ordered markdown as the speaker script
 // (`## Title` optional), where each Korean line is followed by its reviewed

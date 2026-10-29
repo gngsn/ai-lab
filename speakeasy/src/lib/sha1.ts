@@ -1,5 +1,4 @@
 // SHA-1 hex digest of a string, used for TTS audio cache keys (not security).
-// Port of public/js/sha1.js, same output.
 //
 // crypto.subtle only exists in secure contexts (HTTPS or localhost), so on a
 // plain-HTTP page — e.g. the dev server opened from a phone via a LAN IP — it

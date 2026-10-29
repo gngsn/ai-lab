@@ -7,7 +7,6 @@
 
 export type HistoryKind = "auto" | "manual";
 
-// ── decks ─────────────────────────────────────────────────────────────
 export type DeckRow = {
   deck_id: string;
   title: string;
@@ -21,7 +20,6 @@ export type DeckInsert = Pick<DeckRow, "deck_id" | "frame_html"> &
   Partial<Omit<DeckRow, "deck_id" | "frame_html">>;
 export type DeckUpdate = Partial<DeckRow>;
 
-// ── slides ────────────────────────────────────────────────────────────
 export type SlideRow = {
   deck_id: string;
   section_id: string;
@@ -35,7 +33,6 @@ export type SlideInsert = Pick<SlideRow, "deck_id" | "section_id" | "order" | "c
   Partial<Pick<SlideRow, "title" | "updated_at">>;
 export type SlideUpdate = Partial<SlideRow>;
 
-// ── notes (speaker notes + key message, one row per slide) ────────────
 export type NoteRow = {
   deck_id: string;
   section_id: string;
@@ -48,7 +45,6 @@ export type NoteInsert = Pick<NoteRow, "deck_id" | "section_id"> &
   Partial<Pick<NoteRow, "content" | "key_message" | "updated_at">>;
 export type NoteUpdate = Partial<NoteRow>;
 
-// ── history (slide_history, notes_history, frame_history) ─────────────
 export type HistoryRow = {
   id: number;
   deck_id: string;

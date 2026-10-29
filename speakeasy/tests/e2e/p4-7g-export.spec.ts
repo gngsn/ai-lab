@@ -1,5 +1,5 @@
-// P4-7g: the More menu's Export items (HTML, notes .md download and copy, PDF
-// print window) and "Save version".
+// The More menu's Export items (HTML, notes .md download and copy, PDF print window) and "Save
+// version".
 import { readFileSync } from "node:fs";
 import type { Page } from "@playwright/test";
 import { expect, readDb, test } from "../support/app";

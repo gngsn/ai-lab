@@ -1,7 +1,6 @@
-// P6-2: the history drawer on the script editor (the editor's own is pinned by
-// p4-7f), plus the drawer details both pages share: the row content viewer and
-// its 6000-character cut, the section label that only follows the section when
-// the list is redrawn, and the error line.
+// The history drawer on the script editor (the editor's own is pinned by p4-7f), plus the drawer
+// details both pages share: the row content viewer and its 6000-character cut, the section label
+// that only follows the section when the list is redrawn, and the error line.
 import type { Page } from "@playwright/test";
 import { expect, readDb, test } from "../support/app";
 import { DECK } from "../support/seed";
@@ -202,7 +201,7 @@ test("a long row is cut at 6000 characters of the escaped text", async ({ page }
   await whole.locator(".h-view").click();
   expect(await whole.locator(".hist-content").innerText()).toBe(`<${"a".repeat(2500)}>`);
   // 5000 raw characters, 8000 escaped: cut at 6000 escaped characters (1500 of the "<"),
-  // and no note, because the note only follows the RAW length (legacy behavior)
+  // and no note, because the note only follows the RAW length
   await addRow(9, `${"<".repeat(2000)}${"x".repeat(3000)}`);
   // 7000 raw characters: cut, with the note
   await addRow(10, `${"<".repeat(2000)}${"x".repeat(5000)}`);

@@ -1,10 +1,9 @@
-// Types for the globals the legacy pages put on `window` (public/js). Type
-// declarations only: they exist so `// @ts-check` files can use them.
+// Types of the globals that config.local.js and the runtime put on `window`.
 export {};
 
 declare global {
   interface Window {
-    // set by public/js/config.local.js
+    // set by config.local.js
     SUPABASE_URL?: string;
     SUPABASE_ANON_KEY?: string;
     OWNER_PASSPHRASE?: string;

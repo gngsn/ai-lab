@@ -1,4 +1,3 @@
-// The `decks` table (port of public/js/repo/deck-repo.js, same behavior).
 import { supabase } from "./client";
 import * as history from "./history";
 import type { DeckInsert, DeckRow } from "./types";

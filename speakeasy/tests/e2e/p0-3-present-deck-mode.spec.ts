@@ -1,4 +1,4 @@
-// P0-3: presenting a deck that brings its own controller ("deck mode").
+// Presenting a deck that brings its own controller ("deck mode").
 import { deckFrame, expect, press, slideState, test } from "../support/app";
 import { DECK } from "../support/seed";
 
@@ -11,7 +11,7 @@ test("keys step through fragments, groups and slides, and back", async ({ page }
   await press(page, "ArrowRight");
   expect(await slideState(frame)).toMatchObject({ index: 1, title: "Saved state", shown: 0 });
 
-  // this slide's fragment was saved as shown, but starts hidden (see P0-5):
+  // this slide's fragment was saved as shown, but starts hidden (see p0-5-playback-state):
   // the first press reveals it, the second leaves the slide
   await press(page, "ArrowRight");
   expect(await slideState(frame)).toMatchObject({ index: 1, shown: 1 });

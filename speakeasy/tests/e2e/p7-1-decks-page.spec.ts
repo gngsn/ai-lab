@@ -1,7 +1,6 @@
-// P7-1: the deck list page (decks): the status line and the list, deleting a
-// deck, the Import modal (file and GitHub-link modes) and the Re-import modal.
-// p0-2 and p0-17 pin the happy paths; these add what they leave open. They pass
-// on the old controller first and must keep passing on the React rewrite.
+// The deck list page (decks): the status line and the list, deleting a deck, the Import modal (file
+// and GitHub-link modes) and the Re-import modal. p0-2 and p0-17 pin the happy paths; these add what
+// they leave open.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { Page } from "@playwright/test";

@@ -5,7 +5,7 @@ import { errorMessage } from "../../lib/errors";
 import { ERROR_STYLE, mountPoint, PageError, requireOwner, runPage } from "../../lib/page";
 import { bindShortcutsHelp } from "../../lib/shortcuts-help";
 
-/** The error banner the old page kept in its chrome (not rendered yet at this point). */
+/** The error banner of the page chrome, which is not rendered yet at this point. */
 function stopWithBanner(message: string): never {
   const banner = document.createElement("div");
   banner.id = "error-banner";

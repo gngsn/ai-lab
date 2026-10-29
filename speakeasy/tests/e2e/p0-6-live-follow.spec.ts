@@ -1,4 +1,4 @@
-// P0-6: the audience page follows the presenter live over the sync room.
+// The audience page follows the presenter live over the sync room.
 import { deckFrame, expect, press, slideState, test } from "../support/app";
 import { DECK, TOKEN } from "../support/seed";
 

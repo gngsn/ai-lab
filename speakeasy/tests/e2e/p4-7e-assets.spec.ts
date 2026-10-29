@@ -1,5 +1,5 @@
-// P4-7e: the asset library — upload, filter, copy URL, insert into the slide,
-// rename (with every reference rewritten) and delete.
+// The asset library — upload, filter, copy URL, insert into the slide, rename (with every reference
+// rewritten) and delete.
 import { type Page, expect as pwExpect } from "@playwright/test";
 import { dbRow, expect, test } from "../support/app";
 import { DECK } from "../support/seed";

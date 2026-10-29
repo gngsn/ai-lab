@@ -1,5 +1,4 @@
 // Fetch deck HTML / notes Markdown from a URL for "Import HTML deck".
-// Port of public/js/remote-source.js, same behavior.
 //
 // GitHub page links (github.com/…/blob/…, gist.github.com/…) are rewritten to
 // their raw-file URLs, which allow cross-origin fetches. With a GitHub token,

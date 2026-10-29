@@ -1,5 +1,4 @@
-// Turning a deck's HTML (and notes Markdown) into slide records (port of
-// public/js/import-html.js, same behavior).
+// Turning a deck's HTML (and notes Markdown) into slide records.
 
 function getAttr(attrs: string, name: string) {
   const re = new RegExp(`\\b${name}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))`, "i");

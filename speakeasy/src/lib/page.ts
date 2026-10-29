@@ -10,7 +10,7 @@ export class PageError extends Error {}
 export const ERROR_STYLE = {
   /** A load or input problem. */
   plain: "padding:2rem;color:var(--se-bad, #b42318)",
-  /** An access problem (monospace, like the old pages). */
+  /** An access problem (monospace). */
   denied: "padding:2rem;color:var(--se-bad, #b42318);font-family:monospace",
 } as const;
 

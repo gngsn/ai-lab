@@ -1,4 +1,3 @@
-// The same cases as storage-src.test.ts (which pins the legacy file), for the port.
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   fromStorageSrc,

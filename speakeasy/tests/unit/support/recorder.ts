@@ -1,8 +1,6 @@
-// A fake Supabase client that records every query chain instead of running
-// it. Each awaited chain becomes one "trace", e.g.
-//   [["from", ["decks"]], ["select", ["*"]], ["eq", ["deck_id", "d"]], ["single", []]]
-// and `respond(trace)` decides what the chain resolves to. Used to check that
-// the TypeScript data layer issues exactly the queries the legacy one did.
+// A fake Supabase client that records every query chain instead of running it. Each awaited chain
+// becomes one "trace", e.g. [["from", ["decks"]], ["select", ["*"]], ["eq", ["deck_id", "d"]],
+// ["single", []]] and `respond(trace)` decides what the chain resolves to.
 
 export type Call = [method: string, args: unknown[]];
 export type Respond = (trace: Call[]) => unknown;

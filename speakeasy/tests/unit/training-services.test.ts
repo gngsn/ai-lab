@@ -1,7 +1,6 @@
-// P6-3: the training panel's services in TypeScript (src/features/training):
-// requests to the TTS / speech servers, the take histories and the recordings
-// folder. The browser is replaced by fakes; the e2e spec p6-3-training-panel
-// covers the same code end to end.
+// The training panel's services in TypeScript (src/features/training): requests to the TTS / speech
+// servers, the take histories and the recordings folder. The browser is replaced by fakes; the e2e
+// spec p6-3-training-panel covers the same code end to end.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { KeyValueStore, StoreName } from "../../src/features/training/db";
 import {

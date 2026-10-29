@@ -1,5 +1,5 @@
 // Download every media file a deck uses up front, so moving between slides
-// never waits on the network. (Port of public/js/preload-assets.js.)
+// never waits on the network.
 //
 // - "blob" mode (present / shared view): each file is downloaded once and its
 //   URL in the deck HTML is swapped for a local blob: URL before the deck is

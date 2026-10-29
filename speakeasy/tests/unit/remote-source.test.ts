@@ -1,5 +1,3 @@
-// The expected values were produced by the legacy public/js/remote-source.js
-// before it was removed (P6-2), so they pin the behavior the port must keep.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   fetchRemoteText,

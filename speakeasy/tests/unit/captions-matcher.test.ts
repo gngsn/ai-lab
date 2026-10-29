@@ -1,4 +1,4 @@
-// P0-18: which script line is being said? (js/captions/matcher.js)
+// Which script line is being said? (js/captions/matcher.js)
 import { describe, expect, it } from "vitest";
 import { createMatcher } from "../../src/lib/captions/matcher";
 

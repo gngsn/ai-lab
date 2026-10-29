@@ -1,9 +1,7 @@
-// P6-4: the deck runtime inside the deck document (Speakeasy's own
-// slide-runtime and deck-host, loaded from ./js/deck-host.js). The older specs
-// pin stepping through fragments and the host modes; these add what they leave
-// open: the stepper, the slidechange event, key repeat, the wheel, Home / End,
-// the header / footer chrome, the layout fallback style and applying a step
-// state. They pass on the legacy files first and must keep passing on the port.
+// The deck runtime inside the deck document (Speakeasy's own slide-runtime and deck-host, loaded
+// from ./js/deck-host.js). The older specs pin stepping through fragments and the host modes; these
+// add what they leave open: the stepper, the slidechange event, key repeat, the wheel, Home / End,
+// the header / footer chrome, the layout fallback style and applying a step state.
 import type { Frame, Page } from "@playwright/test";
 import { deckFrame, expect, press, slideState, test } from "../support/app";
 import { DECK, TOKEN } from "../support/seed";
@@ -122,7 +120,7 @@ test("the stepper walks its items before the slide changes, and back", async ({ 
   await expect.poll(() => slideState(frame)).toMatchObject({ index: 1 });
   await press(page, "ArrowRight"); // past the last item → next slide
   await expect.poll(() => slideState(frame)).toMatchObject({ index: 2, title: "Custom" });
-  // coming back to Cards starts it over at the first item (legacy behavior)
+  // coming back to Cards starts it over at the first item
   await press(page, "ArrowLeft");
   await expect.poll(() => slideState(frame)).toMatchObject({ index: 1 });
   expect(await active(frame, "mint")).toEqual(["c0"]);
@@ -146,7 +144,7 @@ test("the stepper marks the closest .card, and data-stepper-active-class names t
   await expect.poll(() => slideState(frame)).toMatchObject({ index: 2 });
   // the marked element is the .card around the item, not the item itself
   expect(await active(frame, "on")).toEqual(["w0"]);
-  // leaving a slide does not clear its marks (legacy behavior)
+  // leaving a slide does not clear its marks
   expect(await active(frame, "mint")).toEqual(["c2"]);
   await press(page, "ArrowRight");
   expect(await active(frame, "on")).toEqual(["w1"]);

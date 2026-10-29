@@ -1,5 +1,4 @@
-// Port of personal-log/Kprintf2026/v4/controller.js :: SlidePresentation.
-// Stripped down to the runtime concerns (nav + fragments + scroll).
+// Speakeasy's own slide controller for plain decks: navigation, fragments, steppers and scroll.
 import type { SlideChangeDetail, StepState } from "./types";
 
 type StepperConfig = { selector: string; activeClass: string };
@@ -141,7 +140,7 @@ export class SlidePresentation {
 
   setupMobileScrollSync() {
     // On mobile, `currentSlide` is driven by `main`'s scrollTop (not by
-    // intersection ratio). v4 mobile shrinks layout to 720px-tall slides.
+    // intersection ratio). Mobile shrinks the layout to 720px-tall slides.
     const main = this.mainEl;
     if (!main) return;
     let raf = 0;
@@ -200,7 +199,7 @@ export class SlidePresentation {
       "End",
     ];
     this.listen("keydown", (e) => {
-      // Skip when editing text inline (M3+).
+      // Skip when editing text inline.
       if ((e.target as Element | null)?.getAttribute?.("contenteditable") === "true") return;
       if (NAV_KEYS.includes(e.key)) this.claim(e);
       // Ignore OS autorepeat — holding ↓ otherwise skips through slides.

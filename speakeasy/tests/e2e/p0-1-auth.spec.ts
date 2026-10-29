@@ -1,7 +1,6 @@
-// P0-1: every owner page is gated by the passphrase. Dismissing the dialog
-// (cancel, Esc, click outside) or entering a wrong passphrase must NOT open
-// the page. (Regression: five pages once forgot to `await ensureAuthed()`,
-// and a Promise is always truthy.)
+// Every owner page is gated by the passphrase. Dismissing the dialog (cancel, Esc, click outside) or
+// entering a wrong passphrase must NOT open the page. (Regression: five pages once forgot to `await
+// ensureAuthed()`, and a Promise is always truthy.)
 import { AUTH_KEY, expect, PASSPHRASE, test } from "../support/app";
 import { DECK } from "../support/seed";
 

@@ -7,7 +7,7 @@ import { askText } from "../../lib/dom-prompt";
 /**
  * Ask for a snapshot message, then write one manual history row per slide,
  * note and the frame. Resolves to the snapshot's timestamp, or null when the
- * prompt was cancelled. (Port of saveVersionPrompt in public/js/history-ui.js.)
+ * prompt was cancelled.
  */
 export async function saveVersionPrompt(deckId: string): Promise<string | null> {
   const message = await askText({

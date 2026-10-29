@@ -1,6 +1,6 @@
 // Raw <section>…</section> editing for the current slide (the "html" mode):
 // CodeMirror when the vendor script is loaded, a textarea with a highlight.js
-// overlay otherwise. Port of the HTML-edit part of public/js/edit-bootstrap.js.
+// overlay otherwise.
 import { useCallback, useEffect, useRef } from "react";
 import { updateContent } from "../../data/slides";
 import { formatHtmlSource } from "../../lib/format-html";

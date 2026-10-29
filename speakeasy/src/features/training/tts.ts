@@ -1,6 +1,5 @@
 // Text-to-speech requests of the training panel (local Kokoro, OpenAI,
-// ElevenLabs). Port of the fetchers in the legacy training-panel.js: same
-// URLs, headers, bodies, chunking and error messages.
+// ElevenLabs).
 import { OPENAI_TTS_LIMIT, type TtsEngine, trainingConfig } from "./config";
 import { splitTextChunks } from "./text";
 import { mergeBlobs } from "./wav";

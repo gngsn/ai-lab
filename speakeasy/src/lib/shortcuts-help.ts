@@ -1,5 +1,4 @@
-// Shared "?" keyboard-help modal (port of public/js/shortcuts-help.js, same
-// markup and behavior). Each page calls `bindShortcutsHelp("Page name", [...])`
+// Shared "?" keyboard-help modal. Each page calls `bindShortcutsHelp("Page name", [...])`
 // with its own shortcut list. The modal element is created on demand and
 // inserted at the end of <body>.
 export type Shortcut = { keys: string[]; desc: string };

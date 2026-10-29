@@ -1,5 +1,5 @@
-// P0-15: the script reader (teleprompter) follows the presenter, can switch
-// to manual control, and has text size and highlight controls.
+// The script reader (teleprompter) follows the presenter, can switch to manual control, and has text
+// size and highlight controls.
 import { deckFrame, expect, press, test } from "../support/app";
 import { DECK } from "../support/seed";
 

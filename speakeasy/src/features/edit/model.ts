@@ -1,6 +1,5 @@
-// Editor state shared by the editor's panels (slide list now; canvas, notes,
-// assets, ... in the next P4-7 steps). A port of the state and mutations in
-// the legacy public/js/edit-bootstrap.js.
+// Editor state shared by the editor's panels: slides, the current slide, notes and key
+// messages, and the mutations on them.
 import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { upsertKeyMessage, upsert as upsertNote } from "../../data/notes";
 import { deleteSlide, insertSlide, reorder, updateContent, updateMeta } from "../../data/slides";
@@ -38,7 +37,7 @@ export function useEditorModel({
   const lastSectionKey = `${LAST_SECTION_KEY_PREFIX}${deckId}`;
   const [slides, setSlidesState] = useState(initialSlides);
   const slidesRef = useRef(slides);
-  // sid → note text / key message, kept current by the mutations (like legacy).
+  // sid → note text / key message, kept current by the mutations.
   const notesRef = useRef(initialNotes);
   const keyMessagesRef = useRef(initialKeyMessages);
   const [currentSectionId, setCurrentState] = useState<string | null>(() => {
@@ -77,7 +76,6 @@ export function useEditorModel({
     [lastSectionKey],
   );
   useEffect(() => {
-    // Remember the starting slide, as the legacy refresh() did.
     if (currentRef.current) {
       try {
         localStorage.setItem(lastSectionKey, currentRef.current);
@@ -97,7 +95,6 @@ export function useEditorModel({
     },
     [canvasRef, deckId],
   );
-  // The first slide is shown once the canvas exists.
   useEffect(() => {
     showSlide(currentRef.current);
   }, [showSlide]);
@@ -113,7 +110,6 @@ export function useEditorModel({
     };
   }, []);
 
-  // ── slide title (debounced) ──────────────────────────────────────
   const flushTitleSave = useCallback(async () => {
     if (!titlePending.current) return;
     window.clearTimeout(titleTimer.current);
@@ -137,7 +133,6 @@ export function useEditorModel({
     titleTimer.current = window.setTimeout(() => void flushTitleSave(), 600);
   };
 
-  // ── selection ────────────────────────────────────────────────────
   // Flushes pending buffers so nothing is lost when moving away.
   const switchSlide = async (sid: string) => {
     if (sid === currentRef.current) return;
@@ -149,7 +144,6 @@ export function useEditorModel({
     setNavSectionId(sid);
   };
 
-  // ── mutations ────────────────────────────────────────────────────
   const reorderTo = async (fromId: string, toId: string) => {
     const list = slidesRef.current;
     const fromIdx = list.findIndex((s) => s.section_id === fromId);
@@ -211,7 +205,7 @@ export function useEditorModel({
     const newNotes = notesRef.current.get(sourceSid) ?? "";
     const nextOrder = list.length ? Math.max(...list.map((s) => s.order ?? 0)) + 1 : 0;
     try {
-      // 1. Insert at a fresh tail order so the UNIQUE (deck_id, order)
+      // Insert at a fresh tail order so the UNIQUE (deck_id, order)
       //    constraint isn't violated by gaps from prior deletes/reorders.
       await insertSlide({
         deck_id: deckId,
@@ -224,7 +218,6 @@ export function useEditorModel({
       const newKeyMessage = keyMessagesRef.current.get(sourceSid) ?? "";
       if (newKeyMessage) await upsertKeyMessage(deckId, newSid, newKeyMessage);
 
-      // 2. Splice into the right position locally.
       const spliced = slidesRef.current.slice();
       spliced.splice(srcIdx + 1, 0, {
         deck_id: deckId,
@@ -237,7 +230,6 @@ export function useEditorModel({
       notesRef.current.set(newSid, newNotes);
       keyMessagesRef.current.set(newSid, newKeyMessage);
 
-      // 3. Persist that order on the server (single-transaction RPC).
       await reorder(
         deckId,
         spliced.map((s) => s.section_id),
@@ -276,7 +268,6 @@ export function useEditorModel({
     const s = slideOf(sectionId);
     if (!s) return;
     if (!confirm(`Delete slide '${s.title || sectionId}'?`)) return;
-    // Snapshot for rollback.
     const prevSlides = slidesRef.current;
     const prevNotes = new Map(notesRef.current);
     const prevCurrent = currentRef.current;
@@ -294,7 +285,6 @@ export function useEditorModel({
       }
       chrome.toast("Deleted", "ok");
     } catch (err) {
-      // Rollback local state.
       setSlides(prevSlides);
       notesRef.current = prevNotes;
       setCurrent(prevCurrent);

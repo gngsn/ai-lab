@@ -1,9 +1,7 @@
-// P6-7: edit-frame, the one-slide document inside the editor's canvas iframe
-// (and the pronunciation page's preview). The editor specs drive it through the
-// real editor; these pin its own contract directly, as the editor / pronunciation
-// pages see it: the postMessage protocol (§2.4 of the plan), how it gets its data,
-// how it saves and what it saves. They pass on the legacy page first and must
-// keep passing on the port.
+// Edit-frame, the one-slide document inside the editor's canvas iframe (and the pronunciation page's
+// preview). The editor specs drive it through the real editor; these pin its own contract directly,
+// as the editor / pronunciation pages see it: the postMessage protocol (§2.4 of the plan), how it
+// gets its data, how it saves and what it saves.
 import type { Frame, Page } from "@playwright/test";
 import { expect, test } from "../support/app";
 import { DECK } from "../support/seed";

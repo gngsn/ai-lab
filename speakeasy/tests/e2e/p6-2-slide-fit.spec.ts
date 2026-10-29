@@ -1,7 +1,5 @@
-// P6-2: the slide fit (src/lib/slide-fit.ts): a slide iframe is kept at
-// 1280x720 and scaled and centred inside its box. Used by the editor canvas
-// and the pronunciation preview. Passes on the legacy public/js/slide-fit.js
-// first.
+// The slide fit (src/lib/slide-fit.ts): a slide iframe is kept at 1280x720 and scaled and centred
+// inside its box. Used by the editor canvas and the pronunciation preview.
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "../support/app";
 import { DECK } from "../support/seed";

@@ -1,5 +1,4 @@
-// Shared helper for present / view / edit-frame (port of
-// public/js/slide-render.js, same output).
+// Shared helper for present / view / edit-frame.
 // Ensures every imported <section> has:
 //   - `data-section-id="<id>"` so runtime + sync can identify it from DOM
 //   - `class="slide"` (additive) so `section.slide` selectors + print CSS work
