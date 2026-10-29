@@ -193,8 +193,8 @@ export function CaptionConsole(props: Props) {
           <ul id="lines">
             {c.lines.length ? (
               c.lines.map((line) => (
-                // biome-ignore lint/a11y/useKeyWithClickEvents: preserved console markup
-                // biome-ignore lint/a11y/noNoninteractiveElementInteractions: preserved console markup
+                // biome-ignore lint/a11y/useKeyWithClickEvents: pointer-only control by design
+                // biome-ignore lint/a11y/noNoninteractiveElementInteractions: pointer-only control by design
                 <li
                   key={line.id}
                   data-line={line.index}

@@ -17,7 +17,7 @@ function parseSvgSource(raw: string): Parsed {
     return { ok: false, message: "SVG 문법이 올바르지 않습니다." };
   }
   const svg = doc.documentElement;
-  if (!svg || svg.tagName.toLowerCase() !== "svg") {
+  if (svg?.tagName.toLowerCase() !== "svg") {
     return { ok: false, message: "루트 엘리먼트는 <svg> 여야 합니다." };
   }
   return { ok: true, svg };

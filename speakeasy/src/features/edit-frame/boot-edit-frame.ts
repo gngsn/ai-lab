@@ -36,7 +36,7 @@ function requestDataFromParent(deckId: string, sectionId: string): Promise<Data>
     const reqId = Math.random().toString(36).slice(2);
     const onMsg = (e: MessageEvent) => {
       const m = e.data;
-      if (!m || m.type !== "edit-frame:data" || m.id !== reqId) return;
+      if (m?.type !== "edit-frame:data" || m.id !== reqId) return;
       cleanup();
       if (m.deck && m.slide) resolve({ deck: m.deck, slide: m.slide });
       else reject(new Error("missing"));
