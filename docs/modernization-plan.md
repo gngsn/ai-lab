@@ -602,6 +602,40 @@ edit을 옮기는 동안에는 레거시 `public/edit.html`을 **마지막 태�
 
 ---
 
+## 11.7 Phase 6: HTML 없이 전부 React + TypeScript (2026-10-21 사람이 승인)
+
+사람이 "html을 없애고 모두 React TS로" (범위 C: 덱 실행 페이지와 `public/js` 레거시 전부)를 승인했다. 이 승인으로 §1.2의 "덱 실행 엔진 재작성 금지"와 §3.2의 "런타임 파일 내용 변경 금지"는 **Phase 6에 한해 해제**한다. 단, 아래 호환 조건은 그대로 지킨다.
+
+### 호환 조건 (바꾸면 안 되는 것)
+- URL: `/edit.html`, `/present.html`, `/view.html`, `/share.html`, `/index.html` 등 `.html`이 붙은 주소와 cleanUrls 주소(`/edit`)가 모두 계속 열린다. 공유 링크(`share.html?deck=&token=&sync=`)는 이미 배포돼 있다. 쿼리 파라미터도 그대로다.
+- **저장된 덱이 그대로 돈다.** `frame_html`이 부르는 `./js/deck-host.js`, `./sync.js`(빈 모듈), 전역 `SlidePresentation`, `DOMContentLoaded`, `slidechange` 이벤트 규약을 유지한다. 덱 데이터는 마이그레이션하지 않는다.
+- 사용자가 보는 화면, 동기화 방 이름(`syncRoomFor`), localStorage 키는 그대로다.
+
+### 목표 구조
+- `index.html` **하나**(Vite 진입점은 최소 하나 필요)와 React Router. 페이지별 `.html` 진입점과 `public/*.html`은 없앤다. Vercel `rewrites`로 위 URL들을 `index.html`에 연결한다.
+- 덱 문서는 iframe이다. 덱의 스크립트가 문서 생명주기를 직접 쓰므로 React 컴포넌트로 렌더링하지 않는다. 안쪽 문서는 TS가 만든 HTML 문자열(`frame_html` + 슬라이드 + 런타임 `<script>`)을 `srcdoc`으로 넣는다. 바깥쪽(레터박스, 발표자 패널, 스텝 버튼, 공유 화면)이 React다.
+- 덱 안에서 실행되는 런타임(`deck-host`, `slide-runtime`, `sync`, 자막 audience 등)은 TS로 옮기되 **별도 번들 파일**로 빌드해 덱 문서가 `<script>`로 불러온다.
+- `public/`에는 JS가 아닌 정적 자원(`vendor/`, `css/`, `favicon.svg`, `config.local.js`, 루트 `sync.js` 빈 모듈)만 남긴다.
+
+### 단계 (각각 별도 커밋. 앞 단계가 끝나야 다음으로 간다)
+- [x] P6-0 호환 오라클: 덱 실행 동작을 고정하는 e2e. (`tests/e2e/p6-0-deck-compat.spec.ts` 9개 + 기존 `p0-3`~`p0-11`) (a) 자체 컨트롤러가 있는 덱(`SlidePresentation`), (b) 평범한 `<section>` 덱, (c) 상대 URL을 부르는 `frame_html`. present/view/share/edit-frame에서 슬라이드 이동, 조각(fragment), 동기화, 인쇄(`?print=1`)를 검증. **이 테스트는 레거시 상태에서 먼저 통과해야 하고, 이후 모든 단계가 이 테스트로 검증한다.**
+- [x] P6-1 SPA 골격: `index.html` + 주소 분기(`src/main.tsx`, `src/routes.ts`)로 지금 React인 7개 페이지를 합친다. 페이지 이동은 지금처럼 전체 로드라 라우터 라이브러리는 쓰지 않는다. `.html` URL과 cleanUrls 주소 모두 유지(rewrites), 페이지 단위 코드 분할. 기존 e2e 176개 통과.
+- [x] P6-2 공용 모듈을 TS로: `auth`, `dom-prompt`, `shortcuts-help`, `sync`, `preload-assets`, `remote-source`, `slide-fit`, `history-ui`(React 컴포넌트). `public/js/repo/*`는 `src/data/*`와 같은 동작인 것을 확인한 뒤 지운다(오라클 단위 테스트는 고정 스냅샷으로 바꾼다).
+- [x] P6-3 `training-panel.js`(1,187줄)를 React 컴포넌트 + 훅으로. TTS, STT, 점수, IndexedDB, 녹음을 모듈로 나눈다. `pronunciation`과 편집기가 같이 쓴다.
+- [x] P6-4 덱 런타임 TS화: `slide-runtime`, `deck-host`를 `speakeasy/src/runtime/`로 옮기고 `vite-plugins/deck-runtime.ts`(esbuild)로 고정 URL `/js/deck-host.js`에 번들한다. `slide-render`/`slide-visibility`는 이미 `src/lib`에 있고 레거시 부트스트랩이 쓰는 사본은 P6-5~7에서 함께 지운다. 레터박스와 덱 문서 빌더(`srcdoc`)는 그것을 쓰는 페이지와 같이 가야 해서 P6-5(view/share)에서 한다.
+- [x] P6-5 `view`와 `share`: 레터박스(React `Letterbox`), 덱 문서 빌더(`features/view/document.ts`), 덱 안에서 도는 `view-runtime`/`sync`/`captions` 모듈을 TS로. `view-bootstrap`과 `view.html`, `share.html` 삭제, `/view`·`/share`는 `index.html`로 rewrite. 덱 문서는 `srcdoc`이 아니라 iframe이 같은 URL을 다시 열고 `document.write`하는 방식을 유지했다(아래 노트).
+- [x] P6-6 `present`: 발표자 레이아웃(`PresenterLayout`), 패널(`PresenterPanel`), 스크립트 렌더러, 덱 문서 빌더(`features/present/document.ts`), 덱 안에서 도는 `present-runtime`, 자막 엔진은 TS 콘솔 엔진에 `follow:false` 옵션을 추가해 재사용. `present.html`, `present-bootstrap`, `presenter-panel`, `letterbox.js`, `captions/engine.js` 삭제.
+- [x] P6-7 `edit-frame`: `/edit-frame`도 `index.html` 라우트가 되었고(편집기 iframe이 같은 URL을 그대로 연다), 부트스트랩은 `features/edit-frame/boot-edit-frame.ts`, 프레임 안에서 도는 `inline-editor`/`edit-frame-overlay`는 `src/runtime/`(→ `/js/edit-frame-overlay.js`). postMessage 규약(§2.4)은 그대로.
+- [x] P6-8 정리: `public/` 에는 `css/`, `vendor/`, `favicon.svg`, `js/config.local.js(.example)`만 남았다. 레거시 `public/js/*`와 이를 기준으로 삼던 동등성 테스트(`lib-equivalence`, `data-equivalence`)를 삭제했고, 남은 단위 테스트는 TS 포트를 직접 검증한다. README 구조 설명과 SPEC.md 머리말을 갱신했다.
+
+### 위험과 대응
+- 덱 문서 생명주기(전역 클래스 가로채기, `document.write`): 안쪽 문서를 그대로 두고 TS로 같은 순서를 재현한다. P6-0 테스트가 안전망이다.
+- `srcdoc` 문서의 상대 URL 기준: 부모 URL을 따르므로 `./sync.js` → `/sync.js`. P6-0의 (c)로 확인한다.
+- 휴대폰 렌더링(`lightenForPhones`, iOS 탭 종료 이슈): 자동 테스트로 못 잡는다. 실기기(iPhone) 확인을 사람이 한다.
+- 각 단계에서 안 되면 그 단계 커밋만 되돌린다. 앱은 모든 단계에서 배포 가능해야 한다.
+
+---
+
 ## 12. 진행 기록
 
 | Phase | 상태 | 날짜 | 메모 |

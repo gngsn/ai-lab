@@ -186,43 +186,35 @@ node scripts/import.mjs --deck=my-talk \
 
 ## Project Structure
 
-The pages and scripts below live in `public/` (Vite copies it to `dist/`
-unchanged; see `docs/modernization-plan.md`). Tests are in `tests/`, build
-config in `vite.config.ts`, and new code goes in `src/`.
+A Vite + React + TypeScript app (pnpm). One `index.html` serves every page; `src/main.tsx`
+picks the page from the URL (`src/routes.ts`), and `vercel.json` rewrites the page addresses
+(`/edit`, `/present.html`, ...) to it. Stored decks and shared links keep their old addresses.
 
 ```
-speakeasy/public/
-├─ index.html              # Setup check + deck list
-├─ present.html            # Slide read + navigation (?deck=<id>[&sync=<room>])
-├─ script.html             # Teleprompter + realtime sync
-├─ edit-frame.html         # Single-slide iframe for the editor (/edit, React: ../edit.html + src/features/edit)
-├─ script-edit.html        # Fullscreen notes editor (markdown + preview)
-├─ notes.html              # Marp(.md) read-only view (Copy/Download)
-├─ view.html               # Public viewer (?token=, slides only)
-├─ share.html              # Live audience view (?token=&sync=, follows present)
+speakeasy/
+├─ index.html              # the one entry (loads config.local.js, then src/main.tsx)
+├─ src/
+│  ├─ main.tsx, routes.ts  # page table: which module renders which URL
+│  ├─ pages/<name>/        # one entry module per page (decks, edit, notes, script, script-edit,
+│  │                       #   pronunciation, captions, view, share, present, edit-frame)
+│  ├─ features/<name>/     # the pages' UI and logic (React components, hooks, pure helpers)
+│  ├─ data/                # the only code that talks to Supabase (decks, slides, notes, history, storage)
+│  ├─ lib/                 # shared helpers (auth, sync, markdown, import, preload, ...)
+│  └─ runtime/             # code that runs INSIDE a deck document (see below)
+├─ vite-plugins/           # deck-runtime.ts: bundles src/runtime/ to fixed URLs
+├─ public/                 # served as is: css/, vendor/, js/config.local.js(.example)
 ├─ migrations/             # Supabase SQL migrations
-├─ js/                     # Frontend logic
-│  ├─ supabase.js          # Shared client
-│  ├─ sync.js              # Realtime broadcast
-│  ├─ slide-runtime.js     # Slide presentation logic
-│  ├─ script-view.js       # Teleprompter logic
-│  ├─ script-edit-view.js  # Notes editor mount
-│  ├─ inline-editor.js     # Inline editor (iframe)
-│  ├─ history-ui.js        # History drawer
-│  ├─ view-bootstrap.js    # Share_token view loader
-│  ├─ auth.js              # Passphrase gate
-│  ├─ present-bootstrap.js # Deck loader
-│  ├─ edit-frame-bootstrap.js  # Iframe loader
-│  ├─ repo/                # Data access layer
-│  │  ├─ deck-repo.js
-│  │  ├─ slide-repo.js
-│  │  ├─ notes-repo.js
-│  │  └─ history-repo.js
-│  └─ config.local.js.example
-├─ vendor/                 # Vendored editor/runtime assets
-├─ data/                   # Local runtime state and fixtures
+├─ scripts/                # build-config, build-vendor-modules, import (CLI)
+├─ tests/                  # unit/ (Vitest), e2e/ (Playwright against a fake backend), fixtures/
 ├─ vercel.json
-├─ SPEC.md
-├─ IDEA.md
+├─ SPEC.md                 # the original (pre-Vite) behavior spec
 └─ README.md
 ```
+
+**Deck documents.** `view`, `share` and `present` show the top-level page (React: the letterbox
+and, for present, the side panel) around an iframe of the same URL, which loads the deck and
+replaces itself with the deck's own document (`document.write`, as before). The scripts that run
+in that document come from `src/runtime/` and are served at fixed URLs because stored decks and
+the bootstraps import them: `/js/deck-host.js`, `/js/view-runtime.js`, `/js/present-runtime.js`,
+`/js/sync.js`, `/js/shortcuts-help.js`, `/js/captions/*.js`, `/js/edit-frame-overlay.js` and
+`/sync.js`. See `docs/modernization-notes.md`.

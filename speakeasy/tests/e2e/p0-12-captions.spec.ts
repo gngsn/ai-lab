@@ -31,6 +31,8 @@ test("a heard line is sent to the audience, and CC hides it", async ({ page, con
   const audience = await context.newPage();
   await audience.goto(`/share.html?deck=${DECK}&token=${TOKEN}&sync=${room}`);
   await deckFrame(audience);
+  // the caption box exists once the audience page has loaded its caption module
+  await expect(audience.locator("#__se_cc_box")).toBeAttached();
 
   await page.bringToFront();
   await page.evaluate((t) => (window as any).__seCaptions.feed(t, true), HEARD);
@@ -61,6 +63,8 @@ test("speech that is not in the script sends nothing", async ({ page, context })
   const audience = await context.newPage();
   await audience.goto(`/share.html?deck=${DECK}&token=${TOKEN}&sync=${room}`);
   await deckFrame(audience);
+  // the caption box exists once the audience page has loaded its caption module
+  await expect(audience.locator("#__se_cc_box")).toBeAttached();
 
   await page.bringToFront();
   await page.evaluate(() =>
@@ -78,6 +82,8 @@ test("the caption console follows the presenter and can send a line by hand", as
   const audience = await context.newPage();
   await audience.goto(`/share.html?deck=${DECK}&token=${TOKEN}&sync=${room}`);
   await deckFrame(audience);
+  // the caption box exists once the audience page has loaded its caption module
+  await expect(audience.locator("#__se_cc_box")).toBeAttached();
 
   const consolePage = await context.newPage();
   await consolePage.goto(`/captions.html?deck=${DECK}&sync=${room}`);

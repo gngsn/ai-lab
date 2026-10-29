@@ -2,19 +2,10 @@
 // the removed public/js/export.js. All exports are read-side: they fetch from the data
 // layer and either trigger a download, copy to the clipboard, or open a print
 // window.
-import { getConfig } from "../config";
 import { getDeck } from "../data/decks";
 import { listByDeck as listNotes } from "../data/notes";
 import { listByDeck as listSlides } from "../data/slides";
-
-/** supabase://slides-images/<path> → the public https URL (public/js/storage-src.js). */
-function resolveStorageSourcesInHtml(html: unknown) {
-  const base = String(getConfig().supabaseUrl || "").replace(/\/+$/, "");
-  return String(html || "").replace(/supabase:\/\/slides-images\/([^\s"'<>]+)/g, (match, path) => {
-    if (!base) return match;
-    return `${base}/storage/v1/object/public/slides-images/${encodeURI(String(path).replace(/^\/+/, ""))}`;
-  });
-}
+import { resolveStorageSourcesInHtml } from "./storage-src";
 
 const slugify = (s: string | null | undefined) =>
   (s || "deck")

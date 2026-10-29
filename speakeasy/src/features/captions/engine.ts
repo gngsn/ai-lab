@@ -47,8 +47,15 @@ export function createCaptionEngine({
   deckId,
   slides,
   room,
+  follow = true,
   ...on
-}: { deckId: string; slides: Slide[]; room: string } & Callbacks) {
+}: {
+  deckId: string;
+  slides: Slide[];
+  room: string;
+  /** Follow the presenter over the sync room (the caption console does; the presenter panel is told the slide instead). */
+  follow?: boolean;
+} & Callbacks) {
   const indexBySection = new Map(slides.map((slide, index) => [slide.section_id, index]));
   let script: { title: string | null; lines: ScriptLine[] }[] = [];
   let matcher = createMatcher([]);
@@ -62,14 +69,17 @@ export function createCaptionEngine({
   });
   captions.on("broadcast", { event: "caption" }, ({ payload }) => void payload);
   captions.subscribe((state) => on.onChannel?.(state === "SUBSCRIBED"));
-  const sync = supabase.channel(`speakeasy-sync-${room}`);
-  sync.on("broadcast", { event: "slide" }, ({ payload }) =>
-    setSlide(payload.section_id, payload.index),
-  );
-  sync.subscribe((state) => {
-    if (state === "SUBSCRIBED") void sync.send({ type: "broadcast", event: "hello", payload: {} });
-    on.onSync?.(state === "SUBSCRIBED" ? null : false);
-  });
+  if (follow) {
+    const sync = supabase.channel(`speakeasy-sync-${room}`);
+    sync.on("broadcast", { event: "slide" }, ({ payload }) =>
+      setSlide(payload.section_id, payload.index),
+    );
+    sync.subscribe((state) => {
+      if (state === "SUBSCRIBED")
+        void sync.send({ type: "broadcast", event: "hello", payload: {} });
+      on.onSync?.(state === "SUBSCRIBED" ? null : false);
+    });
+  }
 
   function loadScript(md: string, { save = true } = {}) {
     const { aligned, unmatched } = alignToSlides(parseBilingualMd(md), slides);

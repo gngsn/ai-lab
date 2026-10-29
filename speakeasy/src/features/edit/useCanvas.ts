@@ -3,7 +3,7 @@
 import { type RefObject, useEffect, useRef } from "react";
 import { updateContent } from "../../data/slides";
 import type { DeckRow } from "../../data/types";
-import { fitSlideFrame, type SlideFit } from "../../lib/legacy-runtime";
+import { fitSlideFrame, type SlideFit } from "../../lib/slide-fit";
 import type { EditorModel } from "./model";
 
 type Chrome = {
@@ -34,23 +34,14 @@ export function useCanvas({
   // Slides render at a fixed 1280×720 and scale as a whole, except in
   // "stretch", which deliberately fills the canvas.
   useEffect(() => {
-    let cancelled = false;
-    let created: SlideFit | null = null;
     const frame = canvasRef.current;
     const stage = stageRef.current;
     if (!frame || !stage) return;
-    void fitSlideFrame(frame, stage).then((f) => {
-      if (cancelled) {
-        f.disconnect();
-        return;
-      }
-      created = f;
-      fit.current = f;
-      f.setEnabled(fitEnabled.current);
-    });
+    const created: SlideFit = fitSlideFrame(frame, stage);
+    fit.current = created;
+    created.setEnabled(fitEnabled.current);
     return () => {
-      cancelled = true;
-      created?.disconnect();
+      created.disconnect();
       fit.current = null;
     };
   }, [canvasRef, stageRef]);

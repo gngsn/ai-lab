@@ -1,5 +1,11 @@
 # Speakeasy Rebuild SPEC
 
+> **Note (2026-10):** this is the original behavior spec, written for the plain-JS, multi-HTML app.
+> The app is now Vite + React + TypeScript (one `index.html`, `src/`); the behavior it describes is
+> kept, but the file names below (`*.html`, `js/*.js`) are the old ones. For the current layout see
+> `README.md` ("Project Structure") and `../docs/modernization-notes.md`.
+
+
 > Purpose: rebuild the current `speakeasy/` (formerly `slides-editor/`) as closely as possible, including features, data, screens, URLs, save rules, runtime behavior, and known quirks.
 >
 > This is not a future roadmap. It is an **implementation reproduction contract** for the app that exists now.

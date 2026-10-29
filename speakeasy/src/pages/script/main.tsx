@@ -4,7 +4,7 @@ import { listByDeck as listNotes } from "../../data/notes";
 import { listByDeck as listSlides } from "../../data/slides";
 import { ScriptView } from "../../features/script/ScriptView";
 import { ensureAuthed } from "../../lib/auth";
-import { bindShortcutsHelp } from "../../lib/legacy-runtime";
+import { bindShortcutsHelp } from "../../lib/shortcuts-help";
 
 function fatal(message: string): never {
   // The legacy banner lives in the page chrome, which is not rendered yet.

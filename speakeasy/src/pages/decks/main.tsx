@@ -3,18 +3,16 @@ import { createRoot } from "react-dom/client";
 import { mountDeckList } from "../../features/decks/controller";
 import { DecksView } from "../../features/decks/DecksView";
 import { ensureAuthed } from "../../lib/auth";
-import { loadRemoteSource } from "../../lib/legacy-runtime";
+import * as remoteSource from "../../lib/remote-source";
 
 function Page() {
   useEffect(() => {
     let dispose: (() => void) | undefined;
     let cancelled = false;
-    void loadRemoteSource()
-      .then(mountDeckList)
-      .then((fn) => {
-        if (cancelled) fn();
-        else dispose = fn;
-      });
+    void mountDeckList(remoteSource).then((fn) => {
+      if (cancelled) fn();
+      else dispose = fn;
+    });
     return () => {
       cancelled = true;
       dispose?.();

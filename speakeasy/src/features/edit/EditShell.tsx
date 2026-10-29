@@ -11,18 +11,22 @@ import { flushSync } from "react-dom";
 import { updateTitle } from "../../data/decks";
 import type { DeckRow } from "../../data/types";
 import { exportHtml, exportNotesMd, exportPdf } from "../../lib/export";
-import { bindShortcutsHelp, loadHistoryUi } from "../../lib/legacy-runtime";
+import { bindShortcutsHelp } from "../../lib/shortcuts-help";
 import { syncRoomFor } from "../../lib/sync-room";
+import { HistoryDrawer } from "../history/HistoryDrawer";
+import { saveVersionPrompt } from "../history/save-version";
+import { defaultTtsEngine } from "../training/config";
+import { TrainingPanel } from "../training/TrainingPanel";
 import { AssetLibrary } from "./AssetLibrary";
 import { FrameModal } from "./FrameModal";
-import { HistoryDrawer, useHistoryDrawer } from "./HistoryDrawer";
 import { type EditSlide, useEditorModel } from "./model";
 import { NotesPanel } from "./NotesPanel";
 import { ShareModal, useShare } from "./ShareModal";
 import { SlideList } from "./SlideList";
 import { SvgModal } from "./SvgModal";
-import { useTrainingPanel } from "./training";
+import { useTrainingSection } from "./training";
 import { useCanvas } from "./useCanvas";
+import { useHistoryDrawer } from "./useHistoryDrawer";
 import { useHtmlEditor } from "./useHtmlEditor";
 
 // Chrome shared with the editor features that arrive in later P4-7 steps.
@@ -211,8 +215,7 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
   const [assetsOpen, setAssetsOpen] = useState(false);
   const [frameOpen, setFrameOpen] = useState(false);
   const [svgOpen, setSvgOpen] = useState(false);
-  const trainingMountRef = useRef<HTMLDivElement>(null);
-  useTrainingPanel(deckId, model, trainingMountRef);
+  const trainingSection = useTrainingSection(model);
   const share = useShare(deckId, deckRef, chrome);
   const history = useHistoryDrawer({ deckId, deckRef, model, chrome });
   const [mode, setMode] = useState<Mode>("aspect-169");
@@ -243,7 +246,6 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
   };
   const saveVersion = async () => {
     try {
-      const { saveVersionPrompt } = await loadHistoryUi();
       const ts = await saveVersionPrompt(deckId);
       if (ts === null) return;
       toast("Version saved", "ok");
@@ -709,7 +711,14 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
               >
                 <span className="chev">▾</span> Training
               </button>
-              <div id="training-mount" ref={trainingMountRef}></div>
+              <div id="training-mount">
+                <TrainingPanel
+                  deckId={deckId}
+                  section={trainingSection}
+                  speed={1}
+                  engine={defaultTtsEngine()}
+                />
+              </div>
             </div>
           </aside>
         </main>
@@ -723,7 +732,7 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
         onClose={() => setAssetsOpen(false)}
       />
 
-      <HistoryDrawer history={history} />
+      <HistoryDrawer open={history.open} history={history.history} onClose={history.close} />
 
       <FrameModal
         deckId={deckId}

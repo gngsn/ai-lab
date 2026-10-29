@@ -9,15 +9,22 @@
     "allowJs": true,
     "checkJs": false,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "types": ["node", "vite/client"]
+    "types": ["node", "vite/client"],
+    "paths": {
+      "/vendor/modules/supabase-client.mjs": ["./src/runtime/supabase-client.d.ts"],
+      "/js/deck-host.js": ["./src/runtime/deck-host.ts"],
+      "/js/sync.js": ["./src/runtime/sync.ts"],
+      "/js/captions/audience.js": ["./src/runtime/captions-audience.ts"]
+    }
   },
   "include": [
     "src",
+    "vite-plugins",
     "tests",
-    "public/js",
     "playwright.config.ts",
     "vitest.config.ts",
     "vite.config.ts"

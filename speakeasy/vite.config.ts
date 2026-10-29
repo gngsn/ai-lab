@@ -1,23 +1,15 @@
 import { defineConfig } from "vite";
+import { deckRuntime } from "./vite-plugins/deck-runtime.ts";
 
-// Legacy pages remain in public/ unchanged; migrated pages are Vite entries.
+// One entry (index.html) serves every React page; src/main.tsx picks the page
+// from the URL. The deck runtime pages (present, view, share, edit-frame) are
+// still plain files in public/ until Phase 6 moves them. `spa` makes the dev
+// and preview servers answer /edit, /edit.html, ... with index.html.
 export default defineConfig({
-  // Plain multi-page site: no single-page fallback to index.html.
-  appType: "mpa",
+  appType: "spa",
+  plugins: [deckRuntime()],
   build: {
     outDir: "dist",
     emptyOutDir: true,
-    rollupOptions: {
-      input: {
-        placeholder: "src/pages/_placeholder/index.html",
-        captions: "captions.html",
-        notes: "notes.html",
-        script: "script.html",
-        edit: "edit.html",
-        pronunciation: "pronunciation.html",
-        index: "index.html",
-        "script-edit": "script-edit.html",
-      },
-    },
   },
 });

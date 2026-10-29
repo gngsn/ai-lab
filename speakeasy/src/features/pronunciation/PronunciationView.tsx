@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DeckRow, NoteRow, SlideRow } from "../../data/types";
-import type { PronunciationRuntime, TrainingPanel } from "../../lib/legacy-runtime";
+import { formatBytes, warmDeckAssets } from "../../lib/preload-assets";
+import { fitSlideFrame } from "../../lib/slide-fit";
+import { defaultTtsEngine } from "../training/config";
+import { type TrainingHandle, TrainingPanel } from "../training/TrainingPanel";
+import { cleanForSpeech } from "../training/text";
+import { mergeBlobs, silenceWav } from "../training/wav";
 
 export type Loaded = { deck: DeckRow; slides: SlideRow[]; notes: NoteRow[] };
 type Props = {
   deckId: string;
-  runtime: PronunciationRuntime;
   loaded: Loaded | { error: string };
 };
 
@@ -74,7 +78,7 @@ function makeColResizer(
   };
 }
 
-export function PronunciationView({ deckId, runtime, loaded }: Props) {
+export function PronunciationView({ deckId, loaded }: Props) {
   const data = "error" in loaded ? null : loaded;
   const slides = data?.slides;
   const deck = data?.deck;
@@ -82,16 +86,16 @@ export function PronunciationView({ deckId, runtime, loaded }: Props) {
     () => new Map((data?.notes ?? []).map((n) => [n.section_id, n.content])),
   );
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [speedLabel, setSpeedLabel] = useState("1.0×");
+  const [speed, setSpeed] = useState(1.0);
+  const [speedLabel, setSpeedLabel] = useState("1.0×"); // the legacy page starts at "1.0×"
   const [scores, setScores] = useState<Record<number, { score: number; cls: string }>>({});
   const [exp, setExp] = useState({ busy: false, pct: 0, text: "" });
-  const panel = useRef<TrainingPanel | null>(null);
-  const live = useRef({ slides, currentIndex, speed: 1.0 });
+  const panel = useRef<TrainingHandle>(null);
+  const [engine, setEngine] = useState<string>(defaultTtsEngine);
+  const live = useRef({ slides, currentIndex });
   live.current = { ...live.current, slides, currentIndex };
-  const mountRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const engineRef = useRef<HTMLSelectElement>(null);
   const trnResizerRef = useRef<HTMLDivElement>(null);
 
   const titleOf = (i: number) => slides?.[i]?.title || `Slide ${i + 1}`;
@@ -118,41 +122,12 @@ export function PronunciationView({ deckId, runtime, loaded }: Props) {
     document.title = `Pronunciation · ${deck.title || deckId}`;
   }, [deck, deckId]);
 
-  // Mount the shared training panel, the slide fit and the resizers.
+  // The slide fit, the resizer and the asset warm-up.
   useEffect(() => {
-    if (!data || !mountRef.current) return;
+    if (!data) return;
     if (iframeRef.current && stageRef.current) {
       // Render the preview at the fixed slide size and scale it as a whole.
-      runtime.fitSlideFrame(iframeRef.current, stageRef.current);
-    }
-    const created = runtime.createTrainingPanel(mountRef.current, {
-      deckId,
-      getSection: () => {
-        const { slides: list, currentIndex: index } = live.current;
-        const slide = list?.[index];
-        if (!slide) return { sectionId: null, title: "", text: "" };
-        return {
-          sectionId: slide.section_id,
-          title: slide.title || `Slide ${index + 1}`,
-          text: notesMap.get(slide.section_id) || "",
-        };
-      },
-      onScore: (sectionId, score, cls) => {
-        const index = (live.current.slides ?? []).findIndex((s) => s.section_id === sectionId);
-        if (index < 0) return;
-        setScores((prev) => ({ ...prev, [index]: { score, cls } }));
-      },
-    });
-    panel.current = created;
-    if (engineRef.current) engineRef.current.value = created.getEngine();
-    // Hand the first section over once the panel exists.
-    const first = data.slides[0];
-    if (first) {
-      created.setSection({
-        sectionId: first.section_id,
-        title: first.title || "Slide 1",
-        text: notesMap.get(first.section_id) || "",
-      });
+      fitSlideFrame(iframeRef.current, stageRef.current);
     }
     // Left resizer (#sec-resizer) is dead in the legacy page too: the section
     // list used to wipe it. Only the right one works, and only it is wired.
@@ -165,47 +140,48 @@ export function PronunciationView({ deckId, runtime, loaded }: Props) {
     // Pull every slide's images/video/audio into the browser cache now, so
     // later slides show without waiting on the network.
     const title = document.title;
-    runtime
-      .warmDeckAssets(data.deck, data.slides, {
-        onProgress: ({ done, total, bytes }) => {
-          document.title =
-            done < total ? `(${done}/${total} · ${runtime.formatBytes(bytes)}) ${title}` : title;
-        },
-      })
-      .catch(() => {});
+    warmDeckAssets(data.deck, data.slides, {
+      onProgress: ({ done, total, bytes }) => {
+        document.title =
+          done < total ? `(${done}/${total} · ${formatBytes(bytes)}) ${title}` : title;
+      },
+    }).catch(() => {});
     return () => {
       stopRight();
-      created.destroy();
-      panel.current = null;
     };
-  }, [data, deckId, runtime, notesMap]);
+  }, [data]);
 
-  const selectSection = useCallback(
-    (index: number) => {
-      setCurrentIndex(index);
-      live.current.currentIndex = index;
-      const slide = live.current.slides?.[index];
-      if (!slide) return;
-      // Hand the current section to the training panel (resets feedback,
-      // restores latest take + recording, re-binds scoring).
-      panel.current?.setSection({
-        sectionId: slide.section_id,
-        title: slide.title || `Slide ${index + 1}`,
-        text: notesMap.get(slide.section_id) || "",
-      });
-    },
-    [notesMap],
-  );
+  // The panel follows the selected slide (feedback reset, latest take and recording restored).
+  const trainingSection = useMemo(() => {
+    const slide = slides?.[currentIndex];
+    if (!slide) return { sectionId: null, title: "", text: "" };
+    return {
+      sectionId: slide.section_id,
+      title: slide.title || `Slide ${currentIndex + 1}`,
+      text: notesMap.get(slide.section_id) || "",
+    };
+  }, [slides, currentIndex, notesMap]);
+
+  const onScore = useCallback((sectionId: string, score: number, cls: string) => {
+    const index = (live.current.slides ?? []).findIndex((s) => s.section_id === sectionId);
+    if (index < 0) return;
+    setScores((prev) => ({ ...prev, [index]: { score, cls } }));
+  }, []);
+
+  const selectSection = useCallback((index: number) => {
+    setCurrentIndex(index);
+    live.current.currentIndex = index;
+  }, []);
 
   async function onExport() {
-    if (!slides || !panel.current) return;
     const current = panel.current;
+    if (!slides || !current) return;
     setExp({ busy: true, pct: 0, text: "" });
-    const sil = runtime.silenceWav(1.5);
+    const sil = silenceWav(1.5);
     const blobs: Blob[] = [];
     for (let i = 0; i < slides.length; i++) {
       const slide = slides[i] as SlideRow;
-      const cleanText = runtime.cleanForSpeech(notesMap.get(slide.section_id) || "");
+      const cleanText = cleanForSpeech(notesMap.get(slide.section_id) || "");
       if (!cleanText) continue;
       setExp({
         busy: true,
@@ -233,11 +209,11 @@ export function PronunciationView({ deckId, runtime, loaded }: Props) {
     setExp((prev) => ({ ...prev, text: "Merging…" }));
     let text: string;
     try {
-      const merged = await runtime.mergeBlobs(blobs);
+      const merged = await mergeBlobs(blobs);
       const url = URL.createObjectURL(merged);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${deckId}-${live.current.speed}x.wav`;
+      a.download = `${deckId}-${speed}x.wav`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 30000);
       text = "✓ Done";
@@ -249,7 +225,7 @@ export function PronunciationView({ deckId, runtime, loaded }: Props) {
 
   const slide = slides?.[currentIndex];
   const rawNotes = slide ? notesMap.get(slide.section_id) || "" : "";
-  const cleanText = slide ? runtime.cleanForSpeech(rawNotes) : "";
+  const cleanText = slide ? cleanForSpeech(rawNotes) : "";
   const q = encodeURIComponent(deckId);
   return (
     <div id="app">
@@ -272,9 +248,8 @@ export function PronunciationView({ deckId, runtime, loaded }: Props) {
             defaultValue="1.0"
             onInput={(e) => {
               const value = Number.parseFloat((e.target as HTMLInputElement).value);
-              live.current.speed = value;
+              setSpeed(value);
               setSpeedLabel(`${value.toFixed(2).replace(/\.?0+$/, "")}×`);
-              panel.current?.setSpeed(value);
             }}
           />
           <span id="speed-label">{speedLabel}</span>
@@ -282,8 +257,8 @@ export function PronunciationView({ deckId, runtime, loaded }: Props) {
         <select
           id="tts-engine"
           title="TTS Engine"
-          ref={engineRef}
-          onChange={(e) => panel.current?.setEngine(e.target.value)}
+          value={engine}
+          onChange={(e) => setEngine(e.target.value)}
         >
           <option value="kokoro">🏠 Local (Kokoro)</option>
           <option value="openai">☁️ OpenAI</option>
@@ -370,7 +345,16 @@ export function PronunciationView({ deckId, runtime, loaded }: Props) {
                 aria-hidden="true"
                 ref={trnResizerRef}
               />
-              <div id="training-mount" ref={mountRef} />
+              <div id="training-mount">
+                <TrainingPanel
+                  ref={panel}
+                  deckId={deckId}
+                  section={trainingSection}
+                  speed={speed}
+                  engine={engine}
+                  onScore={onScore}
+                />
+              </div>
             </section>
           </>
         )}
