@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { mountDeckList } from "../../features/decks/controller";
 import { DecksView } from "../../features/decks/DecksView";
-import { ensureAuthed } from "../../lib/auth";
+import { mountPoint, requireOwner, runPage } from "../../lib/page";
 import * as remoteSource from "../../lib/remote-source";
 
 function Page() {
@@ -22,16 +22,10 @@ function Page() {
 }
 
 async function main() {
-  if (!(await ensureAuthed())) {
-    document.body.innerHTML =
-      '<p style="padding:2rem;color:#ef4444;font-family:monospace">Access denied — deck list is owner-only.</p>';
-    throw new Error("auth");
-  }
-  const mount = document.getElementById("app");
-  if (!mount) throw new Error("Missing #app mount point");
-  createRoot(mount).render(<Page />);
+  await requireOwner("Access denied — deck list is owner-only.", {
+    style: "padding:2rem;color:#ef4444;font-family:monospace",
+  });
+  createRoot(mountPoint("app")).render(<Page />);
 }
 
-void main().catch((error: unknown) => {
-  if (!(error instanceof Error && error.message === "auth")) console.error(error);
-});
+runPage(main);

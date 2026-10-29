@@ -8,27 +8,14 @@
 import { getDeck } from "../../data/decks";
 import { getOne } from "../../data/slides";
 import type { DeckRow, SlideRow } from "../../data/types";
+import { showFailure, showLoading } from "../../lib/boot-screen";
+import { errorMessage } from "../../lib/errors";
 import { scriptJson } from "../../lib/script-json";
 import { tagSection } from "../../lib/slide-render";
 import { resolveStorageSourcesInHtml } from "../../lib/storage-src";
 
-// What the frame showed before its slide arrived.
-const LOADING_CSS = `
-body { margin: 0; background: #f2f2f2; color: #6b6c6e;
-  color-scheme: light dark;
-       font: 13px ui-monospace, monospace;
-       display: grid; place-items: center; height: 100vh; }
-@media (prefers-color-scheme: dark) {
-  body { background: #19191a; color: #9a9a9c; }
-}`;
-
-const ESC: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;" };
-
 function fatal(msg: string): never {
-  document.body.innerHTML = `<pre style="color:var(--se-bad, #b42318);padding:1rem;font:13px monospace;">${msg.replace(
-    /[&<>]/g,
-    (c) => ESC[c] as string,
-  )}</pre>`;
+  showFailure(msg, "color:var(--se-bad, #b42318);padding:1rem;font:13px monospace;");
   parent.postMessage({ type: "edit-frame:error", message: msg }, "*");
   throw new Error(msg);
 }
@@ -71,10 +58,7 @@ function requestDataFromParent(deckId: string, sectionId: string): Promise<Data>
 }
 
 export async function bootEditFrame() {
-  const style = document.createElement("style");
-  style.textContent = LOADING_CSS;
-  document.head.appendChild(style);
-  document.body.innerHTML = "<p>loading slide…</p>";
+  showLoading("loading slide…", 13);
 
   const params = new URLSearchParams(location.search);
   const deckId = params.get("deck");
@@ -92,7 +76,7 @@ export async function bootEditFrame() {
     try {
       [deck, slide] = await Promise.all([getDeck(deckId), getOne(deckId, sectionId)]);
     } catch (err) {
-      fatal(`Load failed: ${err instanceof Error ? err.message : String(err)}`);
+      fatal(`Load failed: ${errorMessage(err)}`);
     }
   }
 

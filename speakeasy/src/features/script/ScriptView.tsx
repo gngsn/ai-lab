@@ -2,7 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { DeckRow } from "../../data/types";
 import { createSlideSync } from "../../lib/sync";
 
-export type Section = { section_id: string; order: number; title: string; body: string };
+import type { Section } from "./load-sections";
+
+export type { Section };
+
 type Props = { deck: DeckRow; sections: Section[]; syncId: string | null; deckId: string };
 
 const FONT_KEY = "speakeasy:notes:fontsize";

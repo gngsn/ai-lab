@@ -8,7 +8,10 @@ import { HistoryDrawer } from "../history/HistoryDrawer";
 import { saveVersionPrompt } from "../history/save-version";
 import { useHistory } from "../history/useHistory";
 
-export type Section = { section_id: string; order: number; title: string; body: string };
+import type { Section } from "../script/load-sections";
+
+export type { Section };
+
 type Props = { deck: DeckRow; deckId: string; sections: Section[] };
 
 const SAVE_DEBOUNCE_MS = 800;
