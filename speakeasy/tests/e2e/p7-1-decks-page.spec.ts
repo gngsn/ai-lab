@@ -310,6 +310,40 @@ test.describe("the Import modal", () => {
       await expect(page.locator("#import-url-hint")).toHaveText("");
     });
 
+    test("Import waits for a link that is still being fetched", async ({ page }) => {
+      await page.route(RAW, async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 700));
+        await route.fulfill({
+          headers: { "access-control-allow-origin": "*" },
+          contentType: "text/html",
+          body: DECK_HTML,
+        });
+      });
+      await open(page);
+      await page.locator("#import-url-btn").click();
+      await page.locator("#import-url").fill(BLOB);
+      await page.locator("#import-run-btn").click(); // blurs the field, which starts the fetch
+      await page.waitForURL("**/edit.html?deck=talk");
+    });
+
+    test("leaving a link field again without changing it does not fetch twice", async ({
+      page,
+    }) => {
+      let fetches = 0;
+      page.on("request", (r) => {
+        if (r.url() === RAW) fetches++;
+      });
+      await open(page);
+      await page.locator("#import-url-btn").click();
+      await page.locator("#import-url").fill(BLOB);
+      await page.locator("#import-url").blur();
+      await expect(page.locator("#import-url-hint")).toContainText("slide(s) found");
+      await page.locator("#import-url").focus();
+      await page.locator("#import-url").blur();
+      await page.waitForTimeout(400);
+      expect(fetches).toBe(1);
+    });
+
     test("the GitHub token is remembered in this browser, and removed when emptied", async ({
       page,
     }) => {
@@ -460,6 +494,21 @@ test.describe("the Re-import modal", () => {
     expect(db.notes_history.some((r) => r.deck_id === DECK)).toBe(true);
   });
 
+  test("the re-import note on the status line goes away when the list reloads", async ({
+    page,
+  }) => {
+    await openFor(page);
+    await part(page, "keys")
+      .locator('input[type="file"]')
+      .setInputFiles(path("controller-deck.keymessages.md"));
+    await page.locator("#reimport-run").click();
+    await expect(status(page)).toContainText("re-imported");
+    page.removeAllListeners("dialog");
+    page.on("dialog", (d) => void d.accept());
+    await deckItem(page, PLAIN).locator("[data-delete-deck]").click();
+    await expect(status(page)).toHaveText("✓ connected — 1 deck(s)");
+  });
+
   test("replacing only key messages leaves History alone", async ({ page }) => {
     await openFor(page);
     const before = await readDb(page);
@@ -489,5 +538,19 @@ test.describe("the Re-import modal", () => {
     await expect(page.locator("#reimport-title")).toHaveText(
       (await deckItem(page, PLAIN).locator(".deck-title").textContent()) ?? "",
     );
+  });
+});
+
+test.describe("on a short window", () => {
+  test.use({ viewport: { width: 1280, height: 600 } });
+
+  test("the GitHub import form scrolls, so Import can still be reached", async ({ page }) => {
+    await open(page);
+    await page.locator("#import-url-btn").click();
+    const run = page.locator("#import-run-btn");
+    await run.scrollIntoViewIfNeeded();
+    await expect(run).toBeInViewport();
+    await run.click();
+    await expect(page.locator("#import-error")).toContainText("Choose an HTML file");
   });
 });
