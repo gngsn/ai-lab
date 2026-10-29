@@ -1,7 +1,7 @@
 // IndexedDB "pronunciation-cache" shared by every panel instance: generated
 // takes ("history"), the user's own recordings ("recordings") and the chosen
-// recordings folder handle ("audio"). The layout is the legacy one, so takes
-// saved by the old panel are still found.
+// recordings folder handle ("audio"). The layout must not change: takes saved
+// in a user's browser are found by it.
 export type StoreName = "audio" | "history" | "recordings";
 
 export type KeyValueStore = {

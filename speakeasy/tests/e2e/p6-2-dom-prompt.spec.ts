@@ -1,5 +1,5 @@
-// P6-2: the in-page text prompt (src/lib/dom-prompt.ts, used by "Save version").
-// Opened with Ctrl/Cmd+S on the editor; checks every way it can end.
+// The in-page text prompt (src/lib/dom-prompt.ts, used by "Save version"). Opened with Ctrl/Cmd+S on
+// the editor; checks every way it can end.
 import type { Page } from "@playwright/test";
 import { expect, readDb, test } from "../support/app";
 import { DECK } from "../support/seed";

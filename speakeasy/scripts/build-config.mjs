@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// scripts/build-config.mjs
 // Generate public/js/config.local.js from environment variables at build time.
 // Skips silently if env vars are absent (local dev manages config.local.js
 // by hand). Designed to run as Vercel's buildCommand.

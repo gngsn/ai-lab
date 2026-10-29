@@ -4,8 +4,8 @@
 // - Falls back to auto-marking common text containers as editable when the
 //   slide content has no data-editable annotations yet (typical for slides
 //   freshly inserted via the "+ New slide" button).
-// - Ports the stable `data-edit-id` algorithm from v4's InlineEditor so that
-//   adding/removing editables in adjacent slides doesn't reshuffle ids.
+// - Gives editables stable `data-edit-id`s, so that adding or removing editables in adjacent
+//   slides doesn't reshuffle ids.
 
 const SAVE_DEBOUNCE_MS = 800;
 
@@ -128,7 +128,6 @@ export class InlineEditor {
     this.placeNode(img);
   }
 
-  // Insert an uploaded asset in the form that fits its kind.
   insertAsset({ url, name = "", kind = "file" }: AssetMessage) {
     if (!url) return;
     if (kind === "image") {
@@ -167,7 +166,6 @@ export class InlineEditor {
       if (this.section?.contains(range.commonAncestorContainer)) {
         range.deleteContents();
         range.insertNode(node);
-        // Move caret after the inserted node
         range.setStartAfter(node);
         range.setEndAfter(node);
         sel.removeAllRanges();

@@ -1,11 +1,12 @@
 // Runs inside the letterbox iframe (and in ?print=1 mode, which needs the plain
 // document): loads the deck, checks the share token, and replaces this document
-// with the deck's own. The old page's `document.write` is kept on purpose — the
-// deck's scripts then run in a document whose URL, window and config globals
-// are the page's own (see the relative-URL tests).
+// with the deck's own. It uses `document.write` on purpose: the deck's scripts then run in a
+// document whose URL, window and config globals are the page's own (see the relative-URL tests).
 import { getDeck } from "../../data/decks";
 import { listByDeck } from "../../data/slides";
 import type { DeckRow } from "../../data/types";
+import { showFailure, showLoading } from "../../lib/boot-screen";
+import { errorMessage } from "../../lib/errors";
 import {
   applyAssetMap,
   collectAssetUrls,
@@ -14,30 +15,6 @@ import {
 } from "../../lib/preload-assets";
 import { buildDeckDocument, visibleSlides } from "./document";
 
-// What view.html / share.html showed before the deck arrived.
-const LOADING_CSS = `
-body {
-  margin: 0; background: #f2f2f2; color: #6b6c6e;
-  color-scheme: light dark;
-  font: 14px ui-monospace, monospace;
-  display: grid; place-items: center; height: 100vh;
-}
-@media (prefers-color-scheme: dark) {
-  body { background: #19191a; color: #9a9a9c; }
-}`;
-
-const ESC: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;" };
-
-function fatal(msg: string): never {
-  document.body.innerHTML =
-    `<pre style="font:14px monospace;color:var(--se-bad, #b42318);padding:2rem;max-width:520px;margin:8vh auto;">` +
-    msg.replace(/[&<>]/g, (c) => ESC[c] as string) +
-    `</pre>`;
-  throw new Error(msg);
-}
-
-const errorMessage = (err: unknown) => (err instanceof Error ? err.message : String(err));
-
 /** share: the audience page — the same read-only view, following the presenter over ?sync=<room>. */
 export async function bootDeck({ shareMode }: { shareMode: boolean }) {
   const params = new URLSearchParams(location.search);
@@ -45,10 +22,7 @@ export async function bootDeck({ shareMode }: { shareMode: boolean }) {
   const token = params.get("token");
   const followSync = shareMode ? params.get("sync") : null;
 
-  const style = document.createElement("style");
-  style.textContent = LOADING_CSS;
-  document.head.appendChild(style);
-  document.body.innerHTML = "<p>loading deck…</p>";
+  showLoading("loading deck…");
 
   if (!deckId) fatal("Missing ?deck=<deck_id>");
   if (!token) fatal("Missing ?token=<share_token>");
@@ -109,4 +83,12 @@ export async function bootDeck({ shareMode }: { shareMode: boolean }) {
   document.open();
   document.write(html);
   document.close();
+}
+
+function fatal(msg: string): never {
+  showFailure(
+    msg,
+    "font:14px monospace;color:var(--se-bad, #b42318);padding:2rem;max-width:520px;margin:8vh auto;",
+  );
+  throw new Error(msg);
 }

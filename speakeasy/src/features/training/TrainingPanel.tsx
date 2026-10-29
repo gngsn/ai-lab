@@ -17,8 +17,8 @@ const HIDDEN = { display: "none" } as const;
 
 /**
  * The shared pronunciation training panel: Generate / Upload speech, Record and score, and the
- * take histories. The markup (ids, classes, the doubled #action-row / #stt-status) is the
- * legacy panel's, so training-panel.css and the page layouts apply unchanged.
+ * take histories. The markup (ids, classes, the doubled #action-row / #stt-status) is what
+ * training-panel.css and the page layouts style.
  */
 export const TrainingPanel = forwardRef<TrainingHandle, TrainingOptions>(
   function TrainingPanel(props, ref) {

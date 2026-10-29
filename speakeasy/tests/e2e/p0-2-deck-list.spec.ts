@@ -1,5 +1,5 @@
-// P0-2: the deck list shows the decks (newest first) with links to every
-// screen, and a shared-view link only for shared decks.
+// The deck list shows the decks (newest first) with links to every screen, and a shared-view link
+// only for shared decks.
 import { expect, test } from "../support/app";
 import { DECK, PLAIN, TOKEN } from "../support/seed";
 

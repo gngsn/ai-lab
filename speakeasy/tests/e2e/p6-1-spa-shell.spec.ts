@@ -1,7 +1,7 @@
-// P6-1: one index.html boots every React page. Each page must still start
-// with what its own HTML used to give it (language, tab title, mount element,
-// public stylesheets in the same order, classic scripts), under both the
-// `.html` and the clean address, and the deck runtime pages stay plain files.
+// One index.html boots every React page. Each page must still start with what its own HTML used to
+// give it (language, tab title, mount element, public stylesheets in the same order, classic
+// scripts), under both the `.html` and the clean address, and the deck runtime pages stay plain
+// files.
 import type { Page } from "@playwright/test";
 import { deckFrame, expect, test } from "../support/app";
 import { DECK } from "../support/seed";

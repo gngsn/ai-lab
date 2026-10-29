@@ -1,5 +1,5 @@
-// P4-7f (part 3): the "Insert SVG" dialog — shapes with colours and size, the
-// custom SVG tab with its live preview, and insertion into the slide.
+// The "Insert SVG" dialog — shapes with colours and size, the custom SVG tab with its live preview,
+// and insertion into the slide.
 import type { Page } from "@playwright/test";
 import { expect, test } from "../support/app";
 import { DECK } from "../support/seed";

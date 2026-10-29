@@ -1,4 +1,3 @@
-// Expected values come from the legacy public/js/preload-assets.js.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   applyAssetMap,

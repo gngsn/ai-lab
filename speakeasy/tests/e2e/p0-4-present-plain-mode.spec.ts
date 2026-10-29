@@ -1,5 +1,5 @@
-// P0-4: presenting a plain deck ("speakeasy mode": Speakeasy's own runtime,
-// overlay counter, header / footer chrome).
+// Presenting a plain deck ("speakeasy mode": Speakeasy's own runtime, overlay counter, header /
+// footer chrome).
 import { deckFrame, expect, press, slideState, test } from "../support/app";
 import { DECK, PLAIN } from "../support/seed";
 

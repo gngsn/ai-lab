@@ -1,5 +1,4 @@
-// A tiny Markdown renderer for notes previews (port of
-// public/js/markdown-lite.js, same output): headings, paragraphs, lists,
+// A tiny Markdown renderer for notes previews: headings, paragraphs, lists,
 // block quotes, fenced code, and inline code / bold / italic / links.
 
 function escapeHtml(text: unknown) {

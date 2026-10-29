@@ -1,6 +1,5 @@
-// P0-11: the presenter view (present.html) shows a side panel with the
-// current slide's key message and script, click cues that follow the
-// fragments, the next slide, and can be hidden.
+// The presenter view (present.html) shows a side panel with the current slide's key message and
+// script, click cues that follow the fragments, the next slide, and can be hidden.
 import { deckFrame, expect, press, test } from "../support/app";
 import { DECK, KEY_MESSAGE } from "../support/seed";
 

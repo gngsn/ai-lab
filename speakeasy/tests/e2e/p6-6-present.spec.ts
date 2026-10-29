@@ -1,11 +1,9 @@
-// P6-6: the presenter page (present). The older specs pin stepping (p0-3/4/5),
-// the panel's follow / hide / font (p0-11), captions to the audience (p0-12),
-// the auth gate (p0-1), print mode and the letterbox geometry (p6-0). These add
-// what they leave open: the overlay of a plain deck (counter, progress, dots,
-// sync badge, audience link), the start slide (?section=), the error pages, the
-// se:slide messages, the panel's width / font limits / timer, the caption
-// button and its script file, and the narrow layout. They pass on the legacy
-// page first and must keep passing on the port.
+// The presenter page (present). The older specs pin stepping (p0-3/4/5), the panel's follow / hide /
+// font (p0-11), captions to the audience (p0-12), the auth gate (p0-1), print mode and the letterbox
+// geometry (p6-0). These add what they leave open: the overlay of a plain deck (counter, progress,
+// dots, sync badge, audience link), the start slide (?section=), the error pages, the se:slide
+// messages, the panel's width / font limits / timer, the caption button and its script file, and the
+// narrow layout.
 import type { BrowserContext, Page } from "@playwright/test";
 import { deckFrame, expect, press, slideState, test } from "../support/app";
 import { BILINGUAL, DECK, PLAIN } from "../support/seed";

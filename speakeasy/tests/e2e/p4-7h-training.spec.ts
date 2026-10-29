@@ -1,5 +1,5 @@
-// P4-7h: the Training panel at the bottom of the props column (the component shared
-// with the pronunciation page, src/features/training). The local TTS server is stubbed.
+// The Training panel at the bottom of the props column (the component shared with the pronunciation
+// page, src/features/training). The local TTS server is stubbed.
 import type { Page } from "@playwright/test";
 import { expect, test } from "../support/app";
 import { DECK } from "../support/seed";

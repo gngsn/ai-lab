@@ -1,4 +1,4 @@
-// P0-18: supabase://slides-images/… links resolve to public storage URLs.
+// Supabase://slides-images/… links resolve to public storage URLs.
 import { beforeEach, describe, expect, it } from "vitest";
 import { fromStorageSrc, resolveStorageSourcesInHtml } from "../../src/lib/storage-src";
 

@@ -1,5 +1,4 @@
-// State and actions of the pronunciation training panel (port of
-// createTrainingPanel in the legacy training-panel.js): Generate / Upload with a
+// State and actions of the pronunciation training panel: Generate / Upload with a
 // take history, Record + live or server speech recognition + word-by-word
 // scoring, and the user's own recording history.
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -73,7 +72,7 @@ export function useTraining({ deckId, section, speed, engine, onScore }: Trainin
   const audioRef = useRef<HTMLAudioElement>(null);
   const recAudioRef = useRef<HTMLAudioElement>(null);
 
-  // Mutable state of the legacy closure.
+  // Mutable state: refs, so handlers and effects always see the current values.
   const takes = useRef(createTakes(deckId));
   const folder = useRef(createRecordingFolder(deckId));
   const sectionRef = useRef(section);
@@ -119,7 +118,6 @@ export function useTraining({ deckId, section, speed, engine, onScore }: Trainin
     return url;
   };
 
-  // ── Players ─────────────────────────────────────────────────────
   const showVersion = (version: TtsVersion, hist: History<TtsVersion>, play = false) => {
     setTts({
       versions: hist.versions,
@@ -151,7 +149,6 @@ export function useTraining({ deckId, section, speed, engine, onScore }: Trainin
     recAudioRef.current.play().catch(() => {});
   }, [recPlay]);
 
-  // ── Generate / Upload ───────────────────────────────────────────
   const speak = (sectionId: string, cleanText: string) =>
     takes.current.getOrCreateVersion(sectionId, cleanText, {
       engine: engineRef.current,
@@ -207,7 +204,6 @@ export function useTraining({ deckId, section, speed, engine, onScore }: Trainin
     }
   }
 
-  // ── Feedback ────────────────────────────────────────────────────
   const resetRecordBtn = () => {
     stopArmed.current = false;
     isRecording.current = false;
@@ -226,11 +222,9 @@ export function useTraining({ deckId, section, speed, engine, onScore }: Trainin
     const score = scoreFromDiff(diff);
     const cls = scoreClass(score);
     setFeedback({ diff, score, cls, transcript });
-    // Host updates its own list badge.
     if (cur.sectionId) onScoreRef.current?.(cur.sectionId, score, cls);
   }
 
-  // ── Record ──────────────────────────────────────────────────────
   // The mic is always captured (MediaRecorder) so the user can replay their own voice.
   // WebSpeech additionally runs live recognition for the transcript; VibeVoice/Whisper
   // transcribe the captured blob afterwards.
@@ -324,7 +318,6 @@ export function useTraining({ deckId, section, speed, engine, onScore }: Trainin
     recorder.current = null;
     stream.current = null;
 
-    // Save the user's own voice and make it replayable immediately.
     const { sectionId } = sectionRef.current;
     try {
       if (!sectionId) throw new Error("no section");
@@ -340,7 +333,6 @@ export function useTraining({ deckId, section, speed, engine, onScore }: Trainin
       console.warn("save recording failed:", errorText(e));
     }
 
-    // Produce the transcript used for scoring.
     if (recEngine.current === "webspeech") {
       finishSTT(sttParts.current.join(" "));
       return;
@@ -349,8 +341,8 @@ export function useTraining({ deckId, section, speed, engine, onScore }: Trainin
     try {
       finishSTT(await transcribeBlob(recEngine.current, blob));
     } catch (err) {
-      // The legacy panel wrote "MLX failed (recording saved) → record again" (or
-      // "Error: …") here and cleared it again in the same step, so nothing is shown.
+      // A failed recognition is only logged: the status line is cleared in the same step, so the
+      // user sees no error text.
       console.warn(
         recEngine.current === "vibevoice"
           ? "MLX STT failed, falling back to WebSpeech:"
@@ -403,7 +395,6 @@ export function useTraining({ deckId, section, speed, engine, onScore }: Trainin
     }
   }
 
-  // ── Take selection ──────────────────────────────────────────────
   async function onPickTake(ts: number) {
     const { sectionId } = sectionRef.current;
     if (!sectionId) return;
@@ -419,7 +410,6 @@ export function useTraining({ deckId, section, speed, engine, onScore }: Trainin
     if (v) showRecording(v, hist); // replay an earlier take of your voice
   }
 
-  // ── The section changed: restore its players ────────────────────
   // If Supabase has audio for this slide, download it once, cache it as a take (so Generate and
   // replay reuse it — no re-synthesis), and show it.
   async function adoptRemoteAudio(sectionId: string) {
@@ -473,7 +463,6 @@ export function useTraining({ deckId, section, speed, engine, onScore }: Trainin
           /* silent */
         }
       }
-      // Restore the latest saved recording of the user's own voice.
       try {
         const recs = await takes.current.getRecordings(sectionId);
         if (recs.versions.length && current()) showRecording(recs.versions[0], recs);
@@ -507,7 +496,6 @@ export function useTraining({ deckId, section, speed, engine, onScore }: Trainin
     return { buf: version.buf, mime: version.mime || "audio/mpeg" };
   }, []);
 
-  // destroy
   useEffect(() => {
     const live = { urls: urls.current, timers: timers.current };
     return () => {

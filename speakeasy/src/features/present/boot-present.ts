@@ -7,6 +7,9 @@ import { getDeck } from "../../data/decks";
 import { listByDeck } from "../../data/slides";
 import type { DeckRow } from "../../data/types";
 import { ensureAuthed } from "../../lib/auth";
+import { showFailure, showLoading } from "../../lib/boot-screen";
+import { errorMessage } from "../../lib/errors";
+import { ERROR_STYLE, showError } from "../../lib/page";
 import {
   applyAssetMap,
   collectAssetUrls,
@@ -20,38 +23,18 @@ import {
   visibleWithIndex,
 } from "./document";
 
-// What present.html showed before the deck arrived.
-const LOADING_CSS = `
-body { margin: 0; background: #f2f2f2; color: #6b6c6e;
-  color-scheme: light dark;
-       font: 14px ui-monospace, monospace;
-       display: grid; place-items: center; height: 100vh; }
-@media (prefers-color-scheme: dark) {
-  body { background: #19191a; color: #9a9a9c; }
-}`;
-
-const ESC: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;" };
-
 function fatal(msg: string): never {
-  document.body.innerHTML =
-    `<pre style="font:14px monospace;color:var(--se-bad, #b42318);padding:2rem;">` +
-    msg.replace(/[&<>]/g, (c) => ESC[c] as string) +
-    `</pre>`;
+  showFailure(msg, "font:14px monospace;color:var(--se-bad, #b42318);padding:2rem;");
   throw new Error(msg);
 }
 
-const errorMessage = (err: unknown) => (err instanceof Error ? err.message : String(err));
-
 export async function bootPresent() {
-  const style = document.createElement("style");
-  style.textContent = LOADING_CSS;
-  document.head.appendChild(style);
-  document.body.innerHTML = "<p>loading deck…</p>";
+  showLoading("loading deck…");
 
   if (!(await ensureAuthed())) {
-    document.body.innerHTML =
-      '<p style="padding:2rem;color:var(--se-bad, #b42318);font-family:monospace">' +
-      "Access denied — present is owner-only. Use view.html?token=… for sharing.</p>";
+    showError("Access denied — present is owner-only. Use view.html?token=… for sharing.", {
+      style: ERROR_STYLE.denied,
+    });
     throw new Error("auth");
   }
 

@@ -17,7 +17,7 @@ function parseSvgSource(raw: string): Parsed {
     return { ok: false, message: "SVG 문법이 올바르지 않습니다." };
   }
   const svg = doc.documentElement;
-  if (!svg || svg.tagName.toLowerCase() !== "svg") {
+  if (svg?.tagName.toLowerCase() !== "svg") {
     return { ok: false, message: "루트 엘리먼트는 <svg> 여야 합니다." };
   }
   return { ok: true, svg };
@@ -82,8 +82,8 @@ export function SvgModal({ canvasRef, chrome, open, onClose }: Props) {
   };
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: the backdrop closes the modal on a click outside it, as before
-    // biome-ignore lint/a11y/useKeyWithClickEvents: Esc handling was never part of this modal
+    // biome-ignore lint/a11y/noStaticElementInteractions: the backdrop closes the modal on a click outside it
+    // biome-ignore lint/a11y/useKeyWithClickEvents: the backdrop closes the modal; Esc is not handled
     <div
       className={`modal-bg${open ? " show" : ""}`}
       id="svg-modal-bg"
@@ -204,7 +204,7 @@ export function SvgModal({ canvasRef, chrome, open, onClose }: Props) {
               <div
                 className="svg-source-canvas"
                 id="svg-custom-preview"
-                // biome-ignore lint/security/noDangerouslySetInnerHtml: previews the user's own SVG, as the legacy editor did
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: previews the user's own SVG
                 dangerouslySetInnerHTML={{ __html: parsed.ok ? parsed.svg.outerHTML : "" }}
               />
               <div

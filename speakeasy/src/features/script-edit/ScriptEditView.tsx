@@ -8,13 +8,16 @@ import { HistoryDrawer } from "../history/HistoryDrawer";
 import { saveVersionPrompt } from "../history/save-version";
 import { useHistory } from "../history/useHistory";
 
-export type Section = { section_id: string; order: number; title: string; body: string };
+import type { Section } from "../script/load-sections";
+
+export type { Section };
+
 type Props = { deck: DeckRow; deckId: string; sections: Section[] };
 
 const SAVE_DEBOUNCE_MS = 800;
 
 export function ScriptEditView({ deck, deckId, sections: initialSections }: Props) {
-  // Mutable on purpose: a saved note updates its section's body (the legacy "snapshot").
+  // Mutable on purpose: a saved note updates its section's body (the loaded snapshot).
   const sections = useRef(initialSections).current;
   const [currentSid, setCurrentSid] = useState<string | null>(sections[0]?.section_id || null);
   const [text, setText] = useState(sections[0]?.body || "");
@@ -235,8 +238,8 @@ export function ScriptEditView({ deck, deckId, sections: initialSections }: Prop
         <main id="editor-grid">
           <aside id="edit-sections">
             {sections.map((s, i) => (
-              // biome-ignore lint/a11y/useKeyWithClickEvents: preserved legacy markup
-              // biome-ignore lint/a11y/noStaticElementInteractions: preserved legacy markup
+              // biome-ignore lint/a11y/useKeyWithClickEvents: pointer-only control by design
+              // biome-ignore lint/a11y/noStaticElementInteractions: pointer-only control by design
               <div
                 key={s.section_id}
                 className={`edit-sec ${s.section_id === currentSid ? "active" : ""}`}

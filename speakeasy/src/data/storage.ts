@@ -1,6 +1,5 @@
 // The deck asset library: the `slides-images` Storage bucket (the name
-// predates non-image assets). Port of public/js/repo/storage-repo.js, same
-// behavior. The bucket is public-read and accepts any file type; uploads are
+// predates non-image assets). The bucket is public-read and accepts any file type; uploads are
 // scoped under each deck's deck_id prefix.
 //
 // The library is global: every deck can use every asset.

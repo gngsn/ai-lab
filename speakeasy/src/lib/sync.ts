@@ -1,14 +1,11 @@
-// Realtime slide sync over a Supabase broadcast channel (port of
-// public/js/sync.js, same channel name and payloads).
+// Realtime slide sync over a Supabase broadcast channel.
 //   - channel name prefix: "speakeasy-sync-"
 //   - payload: { section_id, index }. section_id is preferred; index is the
 //     fallback so reordering a deck doesn't desync the script viewer.
 //   - "hello" event: a follower that joins mid-talk asks for the current
 //     slide (requestState); the presenter answers by re-broadcasting it
 //     (onHello), so late joiners don't sit on slide 1.
-// The legacy file made its own client because it ran inside a rewritten
-// document where module identity could differ; here the app's one client is
-// used.
+// Uses the app's one Supabase client; the deck document has its own (runtime/sync.ts).
 import { getConfig } from "../config";
 import { supabase } from "../data/client";
 

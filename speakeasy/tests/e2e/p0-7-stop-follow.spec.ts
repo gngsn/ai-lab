@@ -1,7 +1,6 @@
-// P0-7: the audience can pause following the presenter and browse alone, then
-// follow again. Status and button labels are English ("Pause" / "Follow",
-// the rest of the label only appears on hover); the hint text follows the
-// browser language.
+// The audience can pause following the presenter and browse alone, then follow again. Status and
+// button labels are English ("Pause" / "Follow", the rest of the label only appears on hover); the
+// hint text follows the browser language.
 import { deckFrame, expect, press, slideState, test } from "../support/app";
 import { DECK, TOKEN } from "../support/seed";
 

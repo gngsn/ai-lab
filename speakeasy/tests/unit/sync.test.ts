@@ -1,4 +1,3 @@
-// What the legacy public/js/sync.js did, pinned for the port.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const config = vi.hoisted(() => ({ supabaseUrl: "https://x.test", supabaseAnonKey: "k" }));

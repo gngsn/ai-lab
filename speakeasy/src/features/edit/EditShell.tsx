@@ -29,7 +29,6 @@ import { useCanvas } from "./useCanvas";
 import { useHistoryDrawer } from "./useHistoryDrawer";
 import { useHtmlEditor } from "./useHtmlEditor";
 
-// Chrome shared with the editor features that arrive in later P4-7 steps.
 export type EditChrome = {
   setStatus: (text: string, kind?: string) => void;
   toast: (message: string, kind?: string) => void;
@@ -319,7 +318,6 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
   if (model.navSectionId) presentUrl.searchParams.set("section", model.navSectionId);
   const presentHref = presentUrl.toString();
 
-  // Panel sizes: restored (and written back clamped) on load, like the legacy page.
   useEffect(() => {
     applySlideListWidth(getStoredPx(SLIDE_LIST_WIDTH_KEY, 240));
     applyPropsPanelWidth(getStoredPx(PROPS_PANEL_WIDTH_KEY, 280));
@@ -365,8 +363,8 @@ export function EditShell({ deck, deckId, slides, notes, keyMessages }: Props) {
     };
   }, []);
 
-  // Keyboard: [ and ] fold the side panels; H, I and Ctrl/Cmd+S press the
-  // toolbar buttons that later steps wire up. Escape closes menus.
+  // Keyboard: [ and ] fold the side panels; H, I and Ctrl/Cmd+S press the toolbar buttons.
+  // Escape closes menus.
   useEffect(() => {
     void bindShortcutsHelp("Edit", [
       { keys: ["E"], desc: "Toggle edit mode (canvas)" },

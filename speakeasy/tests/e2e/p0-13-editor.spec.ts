@@ -1,6 +1,5 @@
-// P0-13: editing basics — selecting slides, notes and key message with
-// autosave, adding / duplicating / hiding / deleting / reordering slides.
-// Every assertion about saving reads the fake database.
+// Editing basics — selecting slides, notes and key message with autosave, adding / duplicating /
+// hiding / deleting / reordering slides. Every assertion about saving reads the fake database.
 import { type Page, expect as pwExpect } from "@playwright/test";
 import { dbRow, expect, readDb, test } from "../support/app";
 import { DECK, KEY_MESSAGE } from "../support/seed";

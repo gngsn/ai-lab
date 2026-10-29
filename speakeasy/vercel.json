@@ -36,83 +36,83 @@
   "rewrites": [
     {
       "source": "/edit",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/edit.html",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/notes",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/notes.html",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/script",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/script.html",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/script-edit",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/script-edit.html",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/pronunciation",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/pronunciation.html",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/captions",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/captions.html",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/view",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/view.html",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/share",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/share.html",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/present",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/present.html",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/edit-frame",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/edit-frame.html",
-      "destination": "/index.html"
+      "destination": "/"
     }
   ]
 }

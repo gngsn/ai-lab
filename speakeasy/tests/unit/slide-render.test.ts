@@ -1,4 +1,4 @@
-// P0-18: tagSection — makes a stored slide ready to show (js/slide-render.js).
+// TagSection — makes a stored slide ready to show (js/slide-render.js).
 import { describe, expect, it } from "vitest";
 import { tagSection } from "../../src/lib/slide-render";
 

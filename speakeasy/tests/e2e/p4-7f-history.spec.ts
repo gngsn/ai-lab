@@ -1,6 +1,5 @@
-// P4-7f (part 2): the history drawer in the editor — open/close, the timeline,
-// the current-section filter, viewing a row and restoring slide / notes / frame
-// rows.
+// The history drawer in the editor — open/close, the timeline, the current-section filter, viewing a
+// row and restoring slide / notes / frame rows.
 import type { Page } from "@playwright/test";
 import { dbRow, expect, test } from "../support/app";
 import { DECK } from "../support/seed";

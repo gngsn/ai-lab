@@ -1,6 +1,5 @@
 // Saving the user's recordings to a folder on disk (File System Access API),
-// or downloading them where that API is missing. Port of the folder code in
-// the legacy training-panel.js.
+// or downloading them where that API is missing.
 import { idbStore, type KeyValueStore } from "./db";
 import type { RecVersion } from "./takes";
 import { fileStamp, safePart } from "./text";

@@ -1,6 +1,5 @@
-// P0-5: a deck starts unrevealed even if slides were saved with playback
-// state ("visible" on a slide, "show" on a fragment), and slides play their
-// reveal transition when reached.
+// A deck starts unrevealed even if slides were saved with playback state ("visible" on a slide,
+// "show" on a fragment), and slides play their reveal transition when reached.
 import { deckFrame, expect, test } from "../support/app";
 import { DECK } from "../support/seed";
 

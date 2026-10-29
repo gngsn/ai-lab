@@ -1,5 +1,4 @@
-// Live captions — find which script line the speaker is saying (port of
-// public/js/captions/matcher.js, same behavior).
+// Live captions — find which script line the speaker is saying.
 //
 // Speech recognition is noisy (spacing, particles, misheard words), so lines
 // are compared as sets of character bigrams after dropping spaces and

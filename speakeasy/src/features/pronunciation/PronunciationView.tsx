@@ -87,7 +87,7 @@ export function PronunciationView({ deckId, loaded }: Props) {
   );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [speed, setSpeed] = useState(1.0);
-  const [speedLabel, setSpeedLabel] = useState("1.0×"); // the legacy page starts at "1.0×"
+  const [speedLabel, setSpeedLabel] = useState("1.0×");
   const [scores, setScores] = useState<Record<number, { score: number; cls: string }>>({});
   const [exp, setExp] = useState({ busy: false, pct: 0, text: "" });
   const panel = useRef<TrainingHandle>(null);
@@ -122,15 +122,13 @@ export function PronunciationView({ deckId, loaded }: Props) {
     document.title = `Pronunciation · ${deck.title || deckId}`;
   }, [deck, deckId]);
 
-  // The slide fit, the resizer and the asset warm-up.
   useEffect(() => {
     if (!data) return;
     if (iframeRef.current && stageRef.current) {
-      // Render the preview at the fixed slide size and scale it as a whole.
       fitSlideFrame(iframeRef.current, stageRef.current);
     }
-    // Left resizer (#sec-resizer) is dead in the legacy page too: the section
-    // list used to wipe it. Only the right one works, and only it is wired.
+    // The left resizer (#sec-resizer) is not wired: the section list replaces it. Only the
+    // right one works.
     const stopRight = makeColResizer(trnResizerRef.current, {
       getWidth: (clientX) => window.innerWidth - clientX,
       setWidth: (w) => setCssVar("--training-width", w),
@@ -291,8 +289,8 @@ export function PronunciationView({ deckId, loaded }: Props) {
           <>
             <aside id="section-list">
               {data.slides.map((s, i) => (
-                // biome-ignore lint/a11y/useKeyWithClickEvents: preserved legacy markup
-                // biome-ignore lint/a11y/noStaticElementInteractions: preserved legacy markup
+                // biome-ignore lint/a11y/useKeyWithClickEvents: pointer-only control by design
+                // biome-ignore lint/a11y/noStaticElementInteractions: pointer-only control by design
                 <div
                   key={s.section_id}
                   className={`sec-item${i === currentIndex ? " active" : ""}`}

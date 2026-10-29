@@ -1,5 +1,4 @@
-// Hidden slides carry `data-hidden` on their <section> (port of
-// public/js/slide-visibility.js, same behavior).
+// Hidden slides carry `data-hidden` on their <section>.
 // Note: setSlideHiddenContent needs a DOM (DOMParser), unlike the rest of lib/.
 
 function getAttrValue(attrs: string, name: string) {

@@ -1,4 +1,3 @@
-// Expected markup comes from the legacy public/js/shortcuts-help.js.
 import { describe, expect, it } from "vitest";
 import { shortcutsHtml } from "../../src/lib/shortcuts-help";
 

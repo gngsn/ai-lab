@@ -1,6 +1,5 @@
-// P6-2: the pronunciation page warms the HTTP cache with every asset of the
-// deck (src/lib/preload-assets.ts, "warm" mode: fetch() only, no URL is
-// rewritten). Passes on the legacy public/js/preload-assets.js first.
+// The pronunciation page warms the HTTP cache with every asset of the deck (src/lib/preload-
+// assets.ts, "warm" mode: fetch() only, no URL is rewritten).
 import type { Page, Request } from "@playwright/test";
 import { expect, test } from "../support/app";
 import { DECK, PLAIN } from "../support/seed";

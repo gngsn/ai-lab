@@ -28,7 +28,6 @@ function HiddenSlideIcon() {
   );
 }
 
-// The slide list (#slide-list-items) and its title field / count.
 export function SlideList({
   model,
   asideToggle,
@@ -43,7 +42,7 @@ export function SlideList({
   const [dragging, setDragging] = useState<string | null>(null);
   const itemsRef = useRef<HTMLDivElement>(null);
 
-  // Like the legacy renderSlideList: every re-render syncs the field with the saved title.
+  // Every re-render syncs the field with the saved title.
   // biome-ignore lint/correctness/useExhaustiveDependencies: sync on any list/selection change
   useEffect(() => {
     setTitleDraft(current?.title || "");
@@ -118,8 +117,8 @@ export function SlideList({
             .filter(Boolean)
             .join(" ");
           return (
-            // biome-ignore lint/a11y/useKeyWithClickEvents: preserved legacy markup
-            // biome-ignore lint/a11y/noStaticElementInteractions: preserved legacy markup
+            // biome-ignore lint/a11y/useKeyWithClickEvents: pointer-only control by design
+            // biome-ignore lint/a11y/noStaticElementInteractions: pointer-only control by design
             <div
               key={s.section_id}
               className={classes}
@@ -127,7 +126,6 @@ export function SlideList({
               data-section-id={s.section_id}
               data-hidden={hidden ? "true" : "false"}
               onClick={(e) => {
-                // Only switch slide if not clicking on an action button.
                 if ((e.target as HTMLElement).closest(".slide-actions, details")) return;
                 void model.switchSlide(s.section_id);
               }}
@@ -223,7 +221,7 @@ function ActionButton({
         e.stopPropagation();
         const details = e.currentTarget.closest("details");
         // Close the menu first so it doesn't linger over the result
-        // (delete closes it after, like the legacy page).
+        // (delete closes it after).
         if (!closeAfter) details?.removeAttribute("open");
         await onAct();
         if (closeAfter) details?.removeAttribute("open");

@@ -1,5 +1,5 @@
-// P4-7c: the canvas — the slide iframe and its messages, the < > preview steps,
-// and the mode select (16:9, portrait, raw HTML, stretch).
+// The canvas — the slide iframe and its messages, the < > preview steps, and the mode select (16:9,
+// portrait, raw HTML, stretch).
 import { type Page, expect as pwExpect } from "@playwright/test";
 import { dbRow, expect, test } from "../support/app";
 import { DECK } from "../support/seed";

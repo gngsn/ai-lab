@@ -1,4 +1,4 @@
-// P0-18: parseNotesMd — notes / key-message Markdown, one section per slide.
+// ParseNotesMd — notes / key-message Markdown, one section per slide.
 import { describe, expect, it } from "vitest";
 import { parseNotesMd, slugify } from "../../src/lib/import-html";
 

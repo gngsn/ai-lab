@@ -1,4 +1,3 @@
-// P3-1: Vite env first, then the legacy window globals, then empty.
 import { describe, expect, it } from "vitest";
 import { getConfig } from "../../src/config";
 

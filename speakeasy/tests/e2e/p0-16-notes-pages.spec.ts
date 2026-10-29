@@ -1,5 +1,4 @@
-// P0-16: the full notes editor (script-edit.html) and the Markdown notes
-// view (notes.html).
+// The full notes editor (script-edit.html) and the Markdown notes view (notes.html).
 import type { Page } from "@playwright/test";
 import { dbRow, expect, readDb, test } from "../support/app";
 import { DECK } from "../support/seed";

@@ -1,6 +1,5 @@
 // The shapes of the SVG picker. Each draws into a 100×100 viewBox from the
-// fill colour, stroke colour and stroke width. Port of SVG_SHAPES in
-// public/js/edit-bootstrap.js.
+// fill colour, stroke colour and stroke width.
 export type SvgShape = {
   id: string;
   label: string;
@@ -84,19 +83,19 @@ export const SVG_SHAPES: SvgShape[] = [
   {
     id: "check",
     label: "Checkmark",
-    render: (f, s, sw) =>
+    render: (f, _s, sw) =>
       `<polyline points="8,52 36,78 92,20" fill="none" stroke="${f}" stroke-width="${Math.max(sw, 8)}" stroke-linecap="round" stroke-linejoin="round"/>`,
   },
   {
     id: "cross",
     label: "Cross \u2715",
-    render: (f, s, sw) =>
+    render: (f, _s, sw) =>
       `<line x1="14" y1="14" x2="86" y2="86" stroke="${f}" stroke-width="${Math.max(sw, 8)}" stroke-linecap="round"/><line x1="86" y1="14" x2="14" y2="86" stroke="${f}" stroke-width="${Math.max(sw, 8)}" stroke-linecap="round"/>`,
   },
   {
     id: "plus",
     label: "Plus +",
-    render: (f, s, sw) =>
+    render: (f, _s, sw) =>
       `<line x1="50" y1="10" x2="50" y2="90" stroke="${f}" stroke-width="${Math.max(sw, 8)}" stroke-linecap="round"/><line x1="10" y1="50" x2="90" y2="50" stroke="${f}" stroke-width="${Math.max(sw, 8)}" stroke-linecap="round"/>`,
   },
   {

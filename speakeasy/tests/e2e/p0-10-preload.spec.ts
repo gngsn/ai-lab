@@ -1,5 +1,5 @@
-// P0-10: view / present download every asset first (blob: URLs); share does
-// not (it is mostly opened on phones, where that risks the tab being killed).
+// View / present download every asset first (blob: URLs); share does not (it is mostly opened on
+// phones, where that risks the tab being killed).
 import { deckFrame, expect, test } from "../support/app";
 import { DECK, TOKEN } from "../support/seed";
 

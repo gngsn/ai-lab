@@ -1,5 +1,4 @@
-// A one-line text prompt drawn in the page (port of public/js/dom-prompt.js,
-// same markup and behavior). The layer is created once and reused.
+// A one-line text prompt drawn in the page. The layer is created once and reused.
 const PROMPT_HTML = `
     <div style="width:min(420px,100%);background:var(--se-bg, #f2f2f2);border:1px solid var(--se-ink, #292a2c);border-radius:0;padding:24px;color:var(--se-ink, #292a2c);font-family:inherit">
       <div id="__se_prompt_title" style="font-size:14px;font-weight:600;margin-bottom:8px"></div>

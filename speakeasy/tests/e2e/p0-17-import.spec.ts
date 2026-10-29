@@ -1,5 +1,5 @@
-// P0-17: importing a deck (HTML + notes + key messages) from files, and
-// re-importing parts of an existing deck.
+// Importing a deck (HTML + notes + key messages) from files, and re-importing parts of an existing
+// deck.
 import { fileURLToPath } from "node:url";
 import type { Page } from "@playwright/test";
 import { dbRow, expect, readDb, test } from "../support/app";

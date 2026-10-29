@@ -87,11 +87,9 @@ type Props = {
 };
 
 export function PresenterPanel({ deckId, frameRef, onHide, onWidth }: Props) {
-  // ── Font ─────────────────────────────────────────────────────────────
   const [fontSize, setFontSize] = useState(() => Number(store.get(FONT_KEY)) || 15);
   useEffect(() => store.set(FONT_KEY, String(fontSize)), [fontSize]);
 
-  // ── Timer ────────────────────────────────────────────────────────────
   const startedAt = useRef(Date.now());
   const [elapsed, setElapsed] = useState("0:00");
   useEffect(() => {
@@ -101,7 +99,6 @@ export function PresenterPanel({ deckId, frameRef, onHide, onWidth }: Props) {
     return () => window.clearInterval(id);
   }, []);
 
-  // ── Script data ──────────────────────────────────────────────────────
   const [data, setData] = useState<{
     slides: SlideRow[];
     allSlides: SlideRow[];
@@ -130,7 +127,6 @@ export function PresenterPanel({ deckId, frameRef, onHide, onWidth }: Props) {
     };
   }, [deckId]);
 
-  // ── Following the slide frame ────────────────────────────────────────
   const [current, setCurrent] = useState<Current>({ index: 0, section_id: null, fragments: [] });
   const bodyRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<Engine | null>(null);
@@ -167,7 +163,6 @@ export function PresenterPanel({ deckId, frameRef, onHide, onWidth }: Props) {
     };
   }, [data, frameRef]);
 
-  // ── Live captions ────────────────────────────────────────────────────
   const [cc, setCc] = useState({ ready: false, hasScript: false, listening: false });
   const ccRef = useRef(cc);
   ccRef.current = cc;
@@ -210,7 +205,6 @@ export function PresenterPanel({ deckId, frameRef, onHide, onWidth }: Props) {
     else engine.start();
   };
 
-  // ── Render ───────────────────────────────────────────────────────────
   const view = useMemo(() => {
     if (!data) return null;
     let i = data.slides.findIndex((s) => s.section_id === current.section_id);

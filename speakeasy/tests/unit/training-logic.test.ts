@@ -1,8 +1,4 @@
-// P6-3: the training panel's pure logic in TypeScript (src/features/training).
-// The expected values of cleanForSpeech, silenceWav and mergeBlobs are what the
-// legacy panel (public/js/training-panel.js, since removed) produced for the
-// same inputs, byte for byte for the WAV files (as SHA-1 digests); the helpers
-// it kept private are pinned by hand-checked cases.
+// The training panel's pure logic in TypeScript (src/features/training).
 import { createHash } from "node:crypto";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -48,7 +44,7 @@ const digest = async (b: Blob) =>
     .digest("hex");
 
 describe("cleanForSpeech", () => {
-  // [input, what the legacy panel returned]
+  // [input, expected output]
   const cases: [string, string][] = [
     ["", ""],
     ["plain", "plain"],
@@ -74,7 +70,7 @@ describe("cleanForSpeech", () => {
 });
 
 describe("silenceWav", () => {
-  // [seconds, sample rate, size in bytes, SHA-1 of the legacy file]
+  // [seconds, sample rate, size in bytes, SHA-1 of the file]
   const cases: [number, number | undefined, number, string][] = [
     [0, undefined, 44, "b8000eada705cf56630266b151564d054d3e2a06"],
     [0.5, undefined, 22094, "5f8152f49034fff563e91ed43cd01de8abc5ac4b"],

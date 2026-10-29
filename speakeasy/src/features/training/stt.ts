@@ -1,6 +1,5 @@
 // Speech-to-text of the training panel: the local MLX server (VibeVoice) or
-// OpenAI Whisper transcribe a recorded blob. Port of the STT helpers in
-// the legacy training-panel.js.
+// OpenAI Whisper transcribe a recorded blob.
 import { trainingConfig } from "./config";
 
 async function whisper(blob: Blob): Promise<string> {

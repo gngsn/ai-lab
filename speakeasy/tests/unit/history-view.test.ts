@@ -1,4 +1,3 @@
-// The expected values come from the legacy public/js/history-ui.js helpers.
 import { describe, expect, it } from "vitest";
 import { escapeHtml, fmtTime, previewHtml } from "../../src/features/history/view";
 

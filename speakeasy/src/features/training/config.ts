@@ -1,6 +1,6 @@
 // Settings of the pronunciation training panel. They come from window globals
-// set by js/config.local.js and are read when used, as the legacy panel did at
-// load, so a page that sets them late still works.
+// set by js/config.local.js and are read when used, so a page that sets them
+// late still works.
 export type TtsEngine = "kokoro" | "openai" | "elevenlabs";
 export type SttEngine = "vibevoice" | "whisper" | "webspeech";
 

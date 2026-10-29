@@ -1,12 +1,12 @@
-// Runs a deck inside present.html / view.html. Bundled to /js/deck-host.js,
+// Runs a deck inside the present and view pages. Bundled to /js/deck-host.js,
 // the URL stored decks and the page bootstraps load it from.
 //
 // Decks that bring their own slide controller (a global `SlidePresentation`
-// class started on DOMContentLoaded, like the v5 deck format) are shown
+// class started on DOMContentLoaded) are shown
 // exactly as their plain HTML: Speakeasy adds no layout CSS, no header /
 // footer, no second controller — so nothing double-steps and nothing looks
 // different. Speakeasy only listens (the deck's "slidechange" events and
-// fragment class changes) to drive sync, the script view and share.html.
+// fragment class changes) to drive sync, the script view and the share page.
 //
 // Decks without a controller (plain <section>s) get Speakeasy's runtime,
 // its scroll layout CSS and the data-hl / data-hr / data-page chrome.

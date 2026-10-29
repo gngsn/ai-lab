@@ -100,6 +100,14 @@ Press <kbd>?</kbd> on any page for a modal with shortcuts. Common keys:
 ## Deployment
 
 ### Vercel
+
+Set the Vercel project **Root Directory** to `speakeasy` so its build and routing
+configuration are applied. Run the CLI commands below from that directory.
+
+With `cleanUrls: true`, page rewrites target `/` (the app entry), without an
+`.html` extension. Rewriting to `/index.html` causes Vercel to return 404 for
+page URLs such as `/edit` and `/script`.
+
 ```bash
 # One-time setup
 vercel login
@@ -188,7 +196,7 @@ node scripts/import.mjs --deck=my-talk \
 
 A Vite + React + TypeScript app (pnpm). One `index.html` serves every page; `src/main.tsx`
 picks the page from the URL (`src/routes.ts`), and `vercel.json` rewrites the page addresses
-(`/edit`, `/present.html`, ...) to it. Stored decks and shared links keep their old addresses.
+(`/edit`, `/present.html`, ...) to `/`, which serves it. Stored decks and shared links keep their old addresses.
 
 ```
 speakeasy/

@@ -1,5 +1,5 @@
-// P4-7a: the editor page shell (toolbar, three columns, folding and resizing
-// the side panels, renaming the deck).
+// The editor page shell (toolbar, three columns, folding and resizing the side panels, renaming the
+// deck).
 import { dbRow, expect, test } from "../support/app";
 import { DECK } from "../support/seed";
 

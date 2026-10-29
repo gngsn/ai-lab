@@ -1,5 +1,4 @@
-// Loads the classic stylesheets and scripts a page needs, in the order its
-// old HTML listed them. A stylesheet that fails (blocked, offline) must not
+// Loads the classic stylesheets and scripts a page needs, in order. A stylesheet that fails (blocked, offline) must not
 // stop the page, so both load and error resolve.
 
 export function loadStylesheet(href: string, options: { media?: string; wait?: boolean } = {}) {

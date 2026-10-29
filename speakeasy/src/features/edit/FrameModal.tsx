@@ -36,7 +36,6 @@ export function FrameModal({ deckId, deckRef, chrome, open, onClose, onSaved }: 
   const draft = useRef<FrameDraft | null>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
 
-  // Opening starts from the saved frame, on the HTML part.
   useEffect(() => {
     if (!open) return;
     draft.current = parseFrameDraft(deckRef.current.frame_html);
@@ -70,8 +69,8 @@ export function FrameModal({ deckId, deckRef, chrome, open, onClose, onSaved }: 
 
   const info = FRAME_PART_INFO[part];
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: the backdrop closes the modal on a click outside it, as before
-    // biome-ignore lint/a11y/useKeyWithClickEvents: Esc handling was never part of this modal
+    // biome-ignore lint/a11y/noStaticElementInteractions: the backdrop closes the modal on a click outside it
+    // biome-ignore lint/a11y/useKeyWithClickEvents: the backdrop closes the modal; Esc is not handled
     <div
       className={`modal-bg${open ? " show" : ""}`}
       id="frame-modal-bg"

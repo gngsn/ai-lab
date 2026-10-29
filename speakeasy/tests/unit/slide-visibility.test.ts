@@ -1,4 +1,4 @@
-// P0-18: hidden slides carry data-hidden on their <section>.
+// Hidden slides carry data-hidden on their <section>.
 import { describe, expect, it } from "vitest";
 import { isSlideHiddenContent } from "../../src/lib/slide-visibility";
 

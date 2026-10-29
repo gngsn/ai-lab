@@ -2,11 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { DeckRow } from "../../data/types";
 import { createSlideSync } from "../../lib/sync";
 
-export type Section = { section_id: string; order: number; title: string; body: string };
+import type { Section } from "./load-sections";
+
+export type { Section };
+
 type Props = { deck: DeckRow; sections: Section[]; syncId: string | null; deckId: string };
 
 const FONT_KEY = "speakeasy:notes:fontsize";
-const LEGACY_FONT_KEY = "slides-editor:notes:fontsize"; // pre-rename name
+const LEGACY_FONT_KEY = "slides-editor:notes:fontsize"; // key used before the rename, read as a fallback
 
 // Keep the reader's font size across the rename.
 try {
@@ -24,7 +27,7 @@ export function ScriptView({ deck, sections, syncId, deckId }: Props) {
   );
   const [manual, setManualState] = useState(false);
   const [noHighlight, setNoHighlight] = useState(false);
-  // The legacy page re-rendered (and re-scrolled) on every step, even a no-op one.
+  // Re-render (and re-scroll) on every step, even a no-op one.
   const [renders, setRenders] = useState(0);
   const manualRef = useRef(false);
   const currentRef = useRef(0);
@@ -60,7 +63,7 @@ export function ScriptView({ deck, sections, syncId, deckId }: Props) {
     } catch {}
   }, [fontSize]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on every render, like the legacy page
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on every render
   useEffect(() => {
     scriptRef.current
       ?.querySelector(".sec.active")
@@ -187,8 +190,8 @@ export function ScriptView({ deck, sections, syncId, deckId }: Props) {
           View as Marp
         </a>
         <div className="spacer" />
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: preserved legacy markup */}
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents: preserved legacy markup */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer-only control by design */}
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: pointer-only control by design */}
         <div
           id="sync-badge"
           className={syncId ? "live" : undefined}
@@ -204,8 +207,8 @@ export function ScriptView({ deck, sections, syncId, deckId }: Props) {
         </div>
       </header>
       <div id="error-banner" />
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: preserved legacy markup */}
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: preserved legacy markup */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer-only control by design */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: pointer-only control by design */}
       <div
         id="script"
         ref={scriptRef}

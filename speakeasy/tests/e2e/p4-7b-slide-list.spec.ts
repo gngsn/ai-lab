@@ -1,5 +1,4 @@
-// P4-7b: the slide list (selecting, renaming, adding, duplicating, hiding,
-// deleting and dragging slides).
+// The slide list (selecting, renaming, adding, duplicating, hiding, deleting and dragging slides).
 import { type Page, expect as pwExpect } from "@playwright/test";
 import { dbRow, expect, readDb, test } from "../support/app";
 import { DECK, KEY_MESSAGE } from "../support/seed";
@@ -104,8 +103,7 @@ test.describe(path, () => {
     await expect
       .poll(async () => (await dbRow(page, "slides", { deck_id: DECK, section_id: first }))?.title)
       .toBe("Before switching");
-    // (Not asserted: which slide is selected after that click. The old page redraws its list
-    // when the blur save finishes, which can swallow the click; the new page keeps it.)
+    // (Not asserted: which slide is selected after that click; it depends on when the blur save finishes.)
   });
 
   test("hiding a slide marks it and shows Show in its menu", async ({ page }) => {

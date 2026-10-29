@@ -1,7 +1,6 @@
-// P0-12: live captions. The speaker's recognized speech is matched to a line
-// of the bilingual script, and that line's reviewed English goes to the
-// audience page (CC toggle there). Microphone and Chrome's translator are
-// not available to tests, so speech is fed in through window.__seCaptions.
+// Live captions. The speaker's recognized speech is matched to a line of the bilingual script, and
+// that line's reviewed English goes to the audience page (CC toggle there). Microphone and Chrome's
+// translator are not available to tests, so speech is fed in through window.__seCaptions.
 import type { Page } from "@playwright/test";
 import { deckFrame, expect, press, test } from "../support/app";
 import { BILINGUAL, DECK, TOKEN } from "../support/seed";

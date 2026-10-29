@@ -1,5 +1,4 @@
-// WAV helpers of the pronunciation page (port of silenceWav / mergeBlobs in
-// the legacy training-panel.js, byte-identical output).
+// WAV helpers of the pronunciation page.
 
 function wavHeader(view: DataView, samples: number, sampleRate: number) {
   const w = (o: number, x: number) => view.setUint32(o, x, true);

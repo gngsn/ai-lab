@@ -1,5 +1,4 @@
-// The `slides-audio` Storage bucket (per-slide TTS audio; port of
-// public/js/repo/audio-repo.js, same behavior).
+// The `slides-audio` Storage bucket (per-slide TTS audio).
 // Bucket is public-read; one object per slide at `{deck_id}/{section_id}`.
 // Re-uploading overwrites (upsert) so each slide keeps a single latest take.
 import { supabase } from "./client";

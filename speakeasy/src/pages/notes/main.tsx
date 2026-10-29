@@ -1,30 +1,24 @@
 import { createRoot } from "react-dom/client";
 import { NotesView } from "../../features/notes/NotesView";
 import { buildNotesMd } from "../../features/notes/notes-md";
-import { ensureAuthed } from "../../lib/auth";
+import { errorMessage } from "../../lib/errors";
+import { mountPoint, requireOwner, runPage, showError, stop } from "../../lib/page";
 
-function fail(html: string, error: string): never {
-  document.body.innerHTML = `<p class="err">${html}</p>`;
-  throw new Error(error);
-}
+const ERROR = { className: "err" };
 
 async function main() {
-  if (!(await ensureAuthed())) fail("Access denied — Marp view is owner-only.", "auth");
+  await requireOwner("Access denied — Marp view is owner-only.", ERROR);
   const deckId = new URLSearchParams(location.search).get("deck");
-  if (!deckId) fail("Missing ?deck=&lt;deck_id&gt;", "no deck");
+  if (!deckId) stop("Missing ?deck=<deck_id>", ERROR);
   let built: Awaited<ReturnType<typeof buildNotesMd>>;
   try {
     built = await buildNotesMd(deckId);
   } catch (error) {
-    document.body.innerHTML = `<p class="err">${(error as Error).message}</p>`;
-    return;
+    return showError(errorMessage(error), ERROR);
   }
-  const mount = document.getElementById("app");
-  if (!mount) throw new Error("Missing #app mount point");
-  createRoot(mount).render(<NotesView deck={built.deck} deckId={deckId} content={built.content} />);
+  createRoot(mountPoint("app")).render(
+    <NotesView deck={built.deck} deckId={deckId} content={built.content} />,
+  );
 }
 
-void main().catch((error: unknown) => {
-  if (!(error instanceof Error && ["auth", "no deck"].includes(error.message)))
-    console.error(error);
-});
+runPage(main);
