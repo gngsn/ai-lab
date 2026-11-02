@@ -8,7 +8,7 @@ A step-by-step playbook for the team: what to give the agent, how to set it up, 
 
 | Do | Don't |
 |---|---|
-| Give the agent `ARGON_BRIEF.md`, `DESIGN.md`, and assets and data the team owns (your GPX runs, your app screenshots, your images) | Give it any pre-existing source code, or `SPEC.md`. Demo code must be written during the event |
+| Give the agent `ARGON_BRIEF.md`, `DESIGN.md`, and assets and data the team owns (your GPX runs, your app screenshots, your images) | Give it any pre-existing source code, `SPEC.md` or `REBUILD.md`. Demo code must be written during the event |
 | Work **one phase at a time** and require Gate evidence before moving on | Ask for "the whole app" in one prompt |
 | Make the agent **show proof**: test output, screenshots, trace logs | Accept "done" or "should work" without evidence |
 | Commit after every passing step (small, descriptive commits) | Squash, rewrite history or backdate commits |
