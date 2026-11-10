@@ -752,4 +752,60 @@ async function makeBatch(entries) {
   }
 }
 
+/* ---------------- boot ---------------- */
+renderDots();
+renderEntries();
+$("composer").addEventListener("submit", ask);
+$("stop").onclick = () => controller && controller.abort();
+$("copy").onclick = () => {
+  const t = $("rNatural").textContent;
+  try {
+    navigator.clipboard.writeText(t).then(() => { $("copy").textContent = "복사했어요"; setTimeout(() => ($("copy").textContent = "문장 복사"), 1800); })
+      .catch(() => selectText($("rNatural")));
+  } catch (e) { selectText($("rNatural")); }
+};
+function selectText(el) { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+$("clearSel").onclick = () => { state.sel = []; renderSelection(); };
+$("bundle").onclick = async () => {
+  const picked = state.sel.map((id) => state.entries.find((e) => e.id === id)).filter(Boolean);
+  if (!picked.length) return;
+  $("bundle").disabled = true; $("bundle").textContent = "묶는 중…";
+  try {
+    await makeBatch(picked);
+    state.sel = [];
+    $("setsTitle").scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (e) { setStatus("카드뉴스를 만들지 못했어요. 다시 시도해 주세요.", true); }
+  $("bundle").disabled = false;
+  renderSelection();
+};
+
+renderBatches([]);
+$("ask").disabled = true;
+
+use("sample").then((s) => {
+  state.sample = s;
+  $("ask").disabled = !s;
+  if (!s) $("composerNote").textContent = "교정은 claude.ai나 Claude 앱에서 이 페이지를 열면 쓸 수 있어요.";
+});
+use("downloads").then((d) => { state.downloads = d; if (state.batches.length) renderBatches(state.batches); });
+use("db").then((db) => {
+  state.db = db;
+  if (!db) { renderBatches([{ id: "sample", createdAt: Date.now(), pages: SAMPLE_SET }], { sample: true }); return; }
+  const timer = setTimeout(() => setStatus("저장된 표현을 불러오는 데 오래 걸려요.", true), 10000);
+  db.collection("entries").onSnapshot((snap) => {
+    clearTimeout(timer);
+    state.entries = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    renderEntries();
+  }, () => setStatus("모은 표현을 불러오지 못했어요.", true));
+  db.collection("batches").onSnapshot((snap) => {
+    clearTimeout(timer);
+    const next = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => b.createdAt - a.createdAt);
+    const sig = next.map((b) => b.id + ":" + (b.updatedAt || b.createdAt)).join("|");
+    if (sig === state.batchSig) return;
+    state.batchSig = sig; state.batches = next;
+    renderBatches(next);
+  }, () => setStatus("카드뉴스를 불러오지 못했어요.", true));
+});
 </script>
+
+</body></html>
