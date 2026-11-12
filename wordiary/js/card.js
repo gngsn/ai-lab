@@ -1,6 +1,6 @@
 /* Card renderer: 1080×1350 PNG pages (cover + one detail card per expression). */
 import { fontsReady } from "./fonts.js";
-import { drawIcon, COL } from "./draw.js";
+import { drawIcon, drawSign, COL } from "./draw.js";
 import { layout, balanced, drawLines, frRows } from "./text.js";
 
 export const CW = 1080, CH = 1350;
@@ -63,7 +63,10 @@ export function renderDetail(card, idx) {
   drawHead(ctx, idx ? `EXPRESSION ${pad2(idx)}` : "EXPRESSION", card.ko, idx ? pad2(idx) : "");
   const artTop = TOP + rows[0];
   const size = Math.min(rows[1], IW);
-  drawIcon(ctx, card.icon, X0 + (IW - size) / 2, artTop + (rows[1] - size) / 2, size, 9);
+  if (card.sign && card.sign.art) {
+    const sh = size * 0.94, sw = Math.min(IW, sh * 1.25);
+    drawSign(ctx, card.sign, X0 + (IW - sw) / 2, artTop + (rows[1] - sh) / 2, sw, sh, F);
+  } else drawIcon(ctx, card.icon, X0 + (IW - size) / 2, artTop + (rows[1] - size) / 2, size, 9);
   const enTop = artTop + rows[1];
   drawLines(ctx, enLines, X0, enTop + (rows[2] - enH) / 2, 59.8, IW, "center");
   let y = enTop + rows[2];
@@ -94,7 +97,7 @@ export function renderCover(cards) {
   const areaTop = TOP + headH;
   let y = areaTop + Math.max(0, (BOT - areaTop - total) / 2);
   rows.forEach((r, i) => {
-    drawIcon(ctx, r.c.icon, X0, y + (r.h - 104) / 2, 104, 13);
+    drawIcon(ctx, (r.c.sign && r.c.sign.art) || r.c.icon, X0, y + (r.h - 104) / 2, 104, 13);
     const ty = y + (r.h - r.th) / 2;
     ctx.font = F(800, 22); ctx.fillStyle = COL.soft; ctx.textBaseline = "middle";
     ctx.fillText(pad2(i + 1), TX, ty + 13);

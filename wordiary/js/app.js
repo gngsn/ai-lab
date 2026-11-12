@@ -1,6 +1,6 @@
 import { fontsReady } from "./fonts.js";
 import { toBlob, renderDetail, renderSet, pad2 } from "./card.js";
-import { buildPrompt, cleanCard } from "./ai.js";
+import { buildPrompt, cleanCard, buildDrawPrompt, cleanDrawing } from "./ai.js";
 import { SAMPLE_SET } from "./sample.js";
 
 const use = (name) => (window.claude && window.claude.use) ? window.claude.use(name) : Promise.resolve(null);
@@ -76,7 +76,11 @@ function renderEntries() {
       state.confirmDel = null;
       try { await state.db.collection("entries").doc(e.id).delete(); } catch (err) { setStatus("삭제하지 못했어요. 다시 시도해 주세요.", true); }
     };
-    actions.append(editBtn, delBtn); li.append(actions);
+    const drawBtn = document.createElement("button"); drawBtn.type = "button"; drawBtn.className = "link";
+    drawBtn.textContent = drawing.has(e.id) ? "그리는 중…" : "다시 그리기";
+    drawBtn.disabled = drawing.has(e.id) || !state.sample;
+    drawBtn.onclick = () => drawFor(e.id, e.card);
+    actions.append(editBtn, drawBtn, delBtn); li.append(actions);
 
     if (state.editing === e.id) {
       const form = document.createElement("form"); form.className = "edit";
@@ -217,6 +221,7 @@ async function ask(ev) {
     if (state.db) {
       const ref = state.db.collection("entries").doc();
       await ref.set({ createdAt: Date.now(), input: text.slice(0, 600), reply, card, usedIn: [] });
+      drawFor(ref.id, card);
       savedMsg = "카드로 만들어 내 카드에 넣었어요 ↓";
     }
     showResult(reply, savedMsg);
@@ -234,6 +239,31 @@ async function ask(ev) {
     state.busy = false; $("ask").disabled = !state.sample; $("stop").hidden = true;
     $("askStatus").classList.remove("pulse");
   }
+}
+
+/* ---------------- drawing: Claude draws the sign after the correction lands; one retry, then the picked icon stays ---------------- */
+const drawing = new Set();
+async function requestDrawing(input) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const out = cleanDrawing(await state.sample.json(buildDrawPrompt(input), { cache: false }), input.words);
+      if (out.signage) return out;
+    } catch (e) {
+      if (e && (e.code === "not_granted" || e.code === "rate_limited")) throw e;
+    }
+  }
+  return null;
+}
+async function drawFor(id, card) {
+  if (!state.sample || !state.db || drawing.has(id)) return;
+  drawing.add(id); renderEntries();
+  try {
+    const out = await requestDrawing({ sentence: card.en, meaning: card.ko, words: (card.tip || []).map((t) => t.t) });
+    if (out) await state.db.collection("entries").doc(id).update({ card: { ...card, sign: { art: out.signage, label: out.label } } });
+    else setStatus("그림을 그리지 못해서 기본 아이콘을 넣었어요.", true);
+  } catch (e) {
+    setStatus(e && e.code === "rate_limited" ? "요청이 많아 그림을 못 그렸어요. 잠시 후 다시 그리기를 눌러 주세요." : "그림을 그리지 못해서 기본 아이콘을 넣었어요.", true);
+  } finally { drawing.delete(id); renderEntries(); }
 }
 
 async function makeBatch(entries) {
@@ -275,6 +305,12 @@ $("bundle").onclick = async () => {
 renderBatches([]);
 $("ask").disabled = true;
 
+use("sample").then((s) => {
+  state.sample = s;
+  $("ask").disabled = !s;
+  if (!s) $("composerNote").textContent = "이 화면에서는 Claude를 쓸 수 없어 교정할 수 없어요. claude.ai에서 열어 주세요.";
+  renderEntries();
+});
 use("downloads").then((d) => { state.downloads = d; if (state.batches.length) renderBatches(state.batches); });
 use("db").then((db) => {
   state.db = db;
