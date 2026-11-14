@@ -1,5 +1,5 @@
 import { fontsReady } from "./fonts.js";
-import { toBlob, renderDetail, renderSet, pad2 } from "./card.js";
+import { toBlob, renderDetail, renderSet, setPages, pad2 } from "./card.js";
 import { buildPrompt, cleanCard, buildDrawPrompt, cleanDrawing } from "./ai.js";
 import { SAMPLE_SET } from "./sample.js";
 
@@ -149,11 +149,13 @@ async function fillGrid(b, grid, loading, wrap) {
   loading.remove();
   const stamp = new Date(b.createdAt);
   const base = `cards-${stamp.getFullYear()}${pad2(stamp.getMonth() + 1)}${pad2(stamp.getDate())}`;
+  const pages = setPages(b.pages);
   blobs.forEach((blob, i) => {
     const fig = document.createElement("figure");
     const img = document.createElement("img");
     img.src = URL.createObjectURL(blob);
-    img.alt = i === 0 ? "표지: 한국어 문장 목록" : `${i}번 표현 카드: ${b.pages[i - 1].en}`;
+    const pg = i ? pages[i - 1] : null;
+    img.alt = i === 0 ? "표지: 한국어 문장 목록" : `${pg.idx}번 표현 카드${pg.page.parts > 1 ? ` (${pg.page.part}/${pg.page.parts})` : ""}: ${pg.page.card.en}`;
     fig.append(img);
     if (state.downloads) {
       const btn = document.createElement("button"); btn.type = "button"; btn.className = "link"; btn.textContent = "저장";
