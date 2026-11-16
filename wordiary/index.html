@@ -5,38 +5,122 @@
 
 <svg id="measure" width="0" height="0" style="position:absolute;visibility:hidden" aria-hidden="true"></svg>
 
-
 <main>
   <header class="top">
     <h1>표현 카드</h1>
     <div class="dots" id="dots" aria-label="모은 표현 수"></div>
   </header>
 
+  <div class="thread-bar">
+    <label for="thread">대화</label>
+    <select id="thread"></select>
+    <span class="note" id="threadNote"></span>
+  </div>
+
   <form class="panel composer" id="composer">
     <label for="q">친구한테 쓴 영어 문장, 또는 영어로 하고 싶은 말</label>
-    <textarea id="q" placeholder="예) I think fighting doesn't mean negative, it's form of saying plz fix this"></textarea>
+    <textarea id="q" placeholder="예) Same here and i found very interesting thing that my dream is also more imaginative than others"></textarea>
     <div class="row">
       <button class="btn" id="ask" type="submit">교정받기</button>
       <button class="ghost" id="stop" type="button" hidden>멈추기</button>
       <span class="status" id="askStatus" role="status"></span>
     </div>
-    <p class="note" id="composerNote">교정한 표현은 바로 카드가 돼요. 모인 카드 중 원하는 것만 골라 카드뉴스로 묶으세요.</p>
+    <p class="note" id="composerNote">하려던 말을 하나도 빼지 않고 고쳐 드려요. 같은 대화의 앞 문장을 참고해요.</p>
   </form>
 
-  <section class="panel" id="result" hidden aria-live="polite">
-    <div>
-      <p class="kicker">자연스럽게</p>
-      <p class="natural" id="rNatural"></p>
+  <div class="drafts" id="drafts" hidden></div>
+
+  <section class="panel work" id="work" hidden aria-live="polite">
+    <div class="work-head">
+      <span class="sample-tag" id="workSample" hidden>예시</span>
+      <p class="you" id="wInput"></p>
     </div>
-    <div id="rCasualWrap">
-      <p class="kicker">더 편하게</p>
-      <p class="casual" id="rCasual"></p>
+
+    <div class="sign-wrap">
+      <canvas id="sign" width="640" height="440" aria-label="이 문장을 그린 표지판"></canvas>
+      <div class="row sign-row">
+        <span class="status" id="drawStatus"></span>
+        <button class="link" id="redraw" type="button">다시 그리기</button>
+      </div>
     </div>
-    <ul class="tips" id="rTips"></ul>
-    <p class="note" id="rComment"></p>
+
+    <div class="versions" id="versions" role="tablist" aria-label="다듬은 버전"></div>
+
+    <fieldset class="choice">
+      <legend class="legend">카드에 쓸 문장을 골라요</legend>
+      <label class="option" id="optClosest">
+        <input type="radio" name="which" id="whichClosest" value="closest">
+        <span class="opt-body"><span class="kicker">가장 가깝게 고친 문장</span><span class="sentence" id="rClosest"></span></span>
+      </label>
+      <p class="or" id="orNatural">또는 조금 더 자연스럽게:</p>
+      <label class="option" id="optNatural">
+        <input type="radio" name="which" id="whichNatural" value="natural">
+        <span class="opt-body"><span class="sentence" id="rNatural"></span></span>
+      </label>
+    </fieldset>
     <div class="row">
-      <button class="ghost" id="copy" type="button">문장 복사</button>
-      <span class="note" id="rSaved"></span>
+      <button class="ghost small" id="copy" type="button">고른 문장 복사</button>
+    </div>
+    <p class="meaning" id="rMeaning"></p>
+
+    <div class="covered" id="coveredWrap">
+      <span class="kicker">담긴 내용</span>
+      <ul class="chips" id="rCovered"></ul>
+    </div>
+
+    <div class="assumed" id="assumedWrap" hidden>
+      <p id="rAssumed"></p>
+      <button class="link" id="clarifyOpen" type="button">아니야, 이런 뜻이야</button>
+      <form class="clarify" id="clarify" hidden>
+        <label for="clarifyText">하려던 말을 한국어나 영어로 적어 주세요</label>
+        <input id="clarifyText" autocomplete="off">
+        <button class="btn" type="submit">이 뜻으로 다시 고치기</button>
+      </form>
+    </div>
+
+    <div class="group" id="pointsWrap">
+      <h3>표현 포인트</h3>
+      <ul class="picks" id="rPoints"></ul>
+    </div>
+    <div class="group" id="altsWrap">
+      <h3>다른 표현</h3>
+      <ul class="picks" id="rAlts"></ul>
+    </div>
+    <div class="group" id="bonusWrap">
+      <h3>덤</h3>
+      <ul class="picks" id="rBonus"></ul>
+    </div>
+    <p class="recommend" id="rRecommend"></p>
+
+    <form class="refine" id="refine">
+      <h3>AI로 다듬기</h3>
+      <div class="chips quick" id="quick"></div>
+      <div class="row">
+        <label class="sr" for="refineText">어떻게 다듬을까요</label>
+        <input id="refineText" placeholder="예) 사진이랑 같이 보낼 거야, 더 들뜬 느낌으로" autocomplete="off">
+        <button class="btn" id="refineBtn" type="submit">다듬기</button>
+      </div>
+    </form>
+
+    <div class="builder">
+      <h3>카드 미리보기</h3>
+      <p class="note">체크한 항목만 카드에 들어가요.</p>
+      <div class="preview" id="preview"></div>
+      <div class="overflow" id="overflow" hidden>
+        <p>내용이 카드 한 장에 다 들어가지 않아요. 두 장으로 나누거나 체크를 몇 개 풀어 주세요.</p>
+      </div>
+      <div class="split-row" id="splitRow">
+        <button class="link" id="splitToggle" type="button">두 장으로 나누기</button>
+        <label class="split-range" id="splitRangeWrap" hidden>
+          <span id="splitLabel"></span>
+          <input type="range" id="splitAt" min="1" max="2" step="1">
+        </label>
+      </div>
+      <div class="row">
+        <button class="btn" id="makeCard" type="button">카드 만들기</button>
+        <button class="link" id="closeWork" type="button">닫기</button>
+        <span class="status" id="workStatus" role="status"></span>
+      </div>
     </div>
   </section>
 
@@ -45,9 +129,9 @@
       <h2 id="collectTitle">내 카드</h2>
       <button class="link" id="clearSel" type="button" hidden>선택 해제</button>
     </div>
-    <p class="note">카드를 눌러 고르면 고른 순서대로 번호가 붙어요. 최대 7장까지 한 카드뉴스로 묶을 수 있어요.</p>
+    <p class="note">카드를 눌러 고르면 고른 순서대로 번호가 붙어요. 최대 7개 표현을 한 카드뉴스로 묶을 수 있어요.</p>
     <ul class="entries" id="entries"></ul>
-    <p class="empty" id="entriesEmpty">아직 카드가 없어요. 위에 문장을 넣고 교정받으면 카드가 바로 생겨요.</p>
+    <p class="empty" id="entriesEmpty">아직 카드가 없어요. 위에 문장을 넣고 교정받은 뒤 카드 만들기를 누르면 여기에 모여요.</p>
     <div class="bundle-bar" id="bundleBar" hidden>
       <span class="status" id="selCount"></span>
       <button class="btn" id="bundle" type="button">카드뉴스로 묶기</button>
