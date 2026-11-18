@@ -31,7 +31,7 @@ function contextBlock(context) {
   const turns = (context || []).filter((t) => t && (t.input || t.sent)).slice(-CONTEXT_TURNS);
   if (!turns.length) return "Earlier messages in this conversation: (none)";
   return "Earlier messages in this conversation (oldest first):\n" + turns.map((t, i) =>
-    `${i + 1}. they wrote: ${JSON.stringify(t.input || "")}${t.sent ? `\n   they sent: ${JSON.stringify(t.sent)}` : ""}`).join("\n");
+    `${i + 1}. they wrote: ${JSON.stringify(t.input || "")}${t.sent ? `\n   version they picked: ${JSON.stringify(t.sent)}` : ""}`).join("\n");
 }
 
 function examplesBlock() {
