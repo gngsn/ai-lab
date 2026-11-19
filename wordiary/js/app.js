@@ -321,7 +321,7 @@ async function makeCard() {
   try {
     await saveWork({ card, status: "card" });
     state.workId = null; renderWork();
-    setStatus("카드로 만들어 내 카드에 넣었어요 ↓");
+    setView("cards");
     $("collectTitle").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (e) { setWorkStatus("카드를 만들지 못했어요. 다시 시도해 주세요.", true); }
   $("makeCard").disabled = false;
@@ -332,7 +332,7 @@ function renderDrafts() {
   const drafts = state.entries.filter((e) => isDraft(e) && e.id !== state.workId).sort((a, b) => b.createdAt - a.createdAt).slice(0, 5);
   box.hidden = !drafts.length;
   box.replaceChildren(el("span", { class: "kicker", text: "카드로 안 만든 교정" }), ...drafts.map((e) => {
-    const open = el("button", { type: "button", class: "open", text: sentOf(e) || e.input, onclick: () => { state.local = null; state.workId = e.id; renderWork(); $("work").scrollIntoView({ behavior: "smooth", block: "start" }); } });
+    const open = el("button", { type: "button", class: "open", text: sentOf(e) || e.input, onclick: () => openWork(e.id) });
     const del = el("button", { type: "button", class: "link danger", text: state.confirmDel === e.id ? "한 번 더 누르면 삭제" : "삭제" });
     del.onclick = async () => {
       if (state.confirmDel !== e.id) { state.confirmDel = e.id; renderDrafts(); return; }
@@ -350,7 +350,27 @@ function library() {
 }
 
 function renderDots() {
-  $("dots").replaceChildren(el("span", { text: `카드 ${library().length}장` }));
+  const n = library().length;
+  $("dots").textContent = n ? String(n) : "";
+  $("tabCards").setAttribute("aria-label", `카드 ${n}장`);
+}
+
+/* ---------------- menu: 교정 (write and fix) / 카드 (my cards and card sets), kept in the link as #correct or #cards ---------------- */
+const VIEWS = { correct: "viewCorrect", cards: "viewCards" };
+function setView(name, { push = true } = {}) {
+  if (!VIEWS[name]) name = "correct";
+  for (const [key, id] of Object.entries(VIEWS)) {
+    $(id).hidden = key !== name;
+    $(key === "correct" ? "tabCorrect" : "tabCards").setAttribute("aria-selected", key === name ? "true" : "false");
+  }
+  if (push && location.hash !== "#" + name) {
+    try { history.replaceState(null, "", "#" + name); } catch (e) { location.hash = name; }
+  }
+}
+function openWork(id) {
+  state.local = null; state.workId = id;
+  setView("correct"); renderWork();
+  $("work").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderSelection() {
@@ -400,7 +420,7 @@ function renderEntries() {
 
     const actions = el("div", { class: "row" });
     if (e.schema === 2) {
-      actions.append(el("button", { type: "button", class: "link", text: "다시 편집", onclick: () => { state.local = null; state.workId = e.id; renderWork(); $("work").scrollIntoView({ behavior: "smooth", block: "start" }); } }));
+      actions.append(el("button", { type: "button", class: "link", text: "다시 편집", onclick: () => openWork(e.id) }));
     } else {
       actions.append(el("button", { type: "button", class: "link", text: state.editing === e.id ? "닫기" : "고치기", onclick: () => { state.editing = state.editing === e.id ? null : e.id; renderEntries(); } }));
       const drawing = state.drawing.has(e.id);
@@ -505,6 +525,9 @@ async function makeBatch(entries) {
 
 /* ---------------- boot ---------------- */
 $("composer").addEventListener("submit", ask);
+document.querySelectorAll(".tab").forEach((t) => { t.onclick = () => setView(t.dataset.view); });
+window.addEventListener("hashchange", () => setView(location.hash.slice(1), { push: false }));
+setView(location.hash.slice(1), { push: false });
 $("stop").onclick = () => state.controller && state.controller.abort();
 $("thread").onchange = () => { state.threadId = $("thread").value || null; renderThreads(); };
 $("whichClosest").onchange = () => saveWork({ which: "closest" }, { now: false });

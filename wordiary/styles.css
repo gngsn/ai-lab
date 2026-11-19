@@ -183,3 +183,13 @@ select, .work input:not([type]), .work input[type="text"] {
 .split-range input { width: 100%; accent-color: var(--btn-bg); }
 .legend { font-size: 15px; font-weight: 800; padding: 0; margin-bottom: 8px; }
 .work-head .sample-tag { flex: none; white-space: nowrap; }
+
+/* menu */
+.top { flex-wrap: wrap; }
+.tabs { display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+.tab { border: none; background: transparent; color: var(--muted); font-weight: 800; font-size: 15px; padding: 8px 18px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; }
+.tab[aria-selected="true"] { background: var(--btn-bg); color: var(--btn-fg); }
+.tab .count:empty { display: none; }
+.tab .count { font-size: 12px; min-width: 20px; padding: 1px 6px; border-radius: 999px; background: var(--mint); color: var(--on-mint); text-align: center; }
+.tab:focus-visible { outline: 3px solid var(--mint); outline-offset: 2px; }
+.view { display: flex; flex-direction: column; gap: 20px; }
