@@ -34,11 +34,11 @@ test("cardFromPicks builds sections from what was checked, with icons on points"
   const version = cleanCorrection(EXAMPLES[3].reply, EXAMPLES[3].input);
   const picks = defaultPicks(version);
   assert.deepEqual(picks.points, [true, true, true]); assert.equal(picks.bonus, true);
-  const drawing = { signage: [["M10 10 L20 20", "s"]], label: "DREAM BIG", icons: { "I've noticed": [["M10 10 L20 20", "s"]] } };
+  const drawing = { signage: [["M10 10 L20 20", "s"]], icons: { "I've noticed": [["M10 10 L20 20", "s"]] } };
   const card = cardFromPicks({ version, which: "natural", picks: { ...picks, alternatives: [], other: true }, drawing });
   assert.equal(card.en, version.natural);
   assert.equal(card.ko, version.meaningKo);
-  assert.deepEqual(card.sign, { art: drawing.signage, label: "DREAM BIG" });
+  assert.deepEqual(card.sign, { art: drawing.signage });
   assert.deepEqual(card.sections.map((x) => x.type), ["point", "alt", "bonus"]);
   assert.ok(card.sections[0].items[0].art);
   assert.equal(card.sections[1].items[0].t, version.closest, "the other version becomes the first alternative");

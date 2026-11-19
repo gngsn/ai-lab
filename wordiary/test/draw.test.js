@@ -42,15 +42,16 @@ test("artOf accepts drawings and icon names, else the chat bubble", () => {
   assert.equal(artOf(null), ICONS.chat);
 });
 
-test("cleanDrawing keeps only icons for the requested words and trims the label", () => {
+test("cleanDrawing keeps only icons for the requested words, drops any label and caps the signage", () => {
   const raw = {
-    label: "  memory lane forever and ever and ever  ",
+    label: "MEMORY LANE",
     signage: [{ c: [100, 100, 50], m: "sf" }],
     icons: { "brings back": [{ d: "M20 20 L180 180" }], other: [{ d: "M20 20 L30 30" }], vivid: [{ d: "bad" }] },
   };
   const out = cleanDrawing(raw, ["brings back", "vivid"]);
   assert.equal(out.signage.length, 1);
   assert.deepEqual(Object.keys(out.icons), ["brings back"]);
-  assert.equal(out.label, "memory lane forever and");
-  assert.deepEqual(cleanDrawing(null, ["x"]), { signage: null, label: "", icons: {} });
+  assert.equal("label" in out, false);
+  assert.equal(cleanDrawing({ signage: Array(9).fill({ c: [100, 100, 20] }) }, []).signage.length, 5);
+  assert.deepEqual(cleanDrawing(null, ["x"]), { signage: null, icons: {} });
 });

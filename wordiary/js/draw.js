@@ -3,7 +3,7 @@
    Built-in icons and drawings Claude makes share this format, so both go through the same wobble. */
 import { ICONS, C, E } from "./icons.js";
 
-export const COL = { frame: "#111111", mint: "#B9E2C9", ink: "#2E2E2E", soft: "#4A4A4A", plate: "#F4FAF6" };
+export const COL = { frame: "#111111", mint: "#B9E2C9", ink: "#2E2E2E", soft: "#4A4A4A" };
 
 export function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 export function hash(str) { let h = 2166136261; for (const ch of str) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; }
@@ -96,7 +96,6 @@ function strokePolys(ctx, polys, sw) {
     if (closed) ctx.closePath();
     if (mode === "d") { ctx.fillStyle = COL.ink; ctx.fill(); continue; }
     if (mode === "sf") { ctx.fillStyle = COL.mint; ctx.fill(); }
-    if (mode === "p") { ctx.fillStyle = COL.plate; ctx.fill(); }
     ctx.stroke();
   }
 }
@@ -109,34 +108,3 @@ export function drawArt(ctx, art, x, y, size, sw) {
   ctx.restore();
 }
 export const drawIcon = drawArt;
-
-/* ---------- signage: a hand-drawn sign plate with two screws, the pictogram, and an optional short label ---------- */
-export function drawSign(ctx, sign, x, y, w, h, font) {
-  const label = String(sign?.label || "").trim().toUpperCase();
-  const rr = Math.min(36, h * 0.12);
-  const plate = `M${x + rr} ${y} L${x + w - rr} ${y} Q${x + w} ${y} ${x + w} ${y + rr} L${x + w} ${y + h - rr} Q${x + w} ${y + h} ${x + w - rr} ${y + h} L${x + rr} ${y + h} Q${x} ${y + h} ${x} ${y + h - rr} L${x} ${y + rr} Q${x} ${y} ${x + rr} ${y} Z`;
-  const key = "plate:" + plate;
-  let polys = polyCache.get(key);
-  if (!polys) { polys = wobble(plate, hash(key), 0.6).map((p) => ({ ...p, mode: "p" })); polyCache.set(key, polys); }
-  ctx.save(); strokePolys(ctx, polys, Math.max(5, h * 0.022)); ctx.restore();
-
-  const screw = Math.max(5, h * 0.02);
-  for (const sx of [x + rr * 0.9, x + w - rr * 0.9]) {
-    ctx.beginPath(); ctx.arc(sx, y + rr * 0.9, screw, 0, Math.PI * 2); ctx.fillStyle = COL.ink; ctx.fill();
-  }
-
-  const labelH = label ? Math.max(34, h * 0.13) : 0;
-  const pad = h * 0.08;
-  const size = Math.max(40, Math.min(w - pad * 2, h - pad * 2 - labelH));
-  drawArt(ctx, sign?.art, x + (w - size) / 2, y + pad, size, 9);
-  if (label) {
-    ctx.save();
-    ctx.font = font(800, Math.round(labelH * 0.62)); ctx.fillStyle = COL.ink;
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    if ("letterSpacing" in ctx) ctx.letterSpacing = "3px";
-    let text = label;
-    while (text.length > 1 && ctx.measureText(text).width > w - pad * 2) text = text.slice(0, -1);
-    ctx.fillText(text === label ? label : text.trimEnd() + "…", x + w / 2, y + h - pad * 0.7 - labelH / 2);
-    ctx.restore();
-  }
-}

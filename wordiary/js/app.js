@@ -1,6 +1,6 @@
 import { fontsReady } from "./fonts.js";
 import { toBlob, renderDetail, renderPage, renderSet, setPages, measureCard, F, pad2 } from "./card.js";
-import { drawArt, drawSign, COL } from "./draw.js";
+import { drawArt, COL } from "./draw.js";
 import { buildDrawPrompt, cleanDrawing } from "./ai.js";
 import { buildCorrectPrompt, buildRefinePrompt, cleanCorrection, sentenceOf } from "./correct.js";
 import { cardFromPicks, defaultPicks, pagesOf, itemCount, normalizeCard } from "./cardmodel.js";
@@ -175,7 +175,7 @@ async function drawLegacy(e) {
   state.drawing.add(e.id); renderEntries();
   try {
     const out = await requestDrawing({ sentence: e.card.en, meaning: e.card.ko, words: [] });
-    if (out) await state.db.collection("entries").doc(e.id).update({ card: { ...e.card, sign: { art: out.signage, label: out.label } } });
+    if (out) await state.db.collection("entries").doc(e.id).update({ card: { ...e.card, sign: { art: out.signage } } });
     else setStatus("그림을 그리지 못했어요. 다시 시도해 주세요.", true);
   } catch (err) { setStatus("그림을 그리지 못했어요. 다시 시도해 주세요.", true); }
   finally { state.drawing.delete(e.id); renderEntries(); }
@@ -225,8 +225,7 @@ function drawSignPreview(w) {
   const cv = $("sign"); const ctx = cv.getContext("2d");
   ctx.clearRect(0, 0, cv.width, cv.height);
   const d = w.drawing;
-  if (d && d.signage) drawSign(ctx, { art: d.signage, label: d.label }, 14, 14, cv.width - 28, cv.height - 28, F);
-  else drawSign(ctx, { art: "chat", label: "" }, 14, 14, cv.width - 28, cv.height - 28, F);
+  drawArt(ctx, (d && d.signage) || "chat", 10, 10, cv.width - 20, 9);
 }
 
 function renderWork() {

@@ -1,6 +1,6 @@
 /* Card renderer: 1080×1350 PNG pages. A card news set is a cover plus every page of every card. */
 import { fontsReady } from "./fonts.js";
-import { drawArt, drawSign, COL } from "./draw.js";
+import { drawArt, COL } from "./draw.js";
 import { layout, balanced, drawLines, frRows } from "./text.js";
 import { normalizeCard, pagesOf, SECTION_MARK } from "./cardmodel.js";
 
@@ -84,10 +84,7 @@ export function renderPage(page, idx) {
   let y = TOP + p.rows[0];
   if (p.withArt) {
     const size = Math.min(p.rows[1], IW);
-    if (card.sign && card.sign.art) {
-      const sh = size * 0.94, sw = Math.min(IW, sh * 1.25);
-      drawSign(ctx, card.sign, X0 + (IW - sw) / 2, y + (p.rows[1] - sh) / 2, sw, sh, F);
-    } else drawArt(ctx, card.icon, X0 + (IW - size) / 2, y + (p.rows[1] - size) / 2, size, 9);
+    drawArt(ctx, (card.sign && card.sign.art) || card.icon, X0 + (IW - size) / 2, y + (p.rows[1] - size) / 2, size, 9);
     y += p.rows[1];
   }
   const enRow = p.withArt ? p.rows[2] : p.rows[1];

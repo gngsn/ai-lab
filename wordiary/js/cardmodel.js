@@ -1,5 +1,5 @@
 /* Card data model (pure). One expression = one card; a long card can be split by the user into two pages.
-   v2 card: { v: 2, ko, en, sign: { art, label } | null, icon, sections: [{ type, items: [{ t, d, art? }] }], breakAt? }
+   v2 card: { v: 2, ko, en, sign: { art } | null, icon, sections: [{ type, items: [{ t, d, art? }] }], breakAt? }
    breakAt counts items: the first `breakAt` items stay on page 1, the rest move to page 2. */
 
 export const SECTION_TYPES = ["point", "alt", "bonus"];
@@ -59,7 +59,7 @@ export function cardFromPicks({ version, which, picks, drawing }) {
     v: 2,
     ko: s(version.meaningKo, 120),
     en: s(en, 200),
-    sign: drawing && drawing.signage ? { art: drawing.signage, label: drawing.label || "" } : null,
+    sign: drawing && drawing.signage ? { art: drawing.signage } : null,
     icon: "chat",
     sections,
   };

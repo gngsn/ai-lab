@@ -15,7 +15,8 @@ Each shape is one of:
   {"c": [cx, cy, r], "m": "<mode>"}  a circle
   {"e": [cx, cy, rx, ry], "m": "<mode>"}  an ellipse
 Modes: "s" = outline only, "sf" = mint fill with outline, "d" = solid ink (only for small dots or small details).
-Use 3 to 7 shapes for the signage, 1 to 4 shapes for each small icon. Fewer, larger shapes beat many small ones.
+The signage is an icon, not an illustration: 2 to 4 shapes, at most 5, drawn as simply as the examples. Each small icon: 1 to 3 shapes.
+Never draw text: no letters, words, numbers or labels anywhere. Show the idea with one main object, not a scene.
 
 ${DRAW_EXAMPLES}
 
@@ -23,17 +24,16 @@ The sentence: "${sentence}"
 ${meaning ? `What it means (Korean): ${meaning}\n` : ""}${scene ? `Scene to show on the sign: ${scene}\n` : ""}Small icons are needed for: ${list.length ? list.map((w) => `"${w}"`).join(", ") : "(none)"}
 
 Reply with ONLY this JSON:
-{"label": "1 to 3 English words printed on the sign, in the spirit of a road or shop sign (e.g. MEMORY LANE, RECHARGE ZONE)", "signage": [shapes for one pictogram that captures the situation or feeling of the whole sentence], "icons": {${list.map((w) => `"${w}": [shapes]`).join(", ")}}}`;
+{"signage": [shapes for one simple icon that captures the situation or feeling of the whole sentence], "icons": {${list.map((w) => `"${w}": [shapes]`).join(", ")}}}`;
 }
 
 export function cleanDrawing(raw, words) {
-  const signage = cleanArt(raw && raw.signage, 8);
+  const signage = cleanArt(raw && raw.signage, 5);
   const icons = {};
   const src = (raw && typeof raw.icons === "object" && raw.icons) || {};
   for (const w of (words || []).slice(0, 5)) {
-    const art = cleanArt(src[w], 4);
+    const art = cleanArt(src[w], 3);
     if (art) icons[w] = art;
   }
-  const label = String((raw && raw.label) || "").trim().slice(0, 24).trim();
-  return { signage, label, icons };
+  return { signage, icons };
 }

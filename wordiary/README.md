@@ -7,7 +7,7 @@
 
 1. **입력**: 영어 문장, 또는 영어로 하고 싶은 한국어. 입력은 "대화"에 속하고, 같은 대화의 앞 문장 최대 6개가 문맥으로 함께 갑니다.
 2. **교정**: 하려던 말을 빼지 않은 가장 가까운 교정 → 더 자연스러운 버전 → 한국어 뜻 → 담긴 내용 → (끊긴 문장이면) 어떻게 이해했는지 → 표현 포인트 → 다른 표현 → 덤 → 추천과 이유.
-3. **그림**: 교정이 끝나면 Claude가 문장 전체를 표지판으로, 표현 포인트를 작은 아이콘으로 그립니다.
+3. **그림**: 교정이 끝나면 Claude가 문장 전체를 아이콘 하나(사이니지, 도형 2~5개, 글자 없음)로, 표현 포인트를 작은 아이콘으로 그립니다.
 4. **다듬기**: 빠른 요청 버튼이나 직접 입력. 모든 버전이 남고 다시 고를 수 있습니다. 이해한 뜻이 틀렸으면 "아니야, 이런 뜻이야"로 바로잡습니다.
 5. **카드**: 체크한 항목만 카드 한 장에 들어갑니다. 넘치면 미리보기가 알려 주고, 원하는 항목에서 두 장으로 나눌 수 있습니다.
 6. **카드뉴스**: 내 카드에서 최대 7개 표현을 골라 표지 + 카드 PNG 세트로 묶습니다.
@@ -21,7 +21,7 @@
 | `js/correct.js` | 교정·다듬기 프롬프트와 응답 검증 |
 | `js/examples.js` | 프롬프트 예시로 쓰는 실제 교정 대화 4개 |
 | `js/ai.js` | 그림 프롬프트와 응답 검증 |
-| `js/draw.js` | 그림 검증(`cleanShape`), 손그림 흔들림 렌더러, 표지판 |
+| `js/draw.js` | 그림 검증(`cleanShape`), 손그림 흔들림 렌더러 |
 | `js/icons.js` | 기본 아이콘(그림이 실패했을 때, 섹션 표시) |
 | `js/cardmodel.js` | 카드 데이터: 예전 카드 변환, 체크 → 카드, 두 장 나누기 |
 | `js/card.js`, `js/text.js` | 1080×1350 캔버스 렌더러와 줄바꿈 |
@@ -30,7 +30,7 @@
 ## 데이터 (`db`)
 
 - `threads/{id}`: `{ title, createdAt, updatedAt }`
-- `entries/{id}` (v2): `{ schema: 2, status: "draft" | "card", threadId, input, versions: [교정 응답 + instruction], vi, which, picks, breakAt, drawing: { signage, label, icons }, card, usedIn }`
+- `entries/{id}` (v2): `{ schema: 2, status: "draft" | "card", threadId, input, versions: [교정 응답 + instruction], vi, which, picks, breakAt, drawing: { signage, icons }, card, usedIn }`
 - `entries/{id}` (예전): `{ input, reply, card: { ko, en, icon, alt, tip, sign? }, usedIn }`. 저장된 데이터는 그대로 두고 `normalizeCard`가 읽을 때 v2로 바꿉니다.
 - `batches/{id}`: `{ createdAt, pages: [card], entryIds }`
 
